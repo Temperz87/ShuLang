@@ -1,2 +1,2 @@
-bind x to 5
+bind x : Integer to 5
 print(x)

@@ -24,10 +24,10 @@ statement ::= "if" bool "then" { statement } "else" { statement } | print(statem
 - print outputs to the console
 - I want to do something REALLY funny which is why I have syscall
 
-term_bindings ::= "bind" identifier "to" type statment
+term_bindings ::= "bind" identifier ":" type "to"  statment
     - Creates a new variable bound to statement
 
-term_bindings ::= "fix" identifier "in" type statement
+term_bindings ::= "fix" identifier "in" statement
 - Binds the identifier to its current location
 - Returns the newly created term, doesn't create a global binding (see facotrial.sl)
 - I might remove this as I imagine I'll only ever use fix and never use bind
