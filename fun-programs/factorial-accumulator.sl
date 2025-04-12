@@ -4,7 +4,7 @@ bind factorial_acc : Integer -> Integer to {
         lambda acc : Integer -> (Integer -> Integer) {
             lambda n : Integer -> Integer {
                 if (n equals 0) {
-                    return acc1
+                    return acc
                 }
                 else {
                     return recurse(acc)(n-1)
