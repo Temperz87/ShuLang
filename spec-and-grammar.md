@@ -5,7 +5,7 @@ type ::= Array\<T\> | Bool | Char | Data | Integer | T_1 -> T_2 { T_2 } | String
     - TODO: Write test cases for this
 - Bool := "true" | "false"
     - It's literally a boolean my dude
-    - TODO: Add a LOT of comparisons
+    - There's also a bunch of comparisons
 - Char := Numbers $[0,255]$, one byte
     - TODO: Write test cases for this
 - Data := Some object thing I'll have to figure out
@@ -16,7 +16,7 @@ type ::= Array\<T\> | Bool | Char | Data | Integer | T_1 -> T_2 { T_2 } | String
 - String := An array of characters, it's just syntactic sugar
     - TODO: Write test cases for this
 
-statement ::= "if" bool { statement } | "if" bool { statement } "else" { statement } |  print(statement) | syscall(string) | term_bindings | "lambda" identifier type -> type: | update! identifier stmt | while (bool) stmt
+statement ::= "if" bool { statement } | "if" bool { statement } "else" { statement } |  print(statement) | syscall(string) | term_bindings | "lambda" identifier type -> type: | update identifier stmt | while (bool) stmt
 
 - if is just like if in other languages if the bool is true/false then do the then/else yay!!!!
 - print outputs to the console

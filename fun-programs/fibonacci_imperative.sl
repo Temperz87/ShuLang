@@ -7,9 +7,9 @@ bind fibonacci : Integer -> Integer to {
         bind next to 1
         while (n >= 0) {
             bind tmp to last
-            update! last to next 
-            update! next to (next + tmp)
-            update! n to (n - 1)
+            update last to next 
+            update next to (next + tmp)
+            update n to (n - 1)
         }
         return next
     }
