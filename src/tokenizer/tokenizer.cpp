@@ -4,6 +4,10 @@
 #include <string.h>
 #include <vector>
 
+// Who would've known that without regex
+// This guy would be fairly complex?
+// (not me)
+
 enum token_type {
     IDENTIFIER,
     INTEGER,
@@ -98,9 +102,14 @@ bool is_integer(std::string tok) {
 } 
 
 token_type determine_type(std::string tok) {
-    // TODO: MAKE THIS LOOK BETTER
-    // TODO: WHAT IF STIRNG SIZE IS ZERO???
-    if (string_in_array(tok, operators, 8))
+    // Having the manually set the size isn't ideal
+    // If someone knows a better solution please tell me
+
+    if (tok.size() == 0) {
+        // TODO: Throw an error
+        return UNKNOWN;
+    }
+    else if (string_in_array(tok, operators, 8))
         return OPERATOR;
     else if (string_in_array(tok, keywords, 16))
         return KEYWORD;
@@ -118,6 +127,7 @@ token_type determine_type(std::string tok) {
         return IDENTIFIER;
 }
 
+// Debug function
 void token_type_to_string(std::string& str, token_type ty) {
     switch (ty) {
         case IDENTIFIER:
@@ -154,18 +164,22 @@ token* get_token(std::string str) {
     return t;
 }
 
+// If a variable can have "c" in its name
 bool isacceptableident(char c) {
     return isalnum(c) || c == '_';
 }
 
+// If the character should stand alone
 bool isterminal(char c) {
     std::string s;
     s = c;
 
     token_type ty = determine_type(s);
-    return ty == PUNCTUATOR;
+    return ty == PUNCTUATOR; // For now only tokens of this type
 }
 
+// When we've hit a whitespace
+// This function gets called to toss tokens into the list
 int add_tokens(std::vector<char> tokenizing, std::vector<token*>& token_list) {
     if (tokenizing.size() == 0) {
         // TODO: ERROR
@@ -173,11 +187,11 @@ int add_tokens(std::vector<char> tokenizing, std::vector<token*>& token_list) {
     }
 
     int created = 0;
-
     int next_token_start = 0;
     for (int i = 0; i < tokenizing.size(); i++) {
         if (!isacceptableident(tokenizing.at(i))) {
             if (next_token_start != i) {
+                // Separate out the current token from the next
                 std::string s(tokenizing.begin() + next_token_start, tokenizing.begin() + i);
                 token_list.push_back(get_token(s));
                 created += 1;
@@ -185,15 +199,17 @@ int add_tokens(std::vector<char> tokenizing, std::vector<token*>& token_list) {
 
             int j = i + 1;
  
+            // Some operators can be like "stacked" e.g. ->
+            // Things like +-+- will still properly become unknown
+            // Here we just check if we should start going forward
+            // E.g. '(' doesn't but '-' does
             if (!isterminal(tokenizing.at(i))) {
                 while (j < tokenizing.size() && !isacceptableident(tokenizing.at(j)))
                     j += 1;
             }
 
+            // Parse thing that isn't an identifier/keyword
             std::string s(tokenizing.begin() + i, tokenizing.begin() + j);
-            if (j != i + 1) {
-                // std::cout << s << std::endl;
-            }
             token* separator = get_token(s);
             token_list.push_back(separator);
 
@@ -238,17 +254,18 @@ int tokenize(std::ifstream& file, std::vector<token*>& token_list) {
             }
         }
         else {
-            tokenizing.push_back(curr);
             if (atcomment(tokenizing)) {
+                // Move to the next line
                 tokenizing.clear();
-                while (file.get(curr))
-                    if (curr == '\n')
+                while (file.get(curr)) // Doing an access and a set on one line is undefined behavior
+                    if (curr == '\n') // Hence me having this if to break
                         break;
             }
+            else
+                tokenizing.push_back(curr);
         }
     }
 
-    // TODO: WHAT IF TOKENIZING ISN'T EMPTY??
     return tokens_created;
 }
 
