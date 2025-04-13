@@ -3,27 +3,11 @@
 #include <iostream>
 #include <string.h>
 #include <vector>
+#include <tokenizer.hpp>
 
 // Who would've known that without regex
 // This guy would be fairly complex?
 // (not me)
-
-enum token_type {
-    IDENTIFIER,
-    INTEGER,
-    KEYWORD,
-    OPERATOR,
-    PUNCTUATOR,
-    WHITESPACE,
-    TYPE,
-    UNKNOWN
-};
-
-class token {
-    public:
-        token_type type;
-        std::string value;
-};
 
 
 // Infix stuff
@@ -267,32 +251,4 @@ int tokenize(std::ifstream& file, std::vector<token*>& token_list) {
     }
 
     return tokens_created;
-}
-
-// TODO: Remove the main method
-int main(int argc, char** argv) {
-    if (argc != 2)
-        std::cout << "Expected 1 argument but got " << argc - 1 << " arguments instead" << std::endl;
-
-    std::ifstream myfile;
-    myfile.open(argv[1]);
-    if (!myfile.is_open()) {
-        std::cout << "Error opening file " << argv[1] << std::endl;
-        return -1;
-    }
-
-    std::vector<token*> token_list;
-    int tokens = tokenize(myfile, token_list);
-
-
-    for (int i = 0; i < tokens; i++) {
-        token* t = token_list.at(i);
-        std::string ty;
-        token_type_to_string(ty, t->type);
-        std::cout << "(" << t->value << ", " << ty << ")" << std::endl;
-        delete t;
-    }
-
-    myfile.close();
-    return 0;
 }
