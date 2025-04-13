@@ -30,5 +30,8 @@ int main(int argc, char** argv) {
         std::cout << "(" << t.value << ", " << ty << ")" << std::endl;
     }
 
+
+    begin_parse(token_list, tokens);
+
     return 0;
 }

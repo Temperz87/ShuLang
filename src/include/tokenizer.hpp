@@ -12,9 +12,9 @@ enum token_type {
     KEYWORD,
     OPERATOR,
     PUNCTUATOR,
-    WHITESPACE,
-    TERM_BINDING,
+    STATEMENT,
     TYPE,
+    WHITESPACE,
     UNKNOWN,
 };
 

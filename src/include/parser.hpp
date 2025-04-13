@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ctype.h>
 #include <iostream>
 #include <string.h>
@@ -5,4 +7,4 @@
 #include <vector>
 
 // TODO: DOCUMENTATION
-void parse(std::vector<token> tokenlist);
+void begin_parse(std::vector<token>& tokenlist, int tokens);

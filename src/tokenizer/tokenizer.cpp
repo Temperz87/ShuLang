@@ -134,8 +134,8 @@ void token_type_to_string(std::string& str, token_type ty) {
         case WHITESPACE:
             str = "WHITESPACE";
             break;
-        case TERM_BINDING:
-            str = "TERM_BINDING";
+        case STATEMENT:
+            str = "STATEMENT";
             break;
         case TYPE:
             str = "TYPE";
