@@ -1,7 +1,22 @@
 CC = g++
+CPPFLAGS = -Iinclude
+RM = rm
 
-build:
-	$(CC) driver/driver.cpp -c -o output/driver.o -Iinclude
-	$(CC) tokenizer/tokenizer.cpp -c -o output/tokenizer.o -Iinclude
-	$(CC) parser/parser.cpp -c -o output/parser.o -Iinclude
-	$(CC) output/*.o -o ShuC.out -Iinclude
+OBJECTS = driver/driver.o parser/parser.o tokenizer/tokenizer.o
+HEADERS = $(wildcard ./include/*.hpp)
+
+.PHONY: build clean
+
+include/lib.o:
+	$(CC) $(HEADERS) -c -o ./include/lib.o
+	
+
+%.o : %.cpp
+	$(CC) $(CPPFLAGS) $< -c -o $@ 
+
+build: $(OBJECTS) include/lib.o
+	$(CC) $(CPPFLAGS) $(OBJECTS) -o ./output/ShuC.out
+
+clean:
+	$(RM) -f ./output/*
+	$(RM) -f ShuC.out
