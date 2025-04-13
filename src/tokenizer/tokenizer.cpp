@@ -151,10 +151,10 @@ void token_type_to_string(std::string& str, token_type ty) {
     }
 }
 
-token* get_token(std::string str) {
-    token* t = new token;
-    t->value = str;
-    t->type = determine_type(t->value);
+token get_token(std::string str) {
+    token t;
+    t.value = str;
+    t.type = determine_type(t.value);
     return t;
 }
 
@@ -174,7 +174,7 @@ bool isterminal(char c) {
 
 // When we've hit a whitespace
 // This function gets called to toss tokens into the list
-int add_tokens(std::vector<char> tokenizing, std::vector<token*>& token_list) {
+int add_tokens(std::vector<char> tokenizing, std::vector<token>& token_list) {
     if (tokenizing.size() == 0) {
         // TODO: ERROR
         return 0;
@@ -204,7 +204,7 @@ int add_tokens(std::vector<char> tokenizing, std::vector<token*>& token_list) {
 
             // Parse thing that isn't an identifier/keyword
             std::string s(tokenizing.begin() + i, tokenizing.begin() + j);
-            token* separator = get_token(s);
+            token separator = get_token(s);
             token_list.push_back(separator);
 
             next_token_start = j;
@@ -233,7 +233,7 @@ bool atcomment(std::vector<char> chars) {
     return chars.size() == 2 && chars.at(0) == '/' && chars.at(1) == '/';
 }
 
-int tokenize(std::ifstream& file, std::vector<token*>& token_list) {
+int tokenize(std::ifstream& file, std::vector<token>& token_list) {
     std::vector<char> tokenizing;
     char curr;
     int tokens_created = 0;

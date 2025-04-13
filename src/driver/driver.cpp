@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
+#include <parser.hpp>
 #include <string.h>
 #include <vector>
 #include <tokenizer.hpp>
@@ -17,17 +18,16 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "-----TOKENIZATION-----" << std::endl;
-    std::vector<token*> token_list;
+    std::vector<token> token_list;
     int tokens = tokenize(myfile, token_list);
     myfile.close();
 
 
     for (int i = 0; i < tokens; i++) {
-        token* t = token_list.at(i);
+        token t = token_list.at(i);
         std::string ty;
-        token_type_to_string(ty, t->type);
-        std::cout << "(" << t->value << ", " << ty << ")" << std::endl;
-        delete t;
+        token_type_to_string(ty, t.type);
+        std::cout << "(" << t.value << ", " << ty << ")" << std::endl;
     }
 
     return 0;
