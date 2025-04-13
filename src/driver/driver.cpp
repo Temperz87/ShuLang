@@ -5,8 +5,6 @@
 #include <vector>
 #include <tokenizer.hpp>
 
-
-
 int main(int argc, char** argv) {
     if (argc != 2)
         std::cout << "Expected 1 argument but got " << argc - 1 << " arguments instead" << std::endl;
@@ -18,8 +16,10 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+    std::cout << "-----TOKENIZATION-----" << std::endl;
     std::vector<token*> token_list;
     int tokens = tokenize(myfile, token_list);
+    myfile.close();
 
 
     for (int i = 0; i < tokens; i++) {
@@ -30,6 +30,5 @@ int main(int argc, char** argv) {
         delete t;
     }
 
-    myfile.close();
     return 0;
 }
