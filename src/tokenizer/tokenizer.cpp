@@ -30,21 +30,18 @@ const char* operators[] = {
     "or",
 };
 
-const char* termbindings[] = {
+const char* statement[] = {
     "bind",
-    "fix",
-    "in",
-    "to",
-};
-
-const char* keywords[] = {
     "else",
+    "fix",
     "if",
+    "in",
     "lambda",
     "print",
     "return",
     "syscall",
     "while",
+    "to",
     "update",
 };
 
@@ -100,12 +97,10 @@ token_type determine_type(std::string tok) {
     }
     else if (string_in_array(tok, operators, ARR_SIZE(operators)))
         return OPERATOR;
-    else if (string_in_array(tok, keywords, ARR_SIZE(keywords)))
-        return KEYWORD;
     else if (string_in_array(tok, punctuators, ARR_SIZE(punctuators)))
         return PUNCTUATOR;
-    else if (string_in_array(tok, termbindings, ARR_SIZE(termbindings)))
-        return TERM_BINDING;
+    else if (string_in_array(tok, types, ARR_SIZE(statement)))
+        return STATEMENT;
     else if (string_in_array(tok, types, ARR_SIZE(types)))
         return TYPE;
     else if (string_in_array(tok, whitespace, ARR_SIZE(whitespace)))
