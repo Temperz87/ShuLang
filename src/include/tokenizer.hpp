@@ -11,8 +11,9 @@ enum token_type {
     OPERATOR,
     PUNCTUATOR,
     WHITESPACE,
+    TERM_BINDING,
     TYPE,
-    UNKNOWN
+    UNKNOWN,
 };
 
 class token {

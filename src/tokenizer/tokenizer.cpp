@@ -5,6 +5,8 @@
 #include <vector>
 #include <tokenizer.hpp>
 
+#define ARR_SIZE(x) (sizeof(x) / sizeof(char*))
+
 // Who would've known that without regex
 // This guy would be fairly complex?
 // (not me)
@@ -19,27 +21,31 @@ const char* operators[] = {
     "<=",
     "<",
     ">",
-    ">="
+    ">=",
+    ":",
+    "and",
+    "equals", 
+    "nequals",
+    "not",
+    "or",
+};
+
+const char* termbindings[] = {
+    "bind",
+    "fix",
+    "in",
+    "to",
 };
 
 const char* keywords[] = {
-    "and",
-    "bind",
     "else",
-    "equals", 
-    "not",
-    "nequals",
-    "fix",
     "if",
-    "in",
     "lambda",
-    "or"
     "print",
     "return",
     "syscall",
-    "to",
+    "while",
     "update",
-    "while"
 };
 
 // Just like the {} and () stuff
@@ -54,7 +60,6 @@ const char* punctuators[] = {
 
 // Primitives
 const char* types[] = {
-    ":",
     "->",
     "Boolean",
     "Character",
@@ -93,15 +98,17 @@ token_type determine_type(std::string tok) {
         // TODO: Throw an error
         return UNKNOWN;
     }
-    else if (string_in_array(tok, operators, 8))
+    else if (string_in_array(tok, operators, ARR_SIZE(operators)))
         return OPERATOR;
-    else if (string_in_array(tok, keywords, 16))
+    else if (string_in_array(tok, keywords, ARR_SIZE(keywords)))
         return KEYWORD;
-    else if (string_in_array(tok, punctuators, 4))
+    else if (string_in_array(tok, punctuators, ARR_SIZE(punctuators)))
         return PUNCTUATOR;
-    else if (string_in_array(tok, types, 6))
+    else if (string_in_array(tok, termbindings, ARR_SIZE(termbindings)))
+        return TERM_BINDING;
+    else if (string_in_array(tok, types, ARR_SIZE(types)))
         return TYPE;
-    else if (string_in_array(tok, whitespace, 3))
+    else if (string_in_array(tok, whitespace, ARR_SIZE(whitespace)))
         return WHITESPACE;
     else if (is_integer(tok))
         return INTEGER;
@@ -131,6 +138,9 @@ void token_type_to_string(std::string& str, token_type ty) {
             break;
         case WHITESPACE:
             str = "WHITESPACE";
+            break;
+        case TERM_BINDING:
+            str = "TERM_BINDING";
             break;
         case TYPE:
             str = "TYPE";
@@ -238,6 +248,7 @@ int tokenize(std::ifstream& file, std::vector<token*>& token_list) {
             }
         }
         else {
+            tokenizing.push_back(curr);
             if (atcomment(tokenizing)) {
                 // Move to the next line
                 tokenizing.clear();
@@ -245,8 +256,6 @@ int tokenize(std::ifstream& file, std::vector<token*>& token_list) {
                     if (curr == '\n') // Hence me having this if to break
                         break;
             }
-            else
-                tokenizing.push_back(curr);
         }
     }
 
