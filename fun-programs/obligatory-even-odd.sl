@@ -1,16 +1,16 @@
-bind even : int -> bool to {
-    lambda n : int -> bool {
+bind even : Integer -> Bool to {
+    lambda n : Integer -> Bool {
         if (n equals 0)
-            return True
+            return true
         else
             return odd(n - 1)
     }
 }
 
-bind odd : int -> bool to {
-    lambda n : int -> bool {
+bind odd : Integer -> Bool to {
+    lambda n : Integer -> Bool {
         if (n equals 0)
-            return False
+            return false
         else
             return even(n-1)
     }
