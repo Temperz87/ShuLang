@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -Iinclude -MMD -MP
+CPPFLAGS = -Iinclude -MMD -MP -g
 RM = rm
 
 OBJECTS = driver/driver.o parser/parser.o tokenizer/tokenizer.o

@@ -1,3 +1,4 @@
+#include <AST.hpp>
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
@@ -23,7 +24,7 @@ int main(int argc, char** argv) {
     myfile.close();
 
 
-    for (int i = 0; i < tokens; i++) {
+    for (int i = 0; i < tokens; i++) {  
         token t = token_list.at(i);
         std::string ty;
         token_type_to_string(ty, t.type);
