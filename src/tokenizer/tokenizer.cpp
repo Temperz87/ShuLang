@@ -30,19 +30,21 @@ const char* operators[] = {
     "or",
 };
 
-const char* statement[] = {
-    "bind",
+const char* keyword[] = {
     "else",
     "fix",
-    "if",
     "in",
-    "lambda",
-    "print",
     "return",
     "syscall",
-    "while",
     "to",
     "update",
+};
+
+const char* statements[] = {
+    "bind",
+    "if",
+    "print",
+    "while",
 };
 
 // Just like the {} and () stuff
@@ -70,6 +72,13 @@ const char* whitespace[] = {
     "\n"
 };
 
+const char* values[] = {
+    "false",
+    "lambda",
+    "true",
+};
+
+
 bool string_in_array(const std::string tok, const char** arr, int arr_len) {
     for (int i = 0; i < arr_len; i++) {
         if (tok == arr[i]) {
@@ -95,14 +104,18 @@ token_type determine_type(std::string tok) {
         // TODO: Throw an error
         return UNKNOWN;
     }
+    else if (string_in_array(tok, keyword, ARR_SIZE(keyword)))
+        return KEYWORD;
     else if (string_in_array(tok, operators, ARR_SIZE(operators)))
         return OPERATOR;
     else if (string_in_array(tok, punctuators, ARR_SIZE(punctuators)))
         return PUNCTUATOR;
-    else if (string_in_array(tok, types, ARR_SIZE(statement)))
+    else if (string_in_array(tok, statements, ARR_SIZE(statements)))
         return STATEMENT;
     else if (string_in_array(tok, types, ARR_SIZE(types)))
         return TYPE;
+        else if (string_in_array(tok, values, ARR_SIZE(values)))
+            return VALUE;
     else if (string_in_array(tok, whitespace, ARR_SIZE(whitespace)))
         return WHITESPACE;
     else if (is_integer(tok))
@@ -252,6 +265,11 @@ int tokenize(std::ifstream& file, std::vector<token>& token_list) {
                         break;
             }
         }
+    }
+    
+    if (tokenizing.size() > 0) {
+        tokens_created += add_tokens(tokenizing, token_list);
+        tokenizing.clear();
     }
 
     return tokens_created;
