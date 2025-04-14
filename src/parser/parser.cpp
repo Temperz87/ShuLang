@@ -11,13 +11,12 @@ Iterator<token>* iter;
 static token currenttoken;
 
 void advance() {
-    std::cout << "Advancing" << std::endl;
     iter->advance();
     
-    if (!iter->empty())
-        std::cout << "Iterator now at " << currenttoken.value << std::endl;
-    else
-        std::cout << "Iterator empty" << std::endl;
+    // if (!iter->empty())
+    //     std::cout << "Iterator now at " << currenttoken.value << std::endl;
+    // else
+    //     std::cout << "Iterator empty" << std::endl;
 
     iter->get(currenttoken);
 }
@@ -32,7 +31,6 @@ void parse_identifier(std::string& buf) {
     if (currenttoken.type != IDENTIFIER) {
         // TOOD: ERROR
     }
-    std::cout << "ident: " << currenttoken.value << std::endl;
     buf = currenttoken.value;
 }
 
@@ -43,7 +41,6 @@ void parse_type(std::string& buf) {
 
     buf = "";
     while (currenttoken.type == TYPE) {
-        std::cout << "Type " << currenttoken.value << std::endl; 
         buf += currenttoken.value; // TODO: SOMETHING THAT ISNT AS EXPENSIVE AS CONCAT
         advance();
     }
@@ -51,7 +48,6 @@ void parse_type(std::string& buf) {
 
 void parse_type_annot(std::string& buf) {
     assertstringsequal(buf, ":");
-    std::cout << "Type annot " << currenttoken.value << std::endl; 
     advance();
     parse_type(buf);
 }
@@ -79,17 +75,14 @@ ValueNode parse_value() {
 
 StatementNode parse_statement() {
     if (currenttoken.value == "bind") {
-        std::cout << "Parsing bind" << std::endl;
         advance();
         BindingNode b;
         parse_identifier(b.name);
         advance();
         parse_type_annot(b.ty);
         assertstringsequal(currenttoken.value, "to");
-        std::cout << "To " << currenttoken.value << std::endl; 
         advance();
         b.value = parse_value();
-        std::cout << "Value doan!!!" << std::endl;
         return b;
     }
     else if (currenttoken.value == "print") {
@@ -109,7 +102,6 @@ ASTNode parse_top_level_statement() {
     StatementNode ret;
     switch (currenttoken.type) {
         case STATEMENT:
-            std::cout << "At stmt: " << currenttoken.value << std::endl;
             ret = parse_statement();
             return ret;
         case PUNCTUATOR:
@@ -135,7 +127,6 @@ ProgramNode begin_parse(std::vector<token>* tokenlist) {
     while (!iter->empty()) {
         program.nodes.push_back(parse_top_level_statement());
     }
-    std::cout << "Iterator is empty!!!" << std::endl;
     delete iter;
 
     return program;

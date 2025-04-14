@@ -31,7 +31,8 @@ int main(int argc, char** argv) {
     }
 
 
-    begin_parse(token_list, tokens);
+    std::cout << "-----PARSING-----" << std::endl;
+    begin_parse(&token_list);
 
     return 0;
 }
