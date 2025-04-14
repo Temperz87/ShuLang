@@ -16,6 +16,7 @@ enum token_type {
     TYPE,
     WHITESPACE,
     UNKNOWN,
+    VALUE
 };
 
 class token {

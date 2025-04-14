@@ -11,36 +11,30 @@
 template<class T>
 class Iterator {
     private:
-        typename std::vector<T>::iterator* _iter;
+        typename std::vector<T>* _vec;
         int position = 0;
-        int elements;
 
     public:
-        ~Iterator() {
-            delete this->_iter;
-        }
-
-        Iterator(std::vector<T, std::allocator<T>>& vector, int elements) {
-            this->_iter = new typename std::vector<T>::iterator(vector.begin());
-            this->elements = elements;
+        Iterator(std::vector<T>* vector) {
+            this->_vec = vector;
         }
 
         bool advance() {
-            if (position == elements)
+            if (empty())
                 return false;
-            std::advance(this->_iter, 0);
             position += 1;
             return true;
         }
 
         bool empty() {
-            return position == elements;
+            return this->position >= this->_vec->size();
         }
 
         bool get(T& buf) {
-            if (empty())
+            if (this->empty())
                 return false;
-            buf = **(this->_iter);
+            
+            buf = this->_vec->at(this->position); 
             return true;
         }
 };
