@@ -10,8 +10,10 @@ DEPS := $(OBJECTS:.o=.d)
 %.o : %.cpp
 	$(CC) $(CPPFLAGS) $< -c -o $@ 
 
-build: $(OBJECTS)
+./output/ShuC.out: $(OBJECTS)
 	$(CC) $(CPPFLAGS) $(OBJECTS) -o ./output/ShuC.out
+
+build: ./output/ShuC.out
 
 clean:
 	$(RM) -f ./output/*
