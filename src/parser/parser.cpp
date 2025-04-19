@@ -53,13 +53,13 @@ void parse_type_annot(std::string& buf) {
     parse_type(buf);
 }
 
-IntegerNode parse_integer() {
+IntegerNode* parse_integer() {
     token mytoken = currenttoken;
     advance();
-    return IntegerNode(stoi(mytoken.value));
+    return new IntegerNode(stoi(mytoken.value));
 }
 
-ValueNode parse_value() {
+ValueNode* parse_value() {
     switch (currenttoken.type){
         case INTEGER:
             return parse_integer();
@@ -69,38 +69,38 @@ ValueNode parse_value() {
         case IDENTIFIER:
             std::string ident = currenttoken.value;
             advance();
-            return VariableReferenceNode(ident);
+            return new VariableReferenceNode(ident);
     }
     // TODO: ERROR
 }
 
-StatementNode parse_statement() {
+StatementNode* parse_statement() {
     if (currenttoken.value == "bind") {
         advance();
-        BindingNode b;
-        parse_identifier(b.name);
+        BindingNode* b = new BindingNode();
+        parse_identifier(b->name);
         advance();
-        parse_type_annot(b.ty);
+        parse_type_annot(b->ty);
         assertstringsequal(currenttoken.value, "to");
         advance();
-        b.value = parse_value();
+        b->value = parse_value();
         return b;
     }
     else if (currenttoken.value == "print") {
         advance();
         assertstringsequal(currenttoken.value, "(");
         advance();
-        ValueNode toPrint = parse_value();
+        ValueNode* toPrint = parse_value();
         assertstringsequal(currenttoken.value, ")");
         advance();
-        return PrintNode(toPrint);
+        return new PrintNode(toPrint);
     }
 
     // TODO: ERROR
 }
 
-ASTNode parse_top_level_statement() {
-    StatementNode ret;
+StatementNode* parse_top_level_statement() {
+    StatementNode* ret = new StatementNode();
     switch (currenttoken.type) {
         case STATEMENT:
             ret = parse_statement();
@@ -118,15 +118,15 @@ ASTNode parse_top_level_statement() {
 
 
 // TODO: RETURN AN AST!!!
-ProgramNode begin_parse(std::vector<token>* tokenlist) {
+ProgramNode* begin_parse(std::vector<token>* tokenlist) {
     iter = new Iterator<token>(tokenlist);
     iter->get(currenttoken);
     
-    ProgramNode program;
+    ProgramNode* program = new ProgramNode();
 
 
     while (!iter->empty()) {
-        program.nodes.push_back(parse_top_level_statement());
+        program->nodes.push_back(parse_top_level_statement());
     }
     delete iter;
 

@@ -1,4 +1,5 @@
 #include <AST.hpp>
+#include <ASTPrinter.hpp>
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
@@ -33,7 +34,7 @@ int main(int argc, char** argv) {
 
 
     std::cout << "-----PARSING-----" << std::endl;
-    begin_parse(&token_list);
-
+    ProgramNode* program = begin_parse(&token_list);
+    ASTPrinter().walk(program);
     return 0;
 }
