@@ -3,3 +3,4 @@ src/output/*
 ShuC.out
 *.d
 *.o
+src/compile_commands.json
