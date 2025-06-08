@@ -109,8 +109,9 @@ token_type determine_type(std::string tok) {
         return OPERATOR;
     else if (string_in_array(tok, punctuators, ARR_SIZE(punctuators)))
         return PUNCTUATOR;
-    else if (string_in_array(tok, statements, ARR_SIZE(statements)))
+    else if (string_in_array(tok, statements, ARR_SIZE(statements))) {
         return STATEMENT;
+    }
     else if (string_in_array(tok, types, ARR_SIZE(types)))
         return TYPE;
         else if (string_in_array(tok, values, ARR_SIZE(values)))

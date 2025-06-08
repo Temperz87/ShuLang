@@ -4,3 +4,4 @@ ShuC.out
 *.d
 *.o
 src/compile_commands.json
+src/.cache/*

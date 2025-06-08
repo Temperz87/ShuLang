@@ -1,4 +1,5 @@
 #include <AST.hpp>
+#include <cassert>
 #include <ctype.h>
 #include <iostream>
 #include <iterator.hpp>
@@ -10,6 +11,7 @@
 // Handwritten recursive descent parser
 Iterator<token>* iter;
 static token currenttoken;
+static std::string filename;
 
 void advance() {
     iter->advance();
@@ -22,22 +24,46 @@ void advance() {
     iter->get(currenttoken);
 }
 
-void assertstringsequal(std::string expected, std::string actual) {
+void parse_error(std::string msg) {
+    std::cout << msg << std::endl << "\tWhile parsing " << currenttoken.value << std::endl << "At " << filename << ":" << currenttoken.line << ":" << currenttoken.col_start << std::endl; 
+    exit(1);
+}
+
+void assert_strings_equal(std::string actual, std::string expected) {
     if (expected != actual) {
-        // TODO: ERROR
+        parse_error("Expected " + expected + " but instead got " + actual);
     }
 }
 
+void assert_at_value(std::string expected) {
+    assert_strings_equal(currenttoken.value, expected);
+}
+
+
+void assert_at_type(token_type expected) {
+    if (expected != currenttoken.type) {
+        // TODO: Make error better
+        // I need a way to go from enum to string
+        parse_error("Unexpected token");
+    }
+}
+
+StatementNode* parse_statement();
+OperatorApplicationNode* parse_infix();
+ValueNode* parse_complex_value();
+
 void parse_identifier(std::string& buf) {
     if (currenttoken.type != IDENTIFIER) {
-        // TOOD: ERROR
+        parse_error("I do not know what this is");
     }
     buf = currenttoken.value;
+    advance();
 }
 
 void parse_type(std::string& buf) {
     if (currenttoken.type != TYPE) {
         // TODO: ERROR
+        parse_error("Expected a type");
     }
 
     buf = "";
@@ -48,7 +74,7 @@ void parse_type(std::string& buf) {
 }
 
 void parse_type_annot(std::string& buf) {
-    assertstringsequal(buf, ":");
+    assert_at_value(":");
     advance();
     parse_type(buf);
 }
@@ -72,6 +98,48 @@ ValueNode* parse_value() {
             return new VariableReferenceNode(ident);
     }
     // TODO: ERROR
+    parse_error("Expected a value");
+}
+
+OperatorApplicationNode* parse_operator_application(ValueNode* lhs) {
+    OperatorApplicationNode* op = new OperatorApplicationNode();
+    op->lhs = lhs;
+    op->op = currenttoken.value;
+    advance();
+    op->rhs = parse_complex_value();
+    return op;
+}
+
+ValueNode* parse_complex_value() {
+    ValueNode* ret;
+    switch (currenttoken.type) {
+        case INTEGER:
+        case VALUE:
+        case IDENTIFIER:
+            ret = parse_value();
+            if (currenttoken.type == OPERATOR)
+                return parse_operator_application((ValueNode*)ret);
+            return ret;
+        case PUNCTUATOR:
+            assert_at_value("(");
+            advance();
+            ret = parse_complex_value();
+            assert_at_value(")");
+            advance();
+            return ret;
+        default:
+            parse_error("Expected some sort of value");
+    }
+}
+
+OperatorApplicationNode* parse_infix() {
+    OperatorApplicationNode* opapp = new OperatorApplicationNode();
+    opapp->lhs = parse_complex_value();
+    assert_at_type(OPERATOR);
+    opapp->op = currenttoken.value;
+    advance();
+    opapp->rhs = parse_complex_value();
+    return opapp;
 }
 
 StatementNode* parse_statement() {
@@ -79,56 +147,50 @@ StatementNode* parse_statement() {
         advance();
         BindingNode* b = new BindingNode();
         parse_identifier(b->name);
-        advance();
         parse_type_annot(b->ty);
-        assertstringsequal(currenttoken.value, "to");
+        assert_strings_equal(currenttoken.value, "to");
         advance();
-        b->value = parse_value();
+        b->value = parse_complex_value();
         return b;
     }
     else if (currenttoken.value == "print") {
         advance();
-        assertstringsequal(currenttoken.value, "(");
+        assert_strings_equal(currenttoken.value, "(");
         advance();
-        ValueNode* toPrint = parse_value();
-        assertstringsequal(currenttoken.value, ")");
+        StatementNode* toPrint = parse_complex_value();
+        assert_strings_equal(currenttoken.value, ")");
         advance();
         return new PrintNode(toPrint);
     }
-
-    // TODO: ERROR
-}
-
-StatementNode* parse_top_level_statement() {
-    StatementNode* ret = new StatementNode();
-    switch (currenttoken.type) {
-        case STATEMENT:
-            ret = parse_statement();
-            return ret;
-        case PUNCTUATOR:
-            if (currenttoken.value != "(") {
-                // TOOD: PARSE ERROR
-            }
-            break;
-        default:
-            // TODO: Parse Error
-            std::cout << "I did not expect " << currenttoken.value << " as a top level statement." << std::endl;
+    else {
+        return parse_infix();
     }
 }
 
+StatementNode* parse_top_level_statement() {
+    switch (currenttoken.type) {
+        case STATEMENT:
+            return parse_statement();
+        case PUNCTUATOR:
+            assert_at_value("(");
+            break;
+        default:
+            // TODO: Parse Error
+        parse_error("Unexpected token as top level statement");
+    }
+}
 
-// TODO: RETURN AN AST!!!
-ProgramNode* begin_parse(std::vector<token>* tokenlist) {
+ProgramNode* begin_parse(std::vector<token>* tokenlist, std::string fileToParse) {
+    filename = fileToParse;
+
     iter = new Iterator<token>(tokenlist);
     iter->get(currenttoken);
     
     ProgramNode* program = new ProgramNode();
-
-
     while (!iter->empty()) {
         program->nodes.push_back(parse_top_level_statement());
     }
-    delete iter;
 
+    delete iter;
     return program;
 }

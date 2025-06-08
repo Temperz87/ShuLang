@@ -118,6 +118,23 @@ class BindingNode : public StatementNode {
         ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressBindingNode(this, newChildren); }
 };
 
+class OperatorApplicationNode : public ValueNode {
+    public:
+        std::string op;
+        StatementNode* lhs;
+        StatementNode* rhs;
+
+        std::vector<ASTNode*> children() override {
+            std::vector<ASTNode*> children;
+            children.push_back(lhs);
+            children.push_back(rhs);
+            return children;
+        }
+
+        childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressOperatorApplicationNode(this, 2); }
+        ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressOperatorApplicationNode(this, newChildren); }
+};
+
 class ProgramNode : public ASTNode {
     public:
         std::vector<ASTNode*> nodes;

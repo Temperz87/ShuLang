@@ -34,7 +34,9 @@ int main(int argc, char** argv) {
 
 
     std::cout << "-----PARSING-----" << std::endl;
-    ProgramNode* program = begin_parse(&token_list);
+    ProgramNode* program = begin_parse(&token_list, argv[1]);
     ASTPrinter().walk(program);
+
+    std::cout << "TODO: First Transformation" << std::endl;
     return 0;
 }

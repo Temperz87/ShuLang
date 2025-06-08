@@ -65,4 +65,16 @@ class ASTPrinter : public ASTVisitor {
             indentation -= 1;
             return ASTVisitor::egressPrintNode(node, children);
         }
+
+        ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) override {
+            printIndentation();
+            std::cout << "OPERATOR(" << node->op << ")" << std::endl;
+            indentation += 1;
+            return ASTVisitor::ingressOperatorApplicationNode(node, childcount);
+        }
+
+        ASTNode* egressOperatorApplicationNode(OperatorApplicationNode* node, std::vector<ASTNode*> children) override {
+            indentation -= 1;
+            return ASTVisitor::egressOperatorApplicationNode(node, children);
+        }
 };

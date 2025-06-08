@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -Iinclude -MMD -MP -g
+CPPFLAGS = -Iinclude -MMD -MP -g -Wall
 RM = rm
 
 OBJECTS = driver/driver.o parser/parser.o tokenizer/tokenizer.o Visitor/visitor.o
@@ -20,5 +20,8 @@ clean:
 	$(RM) -f ShuC.out
 	$(RM) -f $(OBJECTS)
 	$(RM) -f $(DEPS)
+
+test: ./output/ShuC.out
+	python3 ../test-cases/run.py ../test-cases/phase_1_programs
 
 -include $(DEPS)

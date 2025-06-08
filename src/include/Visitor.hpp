@@ -14,6 +14,7 @@ class IntegerNode;
 class VariableReferenceNode;
 class BindingNode;
 class ProgramNode;
+class OperatorApplicationNode;
 class ASTNode;
 
 template <class T>
@@ -45,6 +46,10 @@ class Visitor {
 
         virtual childholder<ASTNode> ingressBindingNode(BindingNode* node, int childcount) = 0;
         virtual ASTNode* egressBindingNode(BindingNode* node, std::vector<ASTNode*> newchildren) = 0;
+
+
+        virtual childholder<ASTNode> ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) = 0;
+        virtual ASTNode* egressOperatorApplicationNode(OperatorApplicationNode* node, std::vector<ASTNode*> newchildren) = 0;
 
         virtual childholder<ASTNode> ingressProgramNode(ProgramNode* node, int childcount) = 0;
         virtual ASTNode* egressProgramNode(ProgramNode* node, std::vector<ASTNode*> newchildren) = 0;
