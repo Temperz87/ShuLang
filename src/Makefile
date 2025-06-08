@@ -2,7 +2,7 @@ CC = g++
 CPPFLAGS = -Iinclude -MMD -MP -g -Wall
 RM = rm
 
-OBJECTS = driver/driver.o parser/parser.o tokenizer/tokenizer.o Visitor/visitor.o
+OBJECTS = driver/driver.o parser/parser.o tokenizer/tokenizer.o Visitor/visitor.o passes/ASTPrinter.o
 DEPS := $(OBJECTS:.o=.d)
 
 .PHONY: build clean
