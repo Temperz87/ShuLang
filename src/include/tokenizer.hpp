@@ -23,6 +23,9 @@ class token {
     public:
         token_type type;
         std::string value;
+        int line;
+        int col_start;
+        int col_end;
 };
 
 // Takes in an input file and tosses a bunch of tokens in token_list

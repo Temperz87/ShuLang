@@ -11,7 +11,6 @@
 // This guy would be fairly complex?
 // (not me)
 
-
 // Infix stuff
 const char* operators[] = {
     "+",
@@ -159,10 +158,14 @@ void token_type_to_string(std::string& str, token_type ty) {
     }
 }
 
-token get_token(std::string str) {
+token get_token(std::string str, int start, int end, int line) {
     token t;
     t.value = str;
     t.type = determine_type(t.value);
+    t.col_start = start;
+    t.col_end = end;
+    t.line = line;
+    std::cout << "Created token " << str << " at " << t.col_start << std::endl;
     return t;
 }
 
@@ -182,7 +185,7 @@ bool isterminal(char c) {
 
 // When we've hit a whitespace
 // This function gets called to toss tokens into the list
-int add_tokens(std::vector<char> tokenizing, std::vector<token>& token_list) {
+int add_tokens(std::vector<char> tokenizing, std::vector<token>& token_list, int col, int line) {
     if (tokenizing.size() == 0) {
         // TODO: ERROR
         return 0;
@@ -191,11 +194,15 @@ int add_tokens(std::vector<char> tokenizing, std::vector<token>& token_list) {
     int created = 0;
     int next_token_start = 0;
     for (int i = 0; i < tokenizing.size(); i++) {
+        // Loop until we can no longer form an identifier
+        // Like if we see print()
+        // That left parenethesis means we no longer have an identifier
         if (!isacceptableident(tokenizing.at(i))) {
             if (next_token_start != i) {
                 // Separate out the current token from the next
                 std::string s(tokenizing.begin() + next_token_start, tokenizing.begin() + i);
-                token_list.push_back(get_token(s));
+                token_list.push_back(get_token(s, col, col + i, line));
+                col += i;   
                 created += 1;
             }
 
@@ -212,10 +219,11 @@ int add_tokens(std::vector<char> tokenizing, std::vector<token>& token_list) {
 
             // Parse thing that isn't an identifier/keyword
             std::string s(tokenizing.begin() + i, tokenizing.begin() + j);
-            token separator = get_token(s);
+            token separator = get_token(s, col, col + 1, line);
             token_list.push_back(separator);
 
             next_token_start = j;
+            col += 1;
             i = j - 1;
             created += 1;
         }
@@ -223,7 +231,7 @@ int add_tokens(std::vector<char> tokenizing, std::vector<token>& token_list) {
 
     if (next_token_start < tokenizing.size()) {
         std::string s(tokenizing.begin() + next_token_start, tokenizing.end());
-        token_list.push_back(get_token(s));
+        token_list.push_back(get_token(s, col, col + next_token_start, line));
         created += 1;
     }
 
@@ -246,29 +254,48 @@ int tokenize(std::ifstream& file, std::vector<token>& token_list) {
     char curr;
     int tokens_created = 0;
 
+    int start_col = 1;
+    int line = 1;
+    int add_col = 1;
+
     // Read in tokens until EOF or until we hit a non alphanumeric character
     while (file.get(curr)) {
         if (iswhitespace(curr)) {
+            if (curr == '\n') {
+                start_col = 1;
+                line += 1;
+            }
             // We have hit a new token
             if (tokenizing.size() > 0) {
-                tokens_created += add_tokens(tokenizing, token_list);
+                tokens_created += add_tokens(tokenizing, token_list, start_col, line);
                 tokenizing.clear();
+                start_col += add_col;
+                std::cout << start_col << std::endl;
             }
+            add_col = 1;
         }
         else {
             tokenizing.push_back(curr);
             if (atcomment(tokenizing)) {
                 // Move to the next line
                 tokenizing.clear();
-                while (file.get(curr)) // Doing an access and a set on one line is undefined behavior
-                    if (curr == '\n') // Hence me having this if to break
+                while (file.get(curr)) { // Doing an access and a set on one line is undefined behavior
+                    if (curr == '\n') { // Hence me having this if to break
+                        line += 1;
+                        start_col = 1;
+                        add_col = 1;
                         break;
+                    }
+                }
+            }
+            else {
+                add_col += 1;
             }
         }
     }
     
     if (tokenizing.size() > 0) {
-        tokens_created += add_tokens(tokenizing, token_list);
+        tokens_created += add_tokens(tokenizing, token_list, start_col, line);
         tokenizing.clear();
     }
 
