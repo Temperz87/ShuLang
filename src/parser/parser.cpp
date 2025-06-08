@@ -126,6 +126,8 @@ ValueNode* parse_complex_value() {
             ret = parse_complex_value();
             assert_at_value(")");
             advance();
+            if (currenttoken.type == OPERATOR)
+                return parse_operator_application(ret);
             return ret;
         default:
             parse_error("Expected some sort of value");
