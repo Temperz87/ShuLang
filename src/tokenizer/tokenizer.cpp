@@ -165,7 +165,6 @@ token get_token(std::string str, int start, int end, int line) {
     t.col_start = start;
     t.col_end = end;
     t.line = line;
-    std::cout << "Created token " << str << " at " << t.col_start << std::endl;
     return t;
 }
 
@@ -270,7 +269,6 @@ int tokenize(std::ifstream& file, std::vector<token>& token_list) {
                 tokens_created += add_tokens(tokenizing, token_list, start_col, line);
                 tokenizing.clear();
                 start_col += add_col;
-                std::cout << start_col << std::endl;
             }
             add_col = 1;
         }
