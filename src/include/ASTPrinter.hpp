@@ -16,7 +16,6 @@ class ASTPrinter : public ASTVisitor {
     public: 
         ASTPrinter();
         ~ASTPrinter();
-
         ASTHolder ingressProgramNode(ProgramNode* node, int childcount) override;
         ASTNode* egressProgramNode(ProgramNode* node, std::vector<ASTNode*> children) override;
         ASTHolder ingressBindingNode(BindingNode* node, int childcount) override;

@@ -7,6 +7,7 @@
 #include <string.h>
 #include <vector>
 #include <tokenizer.hpp>
+#include <Uniquification.hpp>
 
 int main(int argc, char** argv) {
     if (argc != 2)
@@ -37,6 +38,8 @@ int main(int argc, char** argv) {
     ProgramNode* program = begin_parse(&token_list, argv[1]);
     ASTPrinter().walk(program);
 
-    std::cout << "TODO: First Transformation" << std::endl;
+    std::cout << "-----UNIQUIFICATION-----" << std::endl;
+    Uniquification().walk(program);
+    ASTPrinter().walk(program);
     return 0;
 }
