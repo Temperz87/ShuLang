@@ -20,7 +20,7 @@ In Uniquify Variable Names, all variables will be assigned an unique name (shock
 ### Remove Complex Operands
 There's this idea of [three address code](https://en.wikipedia.org/wiki/Three-address_code), [A-normal form](https://en.wikipedia.org/wiki/A-normal_form) (somethimes jokingly called Amr normal form after its creator), and [Continuation Passing Style](https://en.wikipedia.org/wiki/Continuation-passing_style) as an IR. Before we go to an IR however, we'll want to make sure that no operator has operands with operators.
 
-### ShulinIR Instruction Selection
+### ShuIR Instruction Selection
 In this pass, we'll be lowering to SSA. In this phase I don't think that I'll be doing any optimizations, but I may introduce [constant folding](https://en.wikipedia.org/wiki/Constant_folding) if I get it done quickly. 
 
 ### LLVM Instruction Selection
