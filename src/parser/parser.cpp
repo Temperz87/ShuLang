@@ -1,6 +1,6 @@
 #include <AST.hpp>
 #include <cassert>
-#include <ctype.h>
+#include <cstddef>
 #include <iostream>
 #include <iterator.hpp>
 #include <parser.hpp>
@@ -9,19 +9,19 @@
 #include <vector>
 
 // Handwritten recursive descent parser
-Iterator<token>* iter;
+static Iterator<token> iter;
 static token currenttoken;
 static std::string filename;
 
 void advance() {
-    iter->advance();
+    iter.advance();
     
-    // if (!iter->empty())
+    // if (!iter.empty())
     //     std::cout << "Iterator now at " << currenttoken.value << std::endl;
     // else
     //     std::cout << "Iterator empty" << std::endl;
 
-    iter->get(currenttoken);
+    iter.get(currenttoken);
 }
 
 void parse_error(std::string msg) {
@@ -54,7 +54,7 @@ ValueNode* parse_complex_value();
 
 void parse_identifier(std::string& buf) {
     if (currenttoken.type != IDENTIFIER) {
-        parse_error("I do not know what this is");
+        parse_error("This does not appear to be a valid identifier");
     }
     buf = currenttoken.value;
     advance();
@@ -182,17 +182,16 @@ StatementNode* parse_top_level_statement() {
     }
 }
 
-ProgramNode* begin_parse(std::vector<token>* tokenlist, std::string fileToParse) {
+ProgramNode* begin_parse(std::vector<token> tokenlist, std::string fileToParse) {
     filename = fileToParse;
 
-    iter = new Iterator<token>(tokenlist);
-    iter->get(currenttoken);
-    
+    iter = Iterator<token>(tokenlist);
+    iter.get(currenttoken);    
     ProgramNode* program = new ProgramNode();
-    while (!iter->empty()) {
+    while (!iter.empty()) {
         program->nodes.push_back(parse_top_level_statement());
     }
 
-    delete iter;
+    // delete iter;
     return program;
 }

@@ -8,4 +8,4 @@
 #include <vector>
 
 // TODO: DOCUMENTATION
-ProgramNode* begin_parse(std::vector<token>* tokenlist, std::string fileToParse);
+ProgramNode* begin_parse(std::vector<token> tokenlist, std::string fileToParse);

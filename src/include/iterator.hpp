@@ -1,6 +1,7 @@
 #pragma once
 #include <ctype.h>
 #include <iostream>
+#include <memory>
 #include <string.h>
 #include <vector>
 
@@ -11,11 +12,15 @@
 template<class T>
 class Iterator {
     private:
-        typename std::vector<T>* _vec;
+        std::vector<T> _vec;
         int position = 0;
 
     public:
-        Iterator(std::vector<T>* vector) {
+        Iterator() {
+            this->_vec = std::vector<T>();
+        }
+
+        Iterator(std::vector<T> vector) {
             this->_vec = vector;
         }
 
@@ -27,14 +32,14 @@ class Iterator {
         }
 
         bool empty() {
-            return this->position >= this->_vec->size();
+            return this->position >= this->_vec.size();
         }
 
         bool get(T& buf) {
             if (this->empty())
                 return false;
             
-            buf = this->_vec->at(this->position); 
+            buf = this->_vec.at(this->position); 
             return true;
         }
 };
