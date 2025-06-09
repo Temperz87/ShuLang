@@ -1,10 +1,5 @@
 #pragma once
 
-#include <ctype.h>
-#include <iostream>
-#include <string.h>
-#include <stack>
-#include <string.h>
 #include <vector>
 #include <Visitor.hpp>
 
@@ -22,7 +17,6 @@ template <class T>
 struct childholder {
     T* node;
     int waitingfor;
-    std::vector<T*> children;
 };
 
 class ASTNode {
@@ -34,7 +28,7 @@ class ASTNode {
         virtual std::vector<ASTNode*> children() = 0;
 
         virtual childholder<ASTNode> ingressVisitor (Visitor* visitor) = 0;
-        virtual ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) = 0;
+        virtual ASTNode* egressVisitor(Visitor* visitor) = 0;
 };
 
 class StatementNode : public ASTNode { 
@@ -43,7 +37,7 @@ class StatementNode : public ASTNode {
     }
 
     childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressStatementNode(this, 0); }
-    ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressStatementNode(this, newChildren); }
+    ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressStatementNode(this); }
 };
 
 class PrintNode : public StatementNode {
@@ -61,13 +55,13 @@ class PrintNode : public StatementNode {
         }
 
         childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressPrintNode(this, 1); }
-        ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressPrintNode(this, newChildren); }
+        ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressPrintNode(this); }
 };
 
 // I'm getting jiggy with it I don't know if this is fine
 class ValueNode : public StatementNode { 
     childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressValueNode(this, 0); }
-    ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressValueNode(this, newChildren); }
+    ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressValueNode(this); }
 }; 
 
 class IntegerNode : public ValueNode {
@@ -84,7 +78,7 @@ class IntegerNode : public ValueNode {
         }
 
         childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressIntegerNode(this, 0); }
-        ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressIntegerNode(this, newChildren); }
+        ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressIntegerNode(this); }
 };
 
 class VariableReferenceNode : public ValueNode {
@@ -100,7 +94,7 @@ class VariableReferenceNode : public ValueNode {
         }
 
         childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressVariableReferenceNode(this, 0); }
-        ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressVariableReferenceNode(this, newChildren); }
+        ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressVariableReferenceNode(this); }
 };
 
 class BindingNode : public StatementNode {
@@ -116,7 +110,7 @@ class BindingNode : public StatementNode {
         }
 
         childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressBindingNode(this, 1); }
-        ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressBindingNode(this, newChildren); }
+        ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressBindingNode(this); }
 };
 
 class OperatorApplicationNode : public ValueNode {
@@ -133,7 +127,7 @@ class OperatorApplicationNode : public ValueNode {
         }
 
         childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressOperatorApplicationNode(this, 2); }
-        ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressOperatorApplicationNode(this, newChildren); }
+        ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressOperatorApplicationNode(this); }
 };
 
 class ProgramNode : public ASTNode {
@@ -152,5 +146,5 @@ class ProgramNode : public ASTNode {
         }
 
         childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressProgramNode(this, nodes.size()); }
-        ASTNode* egressVisitor(Visitor* visitor, std::vector<ASTNode*> newChildren) override { return visitor->egressProgramNode(this, newChildren); }
+        ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressProgramNode(this); }
 };

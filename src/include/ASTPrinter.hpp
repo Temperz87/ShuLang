@@ -17,13 +17,13 @@ class ASTPrinter : public ASTVisitor {
         ASTPrinter();
         ~ASTPrinter();
         ASTHolder ingressProgramNode(ProgramNode* node, int childcount) override;
-        ASTNode* egressProgramNode(ProgramNode* node, std::vector<ASTNode*> children) override;
+        ASTNode* egressProgramNode(ProgramNode* node) override;
         ASTHolder ingressBindingNode(BindingNode* node, int childcount) override;
-        ASTNode* egressBindingNode(BindingNode* node, std::vector<ASTNode*> children) override;
+        ASTNode* egressBindingNode(BindingNode* node) override;
         ASTHolder ingressVariableReferenceNode(VariableReferenceNode* node, int childcount) override;
         ASTHolder ingressIntegerNode(IntegerNode* node, int childcount) override;
         ASTHolder ingressPrintNode(PrintNode* node, int childcount) override;
-        ASTNode* egressPrintNode(PrintNode* node, std::vector<ASTNode*> children) override;
+        ASTNode* egressPrintNode(PrintNode* node) override;
         ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) override;
-        ASTNode* egressOperatorApplicationNode(OperatorApplicationNode* node, std::vector<ASTNode*> children) override;
+        ASTNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override;
 };

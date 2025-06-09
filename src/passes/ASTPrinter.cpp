@@ -12,9 +12,9 @@ ASTPrinter::ASTHolder ASTPrinter::ingressProgramNode(ProgramNode* node, int chil
     return ASTVisitor::ingressProgramNode(node, childcount);
 }
 
-ASTNode* ASTPrinter::egressProgramNode(ProgramNode* node, std::vector<ASTNode*> children) {
+ASTNode* ASTPrinter::egressProgramNode(ProgramNode* node) {
     indentation -= 1;
-    return ASTVisitor::egressProgramNode(node, children);
+    return ASTVisitor::egressProgramNode(node);
 }
 
 ASTPrinter::ASTHolder ASTPrinter::ingressBindingNode(BindingNode* node, int childcount) { 
@@ -24,9 +24,9 @@ ASTPrinter::ASTHolder ASTPrinter::ingressBindingNode(BindingNode* node, int chil
     return ASTVisitor::ingressBindingNode(node, childcount); 
 }
 
-ASTNode* ASTPrinter::egressBindingNode(BindingNode* node, std::vector<ASTNode*> children)  {
+ASTNode* ASTPrinter::egressBindingNode(BindingNode* node)  {
     indentation -= 1;
-    return ASTVisitor::egressBindingNode(node, children);
+    return ASTVisitor::egressBindingNode(node);
 }
 
 ASTPrinter::ASTHolder ASTPrinter::ingressVariableReferenceNode(VariableReferenceNode* node, int childcount)  {
@@ -48,9 +48,9 @@ ASTPrinter::ASTHolder ASTPrinter::ingressPrintNode(PrintNode* node, int childcou
     return ASTVisitor::ingressPrintNode(node, childcount);
 }
 
-ASTNode* ASTPrinter::egressPrintNode(PrintNode* node, std::vector<ASTNode*> children)  {
+ASTNode* ASTPrinter::egressPrintNode(PrintNode* node)  {
     indentation -= 1;
-    return ASTVisitor::egressPrintNode(node, children);
+    return ASTVisitor::egressPrintNode(node);
 }
 
 ASTPrinter::ASTHolder ASTPrinter::ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount)  {
@@ -60,7 +60,7 @@ ASTPrinter::ASTHolder ASTPrinter::ingressOperatorApplicationNode(OperatorApplica
     return ASTVisitor::ingressOperatorApplicationNode(node, childcount);
 }
 
-ASTNode* ASTPrinter::egressOperatorApplicationNode(OperatorApplicationNode* node, std::vector<ASTNode*> children)  {
+ASTNode* ASTPrinter::egressOperatorApplicationNode(OperatorApplicationNode* node)  {
     indentation -= 1;
-    return ASTVisitor::egressOperatorApplicationNode(node, children);
+    return ASTVisitor::egressOperatorApplicationNode(node);
 }

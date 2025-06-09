@@ -16,9 +16,8 @@ class ASTVisitor : public Visitor {
         ASTNode* egress_step(ASTNode* egressed) override {
             childholder<ASTNode>* last = &egress.top();
             last->waitingfor -= 1;
-            last->children.push_back(egressed);
             while (last->waitingfor == 0) {
-                egressed = last->node->egressVisitor(this, last->children);
+                egressed = last->node->egressVisitor(this);
 
                 // We're now done with the node
                 if (this->egress.size() <= 1)
@@ -28,7 +27,6 @@ class ASTVisitor : public Visitor {
                 this->egress.pop();
 
                 last = &egress.top();
-                last->children.push_back(egressed);
                 last->waitingfor -= 1;
             }
 
@@ -49,38 +47,37 @@ class ASTVisitor : public Visitor {
         }
 
         virtual ASTHolder ingressStatementNode(StatementNode* node, int childcount) override { return this->ingressNode(node, childcount); }
-        virtual ASTNode* egressStatementNode(StatementNode* node, std::vector<ASTNode*> newchildren) override { return this->egressNode(node, newchildren); }
+        virtual ASTNode* egressStatementNode(StatementNode* node) override { return this->egressNode(node); }
 
         virtual ASTHolder ingressPrintNode(PrintNode* node, int childcount) override { return this->ingressNode(node, childcount); }
-        virtual ASTNode* egressPrintNode(PrintNode* node, std::vector<ASTNode*> newchildren) override { return this->egressNode(node, newchildren); }
+        virtual ASTNode* egressPrintNode(PrintNode* node) override { return this->egressNode(node); }
 
         virtual ASTHolder ingressValueNode(ValueNode* node, int childcount) override { return this->ingressNode(node, childcount); }
-        virtual ASTNode* egressValueNode(ValueNode* node, std::vector<ASTNode*> newchildren) override { return this->egressNode(node, newchildren); }
+        virtual ASTNode* egressValueNode(ValueNode* node) override { return this->egressNode(node); }
 
         virtual ASTHolder ingressIntegerNode(IntegerNode* node, int childcount) override { return this->ingressNode(node, childcount); }
-        virtual ASTNode* egressIntegerNode(IntegerNode* node, std::vector<ASTNode*> newchildren) override { return this->egressNode(node, newchildren); }
+        virtual ASTNode* egressIntegerNode(IntegerNode* node) override { return this->egressNode(node); }
 
         virtual ASTHolder ingressVariableReferenceNode(VariableReferenceNode* node, int childcount) override { return this->ingressNode(node, childcount); }
-        virtual ASTNode* egressVariableReferenceNode(VariableReferenceNode* node, std::vector<ASTNode*> newchildren) override { return this->egressNode(node, newchildren); }
+        virtual ASTNode* egressVariableReferenceNode(VariableReferenceNode* node) override { return this->egressNode(node); }
 
         virtual ASTHolder ingressBindingNode(BindingNode* node, int childcount) override { return this->ingressNode(node, childcount); }
-        virtual ASTNode* egressBindingNode(BindingNode* node, std::vector<ASTNode*> newchildren) override { return this->egressNode(node, newchildren); }
+        virtual ASTNode* egressBindingNode(BindingNode* node) override { return this->egressNode(node); }
 
         virtual ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) override { return this->ingressNode(node, childcount); }
-        virtual ASTNode* egressOperatorApplicationNode(OperatorApplicationNode* node, std::vector<ASTNode*> newchildren) override { return this->egressNode(node, newchildren); }
+        virtual ASTNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override { return this->egressNode(node); }
 
         virtual ASTHolder ingressProgramNode(ProgramNode* node, int childcount) override { return this->ingressNode(node, childcount); }
-        virtual ASTNode* egressProgramNode(ProgramNode* node, std::vector<ASTNode*> newchildren) override { return this->egressNode(node, newchildren); }
+        virtual ASTNode* egressProgramNode(ProgramNode* node) override { return this->egressNode(node); }
 
         virtual ASTHolder ingressNode(ASTNode* node, int childcount) override { 
             ASTHolder ret;
             ret.node = node;
-            ret.children = std::vector<ASTNode*>();
             ret.waitingfor = childcount;
             return ret;
         }
 
-        virtual ASTNode* egressNode(ASTNode* node, std::vector<ASTNode*> newchildren) override { 
+        virtual ASTNode* egressNode(ASTNode* node) override { 
             return node;
         }
 
@@ -99,7 +96,7 @@ class ASTVisitor : public Visitor {
                 if (holder.waitingfor == 0) {
                     // We know that we can't descend
                     // So we try to ascend
-                    ASTNode* egressed = holder.node->egressVisitor(this, holder.children);
+                    ASTNode* egressed = holder.node->egressVisitor(this);
 
                     // Because terminal parse nodes like Integer don't constitute a program
                     // We always have to ascend
