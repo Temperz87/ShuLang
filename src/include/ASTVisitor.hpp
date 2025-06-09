@@ -72,7 +72,6 @@ class ASTVisitor : public Visitor {
         virtual ASTHolder ingressProgramNode(ProgramNode* node, int childcount) override { return this->ingressNode(node, childcount); }
         virtual ASTNode* egressProgramNode(ProgramNode* node, std::vector<ASTNode*> newchildren) override { return this->egressNode(node, newchildren); }
 
-
         virtual ASTHolder ingressNode(ASTNode* node, int childcount) override { 
             ASTHolder ret;
             ret.node = node;

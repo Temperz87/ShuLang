@@ -47,7 +47,6 @@ class Visitor {
         virtual childholder<ASTNode> ingressBindingNode(BindingNode* node, int childcount) = 0;
         virtual ASTNode* egressBindingNode(BindingNode* node, std::vector<ASTNode*> newchildren) = 0;
 
-
         virtual childholder<ASTNode> ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) = 0;
         virtual ASTNode* egressOperatorApplicationNode(OperatorApplicationNode* node, std::vector<ASTNode*> newchildren) = 0;
 

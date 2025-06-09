@@ -15,6 +15,7 @@ class IntegerNode;
 class VariableReferenceNode;
 class BindingNode;
 class ProgramNode;
+class OperatorApplicationNode;
 class ASTNode;
 
 template <class T>
