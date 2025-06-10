@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AST.hpp"
+#include "ShuLangAST.hpp"
 #include <ctype.h>
 #include <iostream>
 #include <string.h>

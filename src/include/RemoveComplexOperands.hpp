@@ -1,5 +1,5 @@
 #pragma once
 
-#include "AST.hpp"
+#include "ShuLangAST.hpp"
 
 void remove_complex_operands(std::vector<ASTNode*>& program);

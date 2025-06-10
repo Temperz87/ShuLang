@@ -1,6 +1,6 @@
 #pragma once
 
-#include <AST.hpp>
+#include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
 #include <unordered_map>
 #include <vector>

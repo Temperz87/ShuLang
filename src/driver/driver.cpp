@@ -1,4 +1,4 @@
-#include <AST.hpp>
+#include <ShuLangAST.hpp>
 #include <ShuLangPrinter.hpp>
 #include <ctype.h>
 #include <fstream>
