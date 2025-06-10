@@ -2,8 +2,8 @@
 #include <AST.hpp>
 #include <ASTVisitor.hpp>
 #include <RemoveComplexOperands.hpp>
+#include <iterator>
 #include <string>
-#include <system_error>
 #include <vector>
 
 static int tmp_counter = 0;
@@ -28,7 +28,8 @@ class Atomify : public ASTVisitor {
             new_binding->ty = "Integer";
 
             bindings.push_back(new_binding); 
-            return node;
+
+            return ASTVisitor::egressOperatorApplicationNode(node);
         }
 };
 
@@ -37,6 +38,8 @@ class target_complex : public ASTVisitor {
         std::vector<BindingNode*> bindings;
         
         ASTNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
+            std::vector<BindingNode*> bindings;
+
             Atomify a = Atomify(bindings);
             a.walk(node->lhs);
             if (!bindings.empty()) {
@@ -44,14 +47,17 @@ class target_complex : public ASTVisitor {
                 VariableReferenceNode* new_value = new VariableReferenceNode(last_node->name);
                 node->lhs = new_value;
             }
-            bindings.clear();
+            long size = bindings.size();
+
             a.walk(node->rhs);
-            if (!bindings.empty()) {
+            if (bindings.size() != size) {
                 BindingNode* last_node = bindings.at(bindings.size() - 1);
                 VariableReferenceNode* new_value = new VariableReferenceNode(last_node->name);
                 node->rhs = new_value;
             }
-            return node;
+
+            this->bindings.insert(this->bindings.end(), bindings.begin(), bindings.end());
+            return ASTVisitor::egressOperatorApplicationNode(node);
         }
 
         ASTNode* egressPrintNode(PrintNode* node) override {
@@ -62,12 +68,12 @@ class target_complex : public ASTVisitor {
                 VariableReferenceNode* new_value = new VariableReferenceNode(last_node->name);
                 node->to_print = new_value;
             }
-            return node;;
+            return ASTVisitor::egressPrintNode(node);
         }
 };
 
 void remove_complex_operands(std::vector<ASTNode*>& program) {
-    for (int i = 0; i < program.size(); i++) {
+    for (long i = 0; i < program.size(); i++) {
         target_complex visitor = target_complex();
         visitor.walk(program.at(i));
         for (BindingNode* binding : visitor.bindings) {
