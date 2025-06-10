@@ -12,7 +12,7 @@ ShuLangPrinter::ASTHolder ShuLangPrinter::ingressProgramNode(ProgramNode* node, 
     return ShuLangVisitor::ingressProgramNode(node, childcount);
 }
 
-ASTNode* ShuLangPrinter::egressProgramNode(ProgramNode* node) {
+ShuLangNode* ShuLangPrinter::egressProgramNode(ProgramNode* node) {
     indentation -= 1;
     return ShuLangVisitor::egressProgramNode(node);
 }
@@ -24,7 +24,7 @@ ShuLangPrinter::ASTHolder ShuLangPrinter::ingressBindingNode(BindingNode* node, 
     return ShuLangVisitor::ingressBindingNode(node, childcount); 
 }
 
-ASTNode* ShuLangPrinter::egressBindingNode(BindingNode* node)  {
+ShuLangNode* ShuLangPrinter::egressBindingNode(BindingNode* node)  {
     indentation -= 1;
     return ShuLangVisitor::egressBindingNode(node);
 }
@@ -48,7 +48,7 @@ ShuLangPrinter::ASTHolder ShuLangPrinter::ingressPrintNode(PrintNode* node, int 
     return ShuLangVisitor::ingressPrintNode(node, childcount);
 }
 
-ASTNode* ShuLangPrinter::egressPrintNode(PrintNode* node)  {
+ShuLangNode* ShuLangPrinter::egressPrintNode(PrintNode* node)  {
     indentation -= 1;
     return ShuLangVisitor::egressPrintNode(node);
 }
@@ -60,7 +60,7 @@ ShuLangPrinter::ASTHolder ShuLangPrinter::ingressOperatorApplicationNode(Operato
     return ShuLangVisitor::ingressOperatorApplicationNode(node, childcount);
 }
 
-ASTNode* ShuLangPrinter::egressOperatorApplicationNode(OperatorApplicationNode* node)  {
+ShuLangNode* ShuLangPrinter::egressOperatorApplicationNode(OperatorApplicationNode* node)  {
     indentation -= 1;
     return ShuLangVisitor::egressOperatorApplicationNode(node);
 }

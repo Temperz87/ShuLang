@@ -17,7 +17,7 @@ class Atomify : public ShuLangVisitor {
 
         Atomify(std::vector<BindingNode*>& bindings):bindings(bindings) {}
 
-        ASTNode* egressOperatorApplicationNode(OperatorApplicationNode *node) override {
+        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode *node) override {
             BindingNode* new_binding = new BindingNode();
             new_binding->name = gen_tmp_name();
             new_binding->value = node;
@@ -37,7 +37,7 @@ class target_complex : public ShuLangVisitor {
     public:
         std::vector<BindingNode*> bindings;
         
-        ASTNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
+        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
             // The bindings in the class clearly get propagated through every egress
             // So we must have unique bindings for every time we Atomify
             std::vector<BindingNode*> bindings;
@@ -71,7 +71,7 @@ class target_complex : public ShuLangVisitor {
             return ShuLangVisitor::egressOperatorApplicationNode(node);
         }
 
-        ASTNode* egressPrintNode(PrintNode* node) override {
+        ShuLangNode* egressPrintNode(PrintNode* node) override {
             Atomify a = Atomify(bindings);
             // to_print must be atomic
             a.walk(node->to_print);
@@ -84,7 +84,7 @@ class target_complex : public ShuLangVisitor {
         }
 };
 
-void remove_complex_operands(std::vector<ASTNode*>& program) {
+void remove_complex_operands(std::vector<ShuLangNode*>& program) {
     for (long i = 0; i < program.size(); i++) {
         target_complex visitor = target_complex();
         visitor.walk(program.at(i));

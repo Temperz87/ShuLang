@@ -2,8 +2,9 @@ CC = g++
 CPPFLAGS = -Iinclude -MMD -MP -g -Wall
 RM = rm
 
-OBJECTS = driver/driver.o parser/parser.o tokenizer/tokenizer.o Visitor/visitor.o \
-		  passes/ShuLangPrinter.o passes/Uniquification.o  passes/RemoveComplexOperands.o 
+OBJECTS = driver/driver.o parser/parser.o tokenizer/tokenizer.o \
+		  ast/shulang_ast.o \
+		  passes/ShuLangPrinter.o passes/Uniquification.o passes/RemoveComplexOperands.o 
 
 DEPS := $(OBJECTS:.o=.d)
 

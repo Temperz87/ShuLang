@@ -1,10 +1,8 @@
 #include <ShuLangAST.hpp>
 #include <cassert>
-#include <cstddef>
 #include <iostream>
 #include <iterator.hpp>
 #include <parser.hpp>
-#include <string.h>
 #include <tokenizer.hpp>
 #include <vector>
 

@@ -2,4 +2,4 @@
 
 #include "ShuLangAST.hpp"
 
-void remove_complex_operands(std::vector<ASTNode*>& program);
+void remove_complex_operands(std::vector<ShuLangNode*>& program);

@@ -1,5 +1,4 @@
 #include <ShuLangAST.hpp>
-#include <Visitor.hpp>
 #include <Uniquification.hpp>
 #include <ShuLangVisitor.hpp>
 #include <string>
