@@ -23,18 +23,6 @@ struct childholder {
     int waitingfor;
 };
 
-class ASTNode {
-    public:
-        ASTNode() { }
-        ~ASTNode() { }
-        
-        // Gets DIRECT children
-        virtual std::vector<ASTNode*> children() = 0;
-
-        virtual childholder<ASTNode> ingressVisitor (Visitor* visitor) = 0;
-        virtual ASTNode* egressVisitor(Visitor* visitor) = 0;
-};
-
 class StatementNode : public ASTNode { 
     public:
         std::vector<ASTNode*> children() override {

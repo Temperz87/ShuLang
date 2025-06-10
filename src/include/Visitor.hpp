@@ -20,6 +20,7 @@ class ASTNode;
 template <class T>
 struct childholder;
 
+
 class Visitor {
     public:
         virtual ~Visitor();
@@ -58,4 +59,16 @@ class Visitor {
         std::stack<childholder<ASTNode>> egress;
 
         virtual ASTNode* egress_step(ASTNode* egressed) = 0;
+};
+
+class ASTNode {
+    public:
+        ASTNode() { }
+        ~ASTNode() { }
+        
+        // Gets DIRECT children
+        virtual std::vector<ASTNode*> children() = 0;
+
+        virtual childholder<ASTNode> ingressVisitor (Visitor* visitor) = 0;
+        virtual ASTNode* egressVisitor(Visitor* visitor) = 0;
 };
