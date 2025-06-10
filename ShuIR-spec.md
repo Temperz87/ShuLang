@@ -1,7 +1,6 @@
 # Specification of ShuLang Intermediate Representation (SIR)
 
-ShuIR is a SSA IR, in that there are blocks and updating variabels is not allowed.
-
+ShuIR is a SSA IR, in that there are blocks and updating variables would instead create a fresh one.
 
 ## Concrete Syntax
 
