@@ -14,6 +14,9 @@ class ASTVisitor : public Visitor {
         std::stack<childholder<ASTNode>> egress;
 
         ASTNode* egress_step(ASTNode* egressed) override {
+            if (egress.empty())
+                return egressed;
+            
             childholder<ASTNode>* last = &egress.top();
             last->waitingfor -= 1;
             while (last->waitingfor == 0) {

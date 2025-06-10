@@ -6,6 +6,7 @@
 #include <parser.hpp>
 #include <string.h>
 #include <vector>
+#include <RemoveComplexOperands.hpp>
 #include <tokenizer.hpp>
 #include <Uniquification.hpp>
 
@@ -40,6 +41,11 @@ int main(int argc, char** argv) {
 
     std::cout << "-----UNIQUIFICATION-----" << std::endl;
     Uniquification().walk(program);
+    ASTPrinter().walk(program);
+
+
+    std::cout << "-----REMOVE COMPLEX OPERANDS-----" << std::endl;
+    remove_complex_operands(program->nodes);
     ASTPrinter().walk(program);
     return 0;
 }

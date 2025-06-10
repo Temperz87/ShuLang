@@ -3,7 +3,7 @@ CPPFLAGS = -Iinclude -MMD -MP -g -Wall
 RM = rm
 
 OBJECTS = driver/driver.o parser/parser.o tokenizer/tokenizer.o Visitor/visitor.o \
-		  passes/ASTPrinter.o passes/Uniquification.o 
+		  passes/ASTPrinter.o passes/Uniquification.o  passes/RemoveComplexOperands.o 
 
 DEPS := $(OBJECTS:.o=.d)
 

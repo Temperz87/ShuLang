@@ -32,12 +32,13 @@ class ASTNode {
 };
 
 class StatementNode : public ASTNode { 
-    std::vector<ASTNode*> children() override {
-        return std::vector<ASTNode*>();
-    }
+    public:
+        std::vector<ASTNode*> children() override {
+            return std::vector<ASTNode*>();
+        }
 
-    childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressStatementNode(this, 0); }
-    ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressStatementNode(this); }
+        childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressStatementNode(this, 0); }
+        ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressStatementNode(this); }
 };
 
 class PrintNode : public StatementNode {
@@ -60,8 +61,9 @@ class PrintNode : public StatementNode {
 
 // I'm getting jiggy with it I don't know if this is fine
 class ValueNode : public StatementNode { 
-    childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressValueNode(this, 0); }
-    ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressValueNode(this); }
+    public:
+        childholder<ASTNode> ingressVisitor (Visitor* visitor) override { return visitor->ingressValueNode(this, 0); }
+        ASTNode* egressVisitor(Visitor* visitor) override { return visitor->egressValueNode(this); }
 }; 
 
 class IntegerNode : public ValueNode {
