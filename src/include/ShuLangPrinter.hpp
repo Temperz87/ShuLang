@@ -1,10 +1,10 @@
 #pragma once
 
 #include "AST.hpp"
-#include "ASTVisitor.hpp"
+#include "ShuLangVisitor.hpp"
 #include <vector>
 
-class ASTPrinter : public ASTVisitor {
+class ShuLangPrinter : public ShuLangVisitor {
     private:
         int indentation = 0;
         void printIndentation() {
@@ -14,8 +14,8 @@ class ASTPrinter : public ASTVisitor {
         }
 
     public: 
-        ASTPrinter();
-        ~ASTPrinter();
+        ShuLangPrinter();
+        ~ShuLangPrinter();
         ASTHolder ingressProgramNode(ProgramNode* node, int childcount) override;
         ASTNode* egressProgramNode(ProgramNode* node) override;
         ASTHolder ingressBindingNode(BindingNode* node, int childcount) override;

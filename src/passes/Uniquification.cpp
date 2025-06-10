@@ -1,7 +1,7 @@
 #include <AST.hpp>
 #include <Visitor.hpp>
 #include <Uniquification.hpp>
-#include <ASTVisitor.hpp>
+#include <ShuLangVisitor.hpp>
 #include <string>
 
 Uniquification::Uniquification() { };
@@ -19,10 +19,10 @@ Uniquification::ASTHolder Uniquification::ingressBindingNode(BindingNode* node, 
     else
         map[node->name] = unique_name;
     node->name = unique_name;
-    return ASTVisitor::ingressBindingNode(node, childcount);
+    return ShuLangVisitor::ingressBindingNode(node, childcount);
 }
 
 Uniquification::ASTHolder Uniquification::ingressVariableReferenceNode(VariableReferenceNode* node, int childcount) {
     node->identifier = map.at(node->identifier);
-    return ASTVisitor::ingressVariableReferenceNode(node, childcount);
+    return ShuLangVisitor::ingressVariableReferenceNode(node, childcount);
 }

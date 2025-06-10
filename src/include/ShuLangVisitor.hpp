@@ -1,14 +1,10 @@
 #pragma once
 
 #include <AST.hpp>
-#include <ctype.h>
-#include <iostream>
-#include <string.h>
 #include <stack>
-#include <vector>
 #include <Visitor.hpp>
 
-class ASTVisitor : public Visitor {
+class ShuLangVisitor : public Visitor {
     private:
         std::stack<ASTNode*> ingress;
         std::stack<childholder<ASTNode>> egress;
@@ -16,7 +12,7 @@ class ASTVisitor : public Visitor {
         ASTNode* egress_step(ASTNode* egressed) override {
             if (egress.empty())
                 return egressed;
-            
+
             childholder<ASTNode>* last = &egress.top();
             last->waitingfor -= 1;
             while (last->waitingfor == 0) {
@@ -39,12 +35,12 @@ class ASTVisitor : public Visitor {
     public:
         typedef childholder<ASTNode> ASTHolder;
 
-        ~ASTVisitor() {
+        ~ShuLangVisitor() {
             // delete this->ingress;
             // delete this->egress;
         }
 
-        ASTVisitor() {
+        ShuLangVisitor() {
             this->ingress = std::stack<ASTNode*>();
             this->egress = std::stack<ASTHolder>();
         }

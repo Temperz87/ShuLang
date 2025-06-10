@@ -1,11 +1,11 @@
 #pragma once
 
 #include <AST.hpp>
-#include <ASTVisitor.hpp>
+#include <ShuLangVisitor.hpp>
 #include <unordered_map>
 #include <vector>
 
-class Uniquification : public ASTVisitor {
+class Uniquification : public ShuLangVisitor {
     private:
         int unique_id = 0;
         std::unordered_map<std::string, std::string> map;

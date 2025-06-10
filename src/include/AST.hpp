@@ -3,7 +3,11 @@
 #include <vector>
 #include <Visitor.hpp>
 
-class StatementNode;
+
+class ASTNode;
+
+// ShuLang AST 
+class ShuIRNode;
 class PrintNode;
 class ValueNode; 
 class IntegerNode;
@@ -11,7 +15,7 @@ class VariableReferenceNode;
 class BindingNode;
 class ProgramNode;
 class OperatorApplicationNode;
-class ASTNode;
+class StatementNode;
 
 template <class T>
 struct childholder {

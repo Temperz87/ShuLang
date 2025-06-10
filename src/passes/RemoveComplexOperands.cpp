@@ -1,5 +1,5 @@
 #include <AST.hpp>
-#include <ASTVisitor.hpp>
+#include <ShuLangVisitor.hpp>
 #include <RemoveComplexOperands.hpp>
 #include <string>
 #include <vector>
@@ -11,7 +11,7 @@ std::string gen_tmp_name() {
 }
 
 // Anything this class walks will be converted to be atomic
-class Atomify : public ASTVisitor {
+class Atomify : public ShuLangVisitor {
     public:
         std::vector<BindingNode*>& bindings; 
 
@@ -27,13 +27,13 @@ class Atomify : public ASTVisitor {
 
             bindings.push_back(new_binding); 
 
-            return ASTVisitor::egressOperatorApplicationNode(node);
+            return ShuLangVisitor::egressOperatorApplicationNode(node);
         }
 };
 
 // This class takes in an AST that doesn't have to be atomic
 // And tries to ensure its children are
-class target_complex : public ASTVisitor {
+class target_complex : public ShuLangVisitor {
     public:
         std::vector<BindingNode*> bindings;
         
@@ -68,7 +68,7 @@ class target_complex : public ASTVisitor {
             // Which kind of acts as a return
             // Could probably change this to like an iterator position to update
             this->bindings.insert(this->bindings.end(), bindings.begin(), bindings.end());
-            return ASTVisitor::egressOperatorApplicationNode(node);
+            return ShuLangVisitor::egressOperatorApplicationNode(node);
         }
 
         ASTNode* egressPrintNode(PrintNode* node) override {
@@ -80,7 +80,7 @@ class target_complex : public ASTVisitor {
                 VariableReferenceNode* new_value = new VariableReferenceNode(last_node->name);
                 node->to_print = new_value;
             }
-            return ASTVisitor::egressPrintNode(node);
+            return ShuLangVisitor::egressPrintNode(node);
         }
 };
 
