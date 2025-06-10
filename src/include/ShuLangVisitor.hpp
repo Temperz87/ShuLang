@@ -3,6 +3,8 @@
 #include <ShuLangAST.hpp>
 #include <stack>
 
+using namespace shulang;
+
 class ShuLangVisitor {
     private:
         std::stack<ShuLangNode*> ingress;

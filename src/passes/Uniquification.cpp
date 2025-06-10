@@ -3,6 +3,8 @@
 #include <ShuLangVisitor.hpp>
 #include <string>
 
+using namespace shulang;
+
 Uniquification::Uniquification() { };
 Uniquification::~Uniquification() { };
 

@@ -7,5 +7,7 @@
 #include "tokenizer.hpp"
 #include <vector>
 
+using namespace shulang;
+
 // TODO: DOCUMENTATION
 ProgramNode* begin_parse(std::vector<token> tokenlist, std::string fileToParse);

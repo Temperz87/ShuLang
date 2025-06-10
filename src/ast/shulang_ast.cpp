@@ -3,6 +3,8 @@
 #include <ShuLangAST.hpp>
 #include <vector>
 
+using namespace shulang;
+
 std::vector<ShuLangNode*> StatementNode::children() {
   return std::vector<ShuLangNode*>();
 };

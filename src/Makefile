@@ -3,7 +3,7 @@ CPPFLAGS = -Iinclude -MMD -MP -g -Wall
 RM = rm
 
 OBJECTS = driver/driver.o parser/parser.o tokenizer/tokenizer.o \
-		  ast/shulang_ast.o \
+		  ast/shulang_ast.o ast/shuir_ast.o \
 		  passes/ShuLangPrinter.o passes/Uniquification.o passes/RemoveComplexOperands.o 
 
 DEPS := $(OBJECTS:.o=.d)

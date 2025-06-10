@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 
+using namespace shulang;
+
 ShuLangPrinter::ShuLangPrinter() { }
 ShuLangPrinter::~ShuLangPrinter() { }
 ShuLangPrinter::ASTHolder ShuLangPrinter::ingressProgramNode(ProgramNode* node, int childcount) {

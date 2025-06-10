@@ -1,10 +1,8 @@
 #include <ShuLangAST.hpp>
 #include <ShuLangPrinter.hpp>
-#include <ctype.h>
 #include <fstream>
 #include <iostream>
 #include <parser.hpp>
-#include <string.h>
 #include <vector>
 #include <RemoveComplexOperands.hpp>
 #include <tokenizer.hpp>
@@ -37,7 +35,7 @@ int main(int argc, char** argv) {
 
     std::cout << "-----PARSING-----" << std::endl;
     // Recursive descent parsing
-    ProgramNode* program = begin_parse(token_list, argv[1]);
+    shulang::ProgramNode* program = begin_parse(token_list, argv[1]);
     ShuLangPrinter().walk(program);
 
     std::cout << "-----UNIQUIFICATION-----" << std::endl;
