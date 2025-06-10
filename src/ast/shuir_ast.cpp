@@ -1,3 +1,4 @@
+#include "ShuLangAST.hpp"
 #include <ASTNode.hpp>
 #include <ShuIRAST.hpp>
 #include <string>
@@ -40,4 +41,13 @@ PrintNode::PrintNode(ValueNode* to_print) {
 }
 std::vector<std::string> PrintNode::get_usages() {
     return to_print->get_usages();
+}
+
+std::vector<std::string> ProgramNode::get_usages() {
+    std::vector<std::string> ret;
+    for (SIRNode* node : instructions) {
+        std::vector<std::string> usages = node->get_usages();
+        ret.insert(ret.end(), usages.begin(), usages.end());
+    }
+    return ret;
 }

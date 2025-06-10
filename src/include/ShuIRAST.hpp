@@ -5,7 +5,6 @@
 #include <vector>
 
 namespace shuir {
-
     class SIRNode : public ASTNode {
         public:
             // I had this come up in an interview
@@ -47,6 +46,12 @@ namespace shuir {
         public:
             ValueNode* to_print;
             PrintNode(ValueNode* to_print);
+            std::vector<std::string> get_usages() override;
+    };
+
+    class ProgramNode : public SIRNode {
+        public:
+            std::vector<SIRNode*> instructions;
             std::vector<std::string> get_usages() override;
     };
 }
