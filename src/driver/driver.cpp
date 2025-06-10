@@ -36,15 +36,23 @@ int main(int argc, char** argv) {
 
 
     std::cout << "-----PARSING-----" << std::endl;
+    // Recursive descent parsing
     ProgramNode* program = begin_parse(token_list, argv[1]);
     ASTPrinter().walk(program);
 
     std::cout << "-----UNIQUIFICATION-----" << std::endl;
+    // If I do somethingl ike
+    // bind x to 5 bind x to 6
+    // that becomes bind x.0 to 5 bind x.1 to 6
+    // every variable gets a unique name
     Uniquification().walk(program);
     ASTPrinter().walk(program);
 
 
     std::cout << "-----REMOVE COMPLEX OPERANDS-----" << std::endl;
+    // Say I do bind x to (1 + 2) + (3 + 4)
+    // that gets changed to bind tmp0 to 1 + 2 bind tmp1 to 3 + 4 bind x to tmp0 + tmp1
+    // this makes going into ShuIR easier
     remove_complex_operands(program->nodes);
     ASTPrinter().walk(program);
     return 0;

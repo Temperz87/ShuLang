@@ -2,21 +2,22 @@
 #include <Visitor.hpp>
 #include <Uniquification.hpp>
 #include <ASTVisitor.hpp>
-#include <iostream>
 #include <string>
-#include <vector>
 
 Uniquification::Uniquification() { };
 Uniquification::~Uniquification() { };
 
-Uniquification::ASTHolder Uniquification::ingressBindingNode(BindingNode* node, int childcount) {
-    std::string unique_name = node->name + "." + std::to_string(unique_id);
+// TODO: Make this work when I introduce functions
 
+Uniquification::ASTHolder Uniquification::ingressBindingNode(BindingNode* node, int childcount) {
+    std::string unique_name = node->name + "." + std::to_string(unique_id++);
+
+    // Check if we've already assigned a name
+    // If so update it 
     if (map.find(node->name) == map.end())
         map.insert({node->name, unique_name});
     else
         map[node->name] = unique_name;
-    unique_id += 1;
     node->name = unique_name;
     return ASTVisitor::ingressBindingNode(node, childcount);
 }
