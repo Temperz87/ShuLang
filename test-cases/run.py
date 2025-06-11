@@ -57,28 +57,35 @@ def run_ast(node, env = {}):
             printable = get_value(node.to_print, env)
             print(printable)
             
-            
+def run_case(file_name):
+    print("Compiling", file_name)
+    ast = parse_file(file_name)
+    print("-----INITIAL AST-----")
+    print_ast(ast)
+    print("Running")
+    run_ast(ast)
+
+    print("---UNIQUIFICATION-----")
+    uniquify(ast)
+    print_ast(ast)
+    print("Running")
+    run_ast(ast)
+
+    print("---Remove Complex Operands-----")
+    remove_complex_operands(ast)
+    print_ast(ast)
+    print("Running")
+    run_ast(ast)
 
 if __name__ == '__main__':
-    folder = sys.argv[1]
-    files = sorted(os.listdir(folder))
-    for file in files:
-        fp = os.path.join(folder, file)
-        print("Compiling", fp)
-        ast = parse_file(fp)
-        print("-----INITIAL AST-----")
-        print_ast(ast)
-        print("Running")
-        run_ast(ast)
-
-        print("---UNIQUIFICATION-----")
-        uniquify(ast)
-        print_ast(ast)
-        print("Running")
-        run_ast(ast)
-
-        print("---Remove Complex Operands-----")
-        remove_complex_operands(ast)
-        print_ast(ast)
-        print("Running")
-        run_ast(ast)
+    for x in range(1, len(sys.argv)):
+        shulangable = sys.argv[x]
+        if os.path.isfile(shulangable):
+            run_case(shulangable)
+        elif os.path.isdir(shulangable):
+            files = sorted(os.listdir(shulangable))
+            for file in files:      
+                fp = os.path.join(shulangable, file)
+                run_case(fp)
+        else:
+            print("I don't know what", shulangable, "is")
