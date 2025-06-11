@@ -2,9 +2,6 @@ import os
 import sys
 from shulang import *
 
-# TODO: Cleanup
-# I kind of just through this file together
-
 def print_ast(node : ASTNode, indentation = 0):
     if indentation > 0:
         print("  " * indentation, end='')
@@ -88,6 +85,7 @@ def print_sir_ast(node, indentation = 0):
         case _:
             print("Unknown definition", node)
             exit(1)
+
 def get_sir_value(node, env):
     match node:
         case ImmediateNode():
@@ -111,7 +109,6 @@ def run_sir_ast(node, env, stdout):
             val = get_sir_value(node.binding, env)
             env[node.identifier] = val
     return stdout
-                
             
 def compare_stdout(out1, out2):
     if len(out1) != len(out2):
@@ -138,7 +135,6 @@ def run_case(file_name):
     print("Running")
     uniquify_stdout = run_ast(ast, {}, [])
     compare_stdout(first_stdout, uniquify_stdout)
-    print(first_stdout)
 
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
