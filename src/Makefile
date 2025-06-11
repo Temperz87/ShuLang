@@ -41,7 +41,7 @@ clean:
 	$(RM) -f ./driver/driver.d
 	$(RM) -f ./driver/driver.o
 
-test: ./output/ShuC.out
+test: python
 	python3 ../test-cases/run.py ../test-cases/phase_1_programs
 
 -include $(DEPS)
