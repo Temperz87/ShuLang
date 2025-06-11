@@ -1,7 +1,7 @@
 import os
 import sys
 from shulang import ProgramNode, OperatorApplicationNode, BindingNode, \
-    VariableReferenceNode, IntegerNode, PrintNode, ASTNode, parse_file, uniquify, remove_complex_operands
+     VariableReferenceNode, IntegerNode, PrintNode, ASTNode, parse_file, uniquify, remove_complex_operands
 
 # TODO: Cleanup
 # I kind of just through this file together
@@ -46,36 +46,65 @@ def get_value(node, env):
                     print("Unrecognized operator", node.op)
                     exit(1)
 
-def run_ast(node, env = {}):
+def new_empty_env():
+    return {}
+
+def new_empty_list():
+    return []
+
+
+# OKAY OKAY OKAY
+# IF I DO
+# stdout = []
+# EVERYTHING BREAKS
+# THANK YOU PYTHON 
+def run_ast(node, env = new_empty_env(), stdout = new_empty_list()):
     match node:
         case ProgramNode():
             for node in node.nodes:
-                run_ast(node)
+                run_ast(node, env, stdout)
+            return stdout
         case BindingNode():
             env[node.name] = get_value(node.value, env)
         case PrintNode():
             printable = get_value(node.to_print, env)
             print(printable)
+            stdout.append(printable)
             
+def compare_stdout(out1, out2):
+    if len(out1) != len(out2):
+        print("Hmm, these standard outs look different")
+        print("Did you insert or remove a print node somewhere?")
+        exit(-1)
+    
+    for (f, s) in zip(out1, out2):
+        if f != s:
+            print(f, "is not the same as", s)
+            exit(1)
+
 def run_case(file_name):
     print("Compiling", file_name)
     ast = parse_file(file_name)
     print("-----INITIAL AST-----")
     print_ast(ast)
     print("Running")
-    run_ast(ast)
+    first_stdout = run_ast(ast)
 
     print("---UNIQUIFICATION-----")
     uniquify(ast)
     print_ast(ast)
     print("Running")
-    run_ast(ast)
+    uniquify_stdout = run_ast(ast)
+
+    compare_stdout(first_stdout, uniquify_stdout)
 
     print("---Remove Complex Operands-----")
     remove_complex_operands(ast)
     print_ast(ast)
     print("Running")
-    run_ast(ast)
+    rco_stdout = run_ast(ast)
+    compare_stdout(first_stdout, rco_stdout)
+    
 
 if __name__ == '__main__':
     for x in range(1, len(sys.argv)):
