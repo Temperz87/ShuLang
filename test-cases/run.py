@@ -142,7 +142,6 @@ def run_case(file_name):
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
     compare_stdout(first_stdout, rco_stdout)
-    print(first_stdout)
 
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
