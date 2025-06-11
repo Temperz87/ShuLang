@@ -95,7 +95,6 @@ def run_case(file_name):
     print_ast(ast)
     print("Running")
     uniquify_stdout = run_ast(ast)
-
     compare_stdout(first_stdout, uniquify_stdout)
 
     print("---Remove Complex Operands-----")
@@ -104,9 +103,11 @@ def run_case(file_name):
     print("Running")
     rco_stdout = run_ast(ast)
     compare_stdout(first_stdout, rco_stdout)
+    print("Test", file_name, "passed")
     
 
 if __name__ == '__main__':
+    tests_ran = 0
     for x in range(1, len(sys.argv)):
         shulangable = sys.argv[x]
         if os.path.isfile(shulangable):
@@ -116,5 +117,10 @@ if __name__ == '__main__':
             for file in files:      
                 fp = os.path.join(shulangable, file)
                 run_case(fp)
+                print()
+                tests_ran += 1
         else:
             print("I don't know what", shulangable, "is")
+
+    if tests_ran > 0:
+        print(tests_ran, "tests passed. Good job!")
