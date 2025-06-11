@@ -20,11 +20,14 @@ In Uniquify Variable Names, all variables will be assigned an unique name (shock
 ### Remove Complex Operands
 There's this idea of [three address code](https://en.wikipedia.org/wiki/Three-address_code), [A-normal form](https://en.wikipedia.org/wiki/A-normal_form) (somethimes jokingly called Amr normal form after its creator), and [Continuation Passing Style](https://en.wikipedia.org/wiki/Continuation-passing_style) as an IR. Before we go to an IR however, we'll want to make sure that no operator has operands with operators.
 
-### ShuIR Instruction Selection
+### SIR Instruction Selection
 In this pass, we'll be lowering to SSA. In this phase I don't think that I'll be doing any optimizations, but I may introduce [constant folding](https://en.wikipedia.org/wiki/Constant_folding) if I get it done quickly. 
 
 ### LLVM Instruction Selection
 Here, we'll lower ShulinIR into LLVM. I have no idea how this'll work as of yet, but I hope that all will go smoothly.
+
+## LLVM File Emission
+We can finally emit a .ll file, and from there LLVM can do its thing.
 
 ## Phase 1.5: Variable liveness
 I have this at 1.5 purely because I don't know if I have to do this or not given that LLVM has a register allocator. I get that every good compiler engineer should be able to do register allocation, but I don't know if it's a good idea for me to do it ontop of LLVM.
