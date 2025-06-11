@@ -1,8 +1,10 @@
 #include "RemoveComplexOperands.hpp"
+#include "ShuIRAST.hpp"
 #include "Uniquification.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <ASTNode.hpp>
+#include <SelectInstructions.hpp>
 #include <ShuLangAST.hpp>
 #include <parser.hpp>
 #include <tokenizer.hpp>
@@ -31,18 +33,17 @@ void rco(shulang::ProgramNode* ast) {
     remove_complex_operands(ast->nodes);
 }
 
+
 PYBIND11_MODULE(shulang, m) {
-    m.doc() = "Python binding for ShuLang's AST";
+    m.doc() = "Python binding for ShuC and the passes and AST's within";
 
     py::class_<ASTNode>(m, "ASTNode").def(py::init());
-
-
-
+    // ShuLang's AST
     py::class_<shulang::ShuLangNode, ASTNode>(m, "ShuLangNode")
     .def("children", &shulang::ShuLangNode::children);
 
     // StatementNode
-    py::class_<shulang::StatementNode, shulang::ShuLangNode>(m, "Statement")
+    py::class_<shulang::StatementNode, shulang::ShuLangNode>(m, "StatementNode")
     .def("children", &shulang::StatementNode::children);
 
     // PrintNode
@@ -85,9 +86,51 @@ PYBIND11_MODULE(shulang, m) {
     .def("children", &shulang::ProgramNode::children)
     .def_readwrite("nodes", &shulang::ProgramNode::nodes);
 
+    // SIR's AST
+    py::class_<shuir::SIRNode, ASTNode>(m, "SIRNode")
+    .def("get_usages", &shuir::SIRNode::get_usages);
+
+    py::class_<shuir::InstructionNode, shuir::SIRNode>(m, "InstructionNode");
+    py::class_<shuir::ValueNode, shuir::SIRNode>(m, "SIRValueNode");
+
+    py::class_<shuir::ImmediateNode, shuir::ValueNode>(m, "ImmediateNode")
+    .def(py::init<int>())
+    .def_readwrite("number", &shuir::ImmediateNode::number);
+
+    py::class_<shuir::ReferenceNode, shuir::ValueNode>(m, "ReferenceNode")
+    .def(py::init<std::string>())
+    .def_readwrite("identifier", &shuir::ReferenceNode::identifier);
+
+    py::class_<shuir::AddNode, shuir::ValueNode>(m, "AddNode")
+    .def("get_usages", &shuir::AddNode::get_usages)
+    .def_readwrite("lhs", &shuir::AddNode::lhs)
+    .def_readwrite("rhs", &shuir::AddNode::rhs);
+
+    py::class_<shuir::DefinitionNode, shuir::InstructionNode>(m, "DefinitionNode")
+    .def(py::init<std::string, shuir::ValueNode*>())
+    .def("get_usages", &shuir::DefinitionNode::get_usages)
+    .def_readwrite("identifier", &shuir::DefinitionNode::identifier)
+    .def_readwrite("binding", &shuir::DefinitionNode::binding);
+
+    py::class_<shuir::PrintNode, shuir::InstructionNode>(m, "SIRPrintNode")
+    .def(py::init<shuir::ValueNode*>())
+    .def("get_usages", &shuir::PrintNode::get_usages)
+    .def_readwrite("to_print", &shuir::PrintNode::to_print);
+
+    py::class_<shuir::SIRBlock>(m, "SIRBlock")
+    .def(py::init<std::string>())
+    .def_readwrite("instructions", &shuir::SIRBlock::instructions)
+    .def_readwrite("name", &shuir::SIRBlock::name);
+
+    py::class_<shuir::ProgramNode, shuir::SIRNode>(m, "SIRProgramNode")
+    .def("get_usages", &shuir::ProgramNode::get_usages)
+    .def_readwrite("blocks", &shuir::ProgramNode::blocks);
+
     m.def("parse_file", &parse_file, "Given a file returns an AST");
 
     m.def("uniquify", &uniquify, "Runs the uniquification pass");
 
     m.def("remove_complex_operands", &rco, "Runs the remove complex operands pass");
+
+    m.def("select_instructions", &select_SIR_instructions, "Translated from ShuLang to SIR");
 }

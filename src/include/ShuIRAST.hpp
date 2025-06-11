@@ -13,15 +13,10 @@ namespace shuir {
             virtual std::vector<std::string> get_usages();
     };
 
-    class DefinitionNode : public SIRNode {
-        public:
-            std::string identifier;
-            SIRNode* binding;
-            DefinitionNode(std::string identifier, SIRNode* binding);
-            std::vector<std::string> get_usages() override;
-    };
+    class InstructionNode : public SIRNode { };
 
     class ValueNode : public SIRNode { };
+
 
     class ImmediateNode : public ValueNode {
         public:
@@ -35,23 +30,38 @@ namespace shuir {
             ReferenceNode(std::string identifier);
     };
 
-    class AddNode : public SIRNode {
+    class AddNode : public ValueNode {
         public:
             ValueNode* lhs;
             ValueNode* rhs;
             std::vector<std::string> get_usages() override;
     };
 
-    class PrintNode : public SIRNode {
+    class DefinitionNode : public InstructionNode {
+        public:
+            std::string identifier;
+            ValueNode* binding;
+            DefinitionNode(std::string identifier, ValueNode* binding);
+            std::vector<std::string> get_usages() override;
+    };
+
+    class PrintNode : public InstructionNode {
         public:
             ValueNode* to_print;
             PrintNode(ValueNode* to_print);
             std::vector<std::string> get_usages() override;
     };
 
+    class SIRBlock {
+        public:
+            std::vector<InstructionNode*> instructions;
+            std::string name;
+            SIRBlock(std::string name);
+    };
+
     class ProgramNode : public SIRNode {
         public:
-            std::vector<SIRNode*> instructions;
+            std::vector<SIRBlock> blocks;
             std::vector<std::string> get_usages() override;
     };
 }

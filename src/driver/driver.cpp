@@ -1,3 +1,4 @@
+#include "ShuIRAST.hpp"
 #include <ShuLangAST.hpp>
 #include <ShuLangPrinter.hpp>
 #include <fstream>
@@ -5,6 +6,7 @@
 #include <parser.hpp>
 #include <vector>
 #include <RemoveComplexOperands.hpp>
+#include <SelectInstructions.hpp>
 #include <tokenizer.hpp>
 #include <Uniquification.hpp>
 
@@ -53,5 +55,8 @@ int main(int argc, char** argv) {
     // this makes going into ShuIR easier
     remove_complex_operands(program->nodes);
     ShuLangPrinter().walk(program);
+
+    std::cout << "-----SELECT SIR INSTRUCTIONS-----" << std::endl;
+    shuir::ProgramNode sir_program = select_SIR_instructions(program);
     return 0;
 }

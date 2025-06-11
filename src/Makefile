@@ -5,7 +5,8 @@ RM = rm
 
 OBJECTS = parser/parser.o tokenizer/tokenizer.o \
 		  ast/shulang_ast.o ast/shuir_ast.o \
-		  passes/ShuLangPrinter.o passes/Uniquification.o passes/RemoveComplexOperands.o 
+		  passes/ShuLangPrinter.o passes/Uniquification.o passes/RemoveComplexOperands.o  \
+		  passes/SelectInstructions.o
 
 DRIVER = ./driver/driver.o
 

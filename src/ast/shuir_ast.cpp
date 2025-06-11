@@ -1,4 +1,3 @@
-#include "ShuLangAST.hpp"
 #include <ASTNode.hpp>
 #include <ShuIRAST.hpp>
 #include <string>
@@ -10,7 +9,7 @@ std::vector<std::string> SIRNode::get_usages() {
     return std::vector<std::string>();
 }
 
-DefinitionNode::DefinitionNode(std::string identifier, SIRNode* binding) {
+DefinitionNode::DefinitionNode(std::string identifier, ValueNode* binding) {
     this->identifier = identifier;
     this->binding = binding;
 }
@@ -43,11 +42,17 @@ std::vector<std::string> PrintNode::get_usages() {
     return to_print->get_usages();
 }
 
+SIRBlock::SIRBlock(std::string name) {
+    this->name = name;
+}
+
 std::vector<std::string> ProgramNode::get_usages() {
     std::vector<std::string> ret;
-    for (SIRNode* node : instructions) {
-        std::vector<std::string> usages = node->get_usages();
-        ret.insert(ret.end(), usages.begin(), usages.end());
+    for (SIRBlock block : blocks) {
+        for (InstructionNode* node : block.instructions) {
+            std::vector<std::string> usages = node->get_usages();
+            ret.insert(ret.end(), usages.begin(), usages.end());
+        }
     }
     return ret;
 }
