@@ -1,4 +1,4 @@
-#include "ShuIRAST.hpp"
+#include <ShuIRAST.hpp>
 #include <ShuLangAST.hpp>
 #include <ShuLangPrinter.hpp>
 #include <fstream>
