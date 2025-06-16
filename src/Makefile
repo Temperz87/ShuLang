@@ -1,12 +1,12 @@
 CC = g++
-CPPFLAGS = -Iinclude -MMD -g -Wall -pedantic
+CPPFLAGS = -Iinclude -MMD -g -Wall -pedantic $(shell llvm-config --cxxflags) $(shell llvm-config --libs)
 PYTHONFLAGS = -O3 -Wall -shared -fPIC $(shell python3 -m pybind11 --include) -Iinclude
 RM = rm
 
 OBJECTS = parser/parser.o tokenizer/tokenizer.o \
 		  ast/shulang_ast.o ast/shuir_ast.o \
 		  passes/ShuLangPrinter.o passes/Uniquification.o passes/RemoveComplexOperands.o  \
-		  passes/SelectInstructions.o
+		  passes/SelectInstructions.o passes/LLVMSelection.o
 
 DRIVER = ./driver/driver.o
 
