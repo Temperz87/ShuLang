@@ -17,7 +17,6 @@
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Alignment.h>
 #include <llvm/Support/raw_ostream.h>
-#include <ostream>
 #include <system_error>
 
 
@@ -28,31 +27,32 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
 
     LLVMContext context;
     std::unique_ptr<IRBuilder<>> builder = std::make_unique<IRBuilder<>>(context);
-    std::unique_ptr<Module> module = std::make_unique<Module>("Module", context);
-    module->setSourceFileName(StringRef(source_filename));
+    Module module("Module", context);
+    module.setSourceFileName(StringRef(source_filename));
     // Extern printf function
     FunctionType* printf_ty = FunctionType::get(Type::getInt32Ty(context), PointerType::get(Type::getInt8Ty(context), 0), true);
-    Function::Create(printf_ty, Function::ExternalLinkage, "printf", module.get());
+    Function::Create(printf_ty, Function::ExternalLinkage, "printf", module);
     // TODO: SET ARGUMENT NAMES
 
     // Add %d format
-    builder->CreateGlobalString(StringRef("%d\n"), "printf_integer_format", 0, module.get());
+    builder->CreateGlobalString(StringRef("%d\n"), "printf_integer_format", 0, &module);
 
     // Add main function
     FunctionType* main_ty = FunctionType::get(Type::getInt32Ty(context), false);
-    Function* main_function = Function::Create(main_ty, Function::ExternalLinkage, "main", module.get());
+    Function* main_function = Function::Create(main_ty, Function::ExternalLinkage, "main", module);
 
     BasicBlock* entry_main = BasicBlock::Create(context, "entry", main_function);
     builder->SetInsertPoint(entry_main);
-    LLVMCodegenVisitor visitor(context, builder.get(), module.get());
+    std::unique_ptr<LLVMCodegenVisitor> visitor = std::make_unique<LLVMCodegenVisitor>(context, builder.get(), &module);
     for (SIRBlock block : node->blocks) {
-        visitor.walk(block);
+        visitor->walk(block);
     }
     builder->CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
     verifyFunction(*main_function);
 
+    // TODO: Check error code
     std::error_code code;
     raw_fd_ostream fd(output, code);
-    module->print(fd, nullptr);
+    module.print(fd, nullptr);
     fd.close();
 }

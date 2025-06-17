@@ -77,7 +77,6 @@ llvm::Value* LLVMCodegenVisitor::codegen(ProgramNode* node) {
 
 void LLVMCodegenVisitor::walk(SIRBlock block) {
     for (InstructionNode* node : block.instructions) {
-        llvm::Value* val = node->accept(this);
-        builder->Insert(val);
+        node->accept(this);
     }
 }
