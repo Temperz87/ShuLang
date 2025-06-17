@@ -117,7 +117,7 @@ def compare_stdout(out1, out2):
         exit(-1)
     
     for (f, s) in zip(out1, out2):
-        if f != s:
+        if str(f) != str(s):
             print(f, "is not the same as", s)
             exit(1)
 
@@ -148,10 +148,25 @@ def run_case(file_name):
     print_sir_ast(sir_program)
     select_stdout = run_sir_ast(sir_program, {}, [])
     compare_stdout(first_stdout, select_stdout)
+
+    print("---SELECT LLVM INSTRUCTIONS---")
+    select_llvm(sir_program, file_name, 'a.ll')
+    os.system("clang a.ll -o a.out && ./a.out > output.log")
+    
+
+    with open("output.log", "r") as fd:
+        output = [x.strip() for x in fd.readlines()]
+    os.system("rm -f a.ll a.out output.log")
+    compare_stdout(first_stdout, output)
+
     print("Test", file_name, "passed")
 
 if __name__ == '__main__':
     tests_ran = 0
+    if len(sys.argv) == 0:
+        # Halo
+        print("I need a test case")
+    
     for x in range(1, len(sys.argv)):
         shulangable = sys.argv[x]
         if os.path.isfile(shulangable):

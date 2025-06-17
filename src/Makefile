@@ -1,4 +1,4 @@
-CC = g++
+CC = clang++
 CPPFLAGS = -Iinclude -MMD -g -Wall -pedantic $(shell llvm-config --cxxflags) $(shell llvm-config --libs)
 PYTHONFLAGS = -O3 -Wall -shared -fPIC $(shell python3 -m pybind11 --include) -Iinclude
 RM = rm
@@ -33,7 +33,7 @@ build: ./output/ShuC.out
 
 # Makes the python testing bindings
 python: $(OBJECTS)
-	$(CC) $(PYTHONFLAGS) $(OBJECTS)  ./python_bindings/pybind11_stuff.cpp -shared -o ../test-cases/shulang$(shell python3-config --extension-suffix)
+	$(CC) $(PYTHONFLAGS) $(shell llvm-config --libs) $(OBJECTS)  ./python_bindings/pybind11_stuff.cpp -shared -o ../test-cases/shulang$(shell python3-config --extension-suffix)
 
 clean:
 	$(RM) -f ./output/*

@@ -5,6 +5,7 @@
 #include <pybind11/stl.h>
 #include <ASTNode.hpp>
 #include <SelectInstructions.hpp>
+#include <LLVMSelection.hpp>
 #include <ShuLangAST.hpp>
 #include <parser.hpp>
 #include <tokenizer.hpp>
@@ -133,4 +134,6 @@ PYBIND11_MODULE(shulang, m) {
     m.def("remove_complex_operands", &rco, "Runs the remove complex operands pass");
 
     m.def("select_instructions", &select_SIR_instructions, "Translated from ShuLang to SIR");
+
+    m.def("select_llvm", &select_llvm_instructions, "Perform the final lowering!!!");
 }
