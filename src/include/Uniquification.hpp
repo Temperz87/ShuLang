@@ -13,6 +13,6 @@ class Uniquification : public ShuLangVisitor {
     public: 
         Uniquification();
         ~Uniquification();
-        ASTHolder ingressBindingNode(BindingNode* node, int childcount) override;
+        ShuLangNode* egressBindingNode(BindingNode* node) override;
         ASTHolder ingressVariableReferenceNode(VariableReferenceNode* node, int childcount) override;
 };

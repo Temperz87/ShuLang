@@ -10,7 +10,8 @@ Uniquification::~Uniquification() { };
 
 // TODO: Make this work when I introduce functions
 
-Uniquification::ASTHolder Uniquification::ingressBindingNode(BindingNode* node, int childcount) {
+
+ShuLangNode* Uniquification::egressBindingNode(BindingNode* node) {
     std::string unique_name = node->name + "." + std::to_string(unique_id++);
 
     // Check if we've already assigned a name
@@ -20,7 +21,7 @@ Uniquification::ASTHolder Uniquification::ingressBindingNode(BindingNode* node, 
     else
         map[node->name] = unique_name;
     node->name = unique_name;
-    return ShuLangVisitor::ingressBindingNode(node, childcount);
+    return ShuLangVisitor::egressBindingNode(node);
 }
 
 Uniquification::ASTHolder Uniquification::ingressVariableReferenceNode(VariableReferenceNode* node, int childcount) {
