@@ -11,7 +11,7 @@ I intend for this compiler to have at the minimum 5 phases, which will be loosel
 
 This language is using a recursive descent parser and tokenization is pretty much just a linear scan of a file.
 
-## INTERMISSION: General cleanup and maaking pointers smart
+## INTERMISSION: General cleanup and making pointers smart
 I used zero smart pointers so now I have to go back and decide on how ownership should work. I also want to create some .cpp files for my .hpp stuff, and get rid of todo's. There's also some errors when I compile which can't be good, so those need to be gotten rid of.
 
 I also want to implement multiplication and subtraction. This shouldn't be that bad but it seems really tedious as I'll need the corrsponding SIR nodes and what not.
