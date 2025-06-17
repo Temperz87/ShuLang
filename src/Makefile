@@ -15,23 +15,25 @@ DEPS := $(OBJECTS:.o=.d) ./driver/driver.d ./python_binding/pybind11_stuff.d
 
 .PHONY: build clean python
 
-./python_bindings/pybind11_stuff.o: $(OBJECTS)
-	$(CC) $(CPPFLAGS) $(PYTHONFLAGS) -fPIC ./python_bindings/pybind11_stuff.cpp -c -o ./python_bindings/pybind11_stuff.o
-
 ./driver/driver.o: $(OBJECTS)
 	$(CC) $(CPPFLAGS) ./driver/driver.cpp -c -o ./driver/driver.o
 
 %.o : %.cpp
 	$(CC) $(CPPFLAGS) -fPIC $< -c -o $@ 
 
+./output/ShuC.out: ./driver/driver.o
+	touch ./output/ShuC.out
+	$(CC) $(CPPFLAGS) $(OBJECTS)  ./driver/driver.o -o ./output/ShuC.out
+
+
+./python_bindings/pybind11_stuff.o: $(OBJECTS)
+	$(CC) $(CPPFLAGS) $(PYTHONFLAGS) -fPIC ./python_bindings/pybind11_stuff.cpp -c -o ./python_bindings/pybind11_stuff.o
+
+build: ./output/ShuC.out
+
 # Makes the python testing bindings
 python: $(OBJECTS)
 	$(CC) $(PYTHONFLAGS) $(OBJECTS)  ./python_bindings/pybind11_stuff.cpp -shared -o ../test-cases/shulang$(shell python3-config --extension-suffix)
-
-./output/ShuC.out: ./driver/driver.o
-	$(CC) $(CPPFLAGS) $(OBJECTS)  ./driver/driver.o -o ./output/ShuC.out
-
-build: ./output/ShuC.out
 
 clean:
 	$(RM) -f ./output/*
