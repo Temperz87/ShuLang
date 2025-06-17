@@ -5,6 +5,7 @@
 #include <LLVMCodegenVisitor.hpp>
 #include <LLVMSelection.hpp>
 #include <iostream>
+#include <ostream>
 #include <parser.hpp>
 #include <vector>
 #include <RemoveComplexOperands.hpp>
@@ -12,14 +13,44 @@
 #include <tokenizer.hpp>
 #include <Uniquification.hpp>
 
-int main(int argc, char** argv) {
-    if (argc != 2)
-        std::cout << "Expected 1 argument but got " << argc - 1 << " arguments instead" << std::endl;
+static std::string output_file = "a.ll";
 
+std::string process_arguments(int argc, char** argv) {
+    int to_compile_idx = -1;
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-o") {
+            i += 1;
+            output_file = std::string(argv[i]);
+        }
+        else {
+            if (to_compile_idx == -1){
+                to_compile_idx = i;
+            }
+            else {
+                std::cout << "ShuC: warning: it seems like multiple files have been passed in for compilation. ShuC doesn't support this right now, so only the first file:" << 
+                std::endl << "\t" << argv[i] << std::endl << "Will be compiled." << std::endl;
+            }
+        }
+    }
+
+    if (to_compile_idx == -1) {
+        std::cout << "ShuC: fatal error: no input files" << std::endl;
+        exit(1);
+    }
+    return std::string(argv[to_compile_idx]);
+}
+
+int main(int argc, char** argv) {
+    if (argc < 2)
+        std::cout << "ShuC: At least Expected 1 argument but got zero instead." << std::endl;
+
+    std::string filename = process_arguments(argc, argv);
+    
     std::ifstream myfile;
-    myfile.open(argv[1]);
+    myfile.open(filename);
     if (!myfile.is_open()) {
-        std::cout << "Error opening file " << argv[1] << std::endl;
+        std::cout << "ShuC: Error opening file " << argv[1] << std::endl;
         return -1;
     }
 
@@ -62,6 +93,6 @@ int main(int argc, char** argv) {
     shuir::ProgramNode sir_program = select_SIR_instructions(program);
 
     // std::cout << "-----SELECT LLVM INSUTRCTIONS-----" << std::endl;
-    select_llvm_instructions(&sir_program, std::string(argv[1]));
+    select_llvm_instructions(&sir_program, std::string(argv[1]), output_file);
     return 0;
 }

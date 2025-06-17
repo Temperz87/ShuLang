@@ -16,11 +16,14 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Alignment.h>
+#include <llvm/Support/raw_ostream.h>
+#include <ostream>
+#include <system_error>
 
 
 using namespace shuir;
 
-void select_llvm_instructions(ProgramNode* node, std::string source_filename) {
+void select_llvm_instructions(ProgramNode* node, std::string source_filename, std::string output) {
     using namespace llvm;
 
     LLVMContext context;
@@ -48,5 +51,8 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename) {
     builder->CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
     verifyFunction(*main_function);
 
-    module->print(errs(), nullptr);
+    std::error_code code;
+    raw_fd_ostream fd(output, code);
+    module->print(fd, nullptr);
+    fd.close();
 }
