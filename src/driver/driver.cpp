@@ -42,9 +42,6 @@ std::string process_arguments(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2)
-        std::cout << "ShuC: At least Expected 1 argument but got zero instead." << std::endl;
-
     std::string filename = process_arguments(argc, argv);
     
     std::ifstream myfile;
