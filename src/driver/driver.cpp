@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
 
     // std::cout << "-----TOKENIZATION-----" << std::endl;
     std::vector<token> token_list;
-    int tokens = tokenize(myfile, token_list);
+    tokenize(myfile, token_list);
     myfile.close();
 
 
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
 
     // std::cout << "-----PARSING-----" << std::endl;
     // Recursive descent parsing
-    shulang::ProgramNode* program = begin_parse(token_list, argv[1]);
+    std::unique_ptr<shulang::ProgramNode> program = begin_parse(token_list, argv[1]);
     // ShuLangPrinter().walk(program);
 
     // std::cout << "-----UNIQUIFICATION-----" << std::endl;
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     // bind x to 5 bind x to 6
     // that becomes bind x.0 to 5 bind x.1 to 6
     // every variable gets a unique name
-    Uniquification().walk(program);
+    Uniquification().walk(program.get());
     // ShuLangPrinter().walk(program);
 
 
@@ -83,13 +83,17 @@ int main(int argc, char** argv) {
     // Say I do bind x to (1 + 2) + (3 + 4)
     // that gets changed to bind tmp0 to 1 + 2 bind tmp1 to 3 + 4 bind x to tmp0 + tmp1
     // this makes going into ShuIR easier
-    remove_complex_operands(program->nodes);
+    remove_complex_operands(program.get());
     // ShuLangPrinter().walk(program);
 
     // std::cout << "-----SELECT SIR INSTRUCTIONS-----" << std::endl;
-    shuir::ProgramNode sir_program = select_SIR_instructions(program);
+    // Lowering to SSA
+    shuir::ProgramNode sir_program = select_SIR_instructions(program.get());
 
     // std::cout << "-----SELECT LLVM INSUTRCTIONS-----" << std::endl;
+    // Emitting LLVM
+    // Later on we'll also tell LLVm to do some optimizations
+    // e.g. alloca promotion
     select_llvm_instructions(&sir_program, std::string(argv[1]), output_file);
     return 0;
 }

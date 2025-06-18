@@ -33,21 +33,22 @@ namespace shulang {
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
-  class PrintNode : public StatementNode {
-    public:
-      std::unique_ptr<StatementNode> to_print;
-      PrintNode(std::unique_ptr<StatementNode> printable):to_print(std::move(printable)) {};
-      std::vector<ShuLangNode*> children() override;
-      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor* visitor) override;
-      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
-  };
-
   // First class values
   class ValueNode : public StatementNode {
     public:
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
+
+  class PrintNode : public StatementNode {
+    public:
+      std::unique_ptr<ValueNode> to_print;
+      PrintNode(std::unique_ptr<ValueNode> printable):to_print(std::move(printable)) {};
+      std::vector<ShuLangNode*> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor* visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
+  };
+
 
   class IntegerNode : public ValueNode {
     public:
@@ -88,9 +89,8 @@ namespace shulang {
   };
 
   class ProgramNode : public ShuLangNode {
-    std::vector<std::unique_ptr<ShuLangNode>> nodes;
     public:
-      void AddNode(std::unique_ptr<ShuLangNode> node);
+      std::vector<std::unique_ptr<ShuLangNode>> nodes;
       std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;

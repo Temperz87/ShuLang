@@ -1,32 +1,32 @@
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
 #include <RemoveComplexOperands.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
-static int tmp_counter = 0;
-
 std::string gen_tmp_name() {
+    static int tmp_counter = 0;
     return "tmp" + std::to_string(tmp_counter++);
 }
 
-// Anything this class walks will be converted to be atomic
-class Atomify : public ShuLangVisitor {
+// Is this scuffed? YES!
+// Do I care? YES!
+// Is this making me insecure? YES!
+// Will I fix it? Maybe.........
+class ComplexDetector : public ShuLangVisitor {
+    private:
+        bool is_complex = false;
     public:
-        std::vector<BindingNode*>& bindings; 
+        bool NeedToRebind(ShuLangNode* node) {
+            walk(node);
+            bool ret = is_complex;
+            is_complex = false;
+            return ret;
+        }
 
-        Atomify(std::vector<BindingNode*>& bindings):bindings(bindings) {}
-
-        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode *node) override {
-            BindingNode* new_binding = new BindingNode();
-            new_binding->name = gen_tmp_name();
-            new_binding->value = node;
-
-            // TODO: Support other types when they come
-            new_binding->ty = "Integer";
-
-            bindings.push_back(new_binding); 
-
+        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
+            is_complex = true;
             return ShuLangVisitor::egressOperatorApplicationNode(node);
         }
 };
@@ -34,63 +34,53 @@ class Atomify : public ShuLangVisitor {
 // This class takes in an AST that doesn't have to be atomic
 // And tries to ensure its children are
 class target_complex : public ShuLangVisitor {
+    private:
+        std::unique_ptr<VariableReferenceNode> generate_binding(std::unique_ptr<ValueNode> complex_value) {
+            std::unique_ptr<BindingNode> fresh;
+            fresh->name = gen_tmp_name();
+            fresh->value = std::move(complex_value);
+            bindings.push_back(std::move(fresh));
+            return std::make_unique<VariableReferenceNode>(fresh->name);
+        }
+
     public:
-        std::vector<BindingNode*> bindings;
+        std::vector<std::unique_ptr<BindingNode>> bindings;
         
         ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
             // The bindings in the class clearly get propagated through every egress
             // So we must have unique bindings for every time we Atomify
-            std::vector<BindingNode*> bindings;
 
             // For operators, their lhs and rhs must be atomic
-            Atomify a = Atomify(bindings);
-            a.walk(node->lhs);
-
-            // If there are new bindings then lhs wasn't atomic
-            // So reference the last binding as the new lhs
-            if (!bindings.empty()) {
-                BindingNode* last_node = bindings.at(bindings.size() - 1);
-                VariableReferenceNode* new_value = new VariableReferenceNode(last_node->name);
-                node->lhs = new_value;
-            }
-            long size = bindings.size();
-
-            a.walk(node->rhs);
-            
-            // If the size changed then there are new bindings
-            if (bindings.size() != size) {
-                BindingNode* last_node = bindings.at(bindings.size() - 1);
-                VariableReferenceNode* new_value = new VariableReferenceNode(last_node->name);
-                node->rhs = new_value;
+            ComplexDetector det;
+            if (det.NeedToRebind(node->lhs.get())) {
+                node->lhs = generate_binding(std::move(node->lhs));
             }
 
-            // Insert to this->bindings
-            // Which kind of acts as a return
-            // Could probably change this to like an iterator position to update
-            this->bindings.insert(this->bindings.end(), bindings.begin(), bindings.end());
+            if (det.NeedToRebind(node->rhs.get())) {
+                node->rhs = generate_binding(std::move(node->rhs));
+            }
+
             return ShuLangVisitor::egressOperatorApplicationNode(node);
         }
 
         ShuLangNode* egressPrintNode(PrintNode* node) override {
-            Atomify a = Atomify(bindings);
+            ComplexDetector det;
             // to_print must be atomic
-            a.walk(node->to_print);
-            if (!bindings.empty()) {
-                BindingNode* last_node = bindings.at(bindings.size() - 1);
-                VariableReferenceNode* new_value = new VariableReferenceNode(last_node->name);
-                node->to_print = new_value;
+            if (det.NeedToRebind(node->to_print.get())) {
+                node->to_print = generate_binding(std::move(node->to_print));
             }
             return ShuLangVisitor::egressPrintNode(node);
         }
 };
 
-void remove_complex_operands(std::vector<ShuLangNode*>& program) {
-    for (long i = 0; i < program.size(); i++) {
+void remove_complex_operands(ProgramNode* program) {
+    for (long i = 0; i < program->nodes.size(); i++) {
         target_complex visitor = target_complex();
-        visitor.walk(program.at(i));
-        for (BindingNode* binding : visitor.bindings) {
-            program.insert(program.begin() + i, binding);
-            i++;
+        visitor.walk(program->nodes.at(i).get());
+
+        int len = visitor.bindings.size();
+        for (int j = 0; j < len; j++) {
+            program->nodes.insert(program->nodes.begin() + j, std::move(visitor.bindings.at(j)));
         }
     }
 }

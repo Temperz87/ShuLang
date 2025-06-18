@@ -79,8 +79,7 @@ void parse_type_annot(std::string& buf) {
 std::unique_ptr<IntegerNode> parse_integer() {
     token mytoken = currenttoken;
     advance();
-    std::unique_ptr<IntegerNode> ret = std::make_unique<IntegerNode>(IntegerNode(stoi(mytoken.value)));
-    return ret;
+    return std::make_unique<IntegerNode>(IntegerNode(stoi(mytoken.value)));
 }
 
 std::unique_ptr<ValueNode> parse_value() {
@@ -130,7 +129,7 @@ std::unique_ptr<ValueNode> parse_complex_value() {
                 return parse_operator_application(std::move(ret));
             return ret;
         default:
-            parse_error("Expected some sort of value");
+            parse_error("Expected a value");
     }
 }
 
@@ -149,7 +148,7 @@ std::unique_ptr<StatementNode> parse_statement() {
         advance();
         assert_strings_equal(currenttoken.value, "(");
         advance();
-        std::unique_ptr<StatementNode> to_print = parse_complex_value();
+        std::unique_ptr<ValueNode> to_print = parse_complex_value();
         assert_strings_equal(currenttoken.value, ")");
         advance();
         return std::make_unique<PrintNode>(std::move(to_print));
@@ -163,10 +162,9 @@ std::unique_ptr<ProgramNode> begin_parse(std::vector<token> tokenlist, std::stri
     filename = fileToParse;
     iter = Iterator<token>(tokenlist);
     iter.get(currenttoken);
-    std::unique_ptr<ProgramNode> program;
+    std::unique_ptr<ProgramNode> program = std::make_unique<ProgramNode>();
     while (!iter.empty()) {
-        std::unique_ptr<ShuLangNode> incomming = parse_statement();
-        program->AddNode(std::move(incomming));
+        program->nodes.push_back(parse_statement());
     }
     return program;
 }

@@ -69,7 +69,7 @@ shuir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
     // We don't have functions yet so we only have one block
     shuir::SIRBlock block = shuir::SIRBlock("main");
     SLTranslator translator = SLTranslator(block);
-    for (shulang::ShuLangNode* node : sl_program->nodes) {
+    for (shulang::ShuLangNode* node : sl_program->children()) {
         translator.walk(node);
     }
     shuir::ProgramNode node = shuir::ProgramNode();
