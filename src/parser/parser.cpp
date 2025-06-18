@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <iterator.hpp>
+#include <memory>
 #include <parser.hpp>
 #include <tokenizer.hpp>
 #include <vector>
@@ -46,9 +47,7 @@ void assert_at_type(token_type expected) {
     }
 }
 
-StatementNode* parse_statement();
-OperatorApplicationNode* parse_infix();
-ValueNode* parse_complex_value();
+std::unique_ptr<ValueNode> parse_complex_value();
 
 void parse_identifier(std::string& buf) {
     if (currenttoken.type != IDENTIFIER) {
@@ -77,13 +76,14 @@ void parse_type_annot(std::string& buf) {
     parse_type(buf);
 }
 
-IntegerNode* parse_integer() {
+std::unique_ptr<IntegerNode> parse_integer() {
     token mytoken = currenttoken;
     advance();
-    return new IntegerNode(stoi(mytoken.value));
+    std::unique_ptr<IntegerNode> ret = std::make_unique<IntegerNode>(IntegerNode(stoi(mytoken.value)));
+    return ret;
 }
 
-ValueNode* parse_value() {
+std::unique_ptr<ValueNode> parse_value() {
     switch (currenttoken.type){
         case INTEGER:
             return parse_integer();
@@ -93,30 +93,32 @@ ValueNode* parse_value() {
         case IDENTIFIER:
             std::string ident = currenttoken.value;
             advance();
-            return new VariableReferenceNode(ident);
+            return std::make_unique<VariableReferenceNode>(VariableReferenceNode(ident));
     }
-    // TODO: ERROR
-    parse_error("Expected a value");
+    parse_error("Expected a value (e.g. 5)");
 }
 
-OperatorApplicationNode* parse_operator_application(ValueNode* lhs) {
-    OperatorApplicationNode* op = new OperatorApplicationNode();
-    op->lhs = lhs;
-    op->op = currenttoken.value;
+std::unique_ptr<OperatorApplicationNode> parse_operator_application(std::unique_ptr<ValueNode> lhs) {
+    std::string op = currenttoken.value;
     advance();
-    op->rhs = parse_complex_value();
-    return op;
+    std::unique_ptr<ValueNode> rhs = parse_complex_value();
+    
+    std::unique_ptr<OperatorApplicationNode> node = std::make_unique<OperatorApplicationNode>();
+    node->lhs = std::move(lhs); 
+    node->rhs = std::move(rhs);
+    node->op = op;
+    return node; 
 }
 
-ValueNode* parse_complex_value() {
-    ValueNode* ret;
+std::unique_ptr<ValueNode> parse_complex_value() {
+    std::unique_ptr<ValueNode> ret;
     switch (currenttoken.type) {
         case INTEGER:
         case VALUE:
         case IDENTIFIER:
             ret = parse_value();
             if (currenttoken.type == OPERATOR)
-                return parse_operator_application((ValueNode*)ret);
+                return parse_operator_application(std::move(ret));
             return ret;
         case PUNCTUATOR:
             assert_at_value("(");
@@ -125,27 +127,17 @@ ValueNode* parse_complex_value() {
             assert_at_value(")");
             advance();
             if (currenttoken.type == OPERATOR)
-                return parse_operator_application(ret);
+                return parse_operator_application(std::move(ret));
             return ret;
         default:
             parse_error("Expected some sort of value");
     }
 }
 
-OperatorApplicationNode* parse_infix() {
-    OperatorApplicationNode* opapp = new OperatorApplicationNode();
-    opapp->lhs = parse_complex_value();
-    assert_at_type(OPERATOR);
-    opapp->op = currenttoken.value;
-    advance();
-    opapp->rhs = parse_complex_value();
-    return opapp;
-}
-
-StatementNode* parse_statement() {
+std::unique_ptr<StatementNode> parse_statement() {
     if (currenttoken.value == "bind") {
         advance();
-        BindingNode* b = new BindingNode();
+        std::unique_ptr<BindingNode> b = {};
         parse_identifier(b->name);
         parse_type_annot(b->ty);
         assert_strings_equal(currenttoken.value, "to");
@@ -157,39 +149,24 @@ StatementNode* parse_statement() {
         advance();
         assert_strings_equal(currenttoken.value, "(");
         advance();
-        StatementNode* toPrint = parse_complex_value();
+        std::unique_ptr<StatementNode> to_print = parse_complex_value();
         assert_strings_equal(currenttoken.value, ")");
         advance();
-        return new PrintNode(toPrint);
+        return std::make_unique<PrintNode>(std::move(to_print));
     }
     else {
-        return parse_infix();
+        parse_error("Expected a statement");
     }
 }
 
-StatementNode* parse_top_level_statement() {
-    switch (currenttoken.type) {
-        case STATEMENT:
-            return parse_statement();
-        case PUNCTUATOR:
-            assert_at_value("(");
-            break;
-        default:
-            // TODO: Parse Error
-        parse_error("Unexpected token as top level statement");
-    }
-}
-
-ProgramNode* begin_parse(std::vector<token> tokenlist, std::string fileToParse) {
+std::unique_ptr<ProgramNode> begin_parse(std::vector<token> tokenlist, std::string fileToParse) {
     filename = fileToParse;
-
     iter = Iterator<token>(tokenlist);
-    iter.get(currenttoken);    
-    ProgramNode* program = new ProgramNode();
+    iter.get(currenttoken);
+    std::unique_ptr<ProgramNode> program;
     while (!iter.empty()) {
-        program->nodes.push_back(parse_top_level_statement());
+        std::unique_ptr<ShuLangNode> incomming = parse_statement();
+        program->AddNode(std::move(incomming));
     }
-
-    // delete iter;
     return program;
 }

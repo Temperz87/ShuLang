@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ASTNode.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -28,75 +29,70 @@ namespace shulang {
   class StatementNode : public ShuLangNode {
     public:
       std::vector<ShuLangNode*> children() override;
-      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor* visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
   class PrintNode : public StatementNode {
-  public:
-    StatementNode *to_print;
-    PrintNode(StatementNode *printable);
-    std::vector<ShuLangNode*> children() override;
-    childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
-    ShuLangNode*egressVisitor(ShuLangVisitor *visitor) override;
+    public:
+      std::unique_ptr<StatementNode> to_print;
+      PrintNode(std::unique_ptr<StatementNode> printable):to_print(std::move(printable)) {};
+      std::vector<ShuLangNode*> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor* visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
-  // I'm getting jiggy with it I don't know if this is fine
+  // First class values
   class ValueNode : public StatementNode {
-  public:
-    childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
-    ShuLangNode*egressVisitor(ShuLangVisitor *visitor) override;
+    public:
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
   class IntegerNode : public ValueNode {
-  public:
-    int value;
-    std::vector<ShuLangNode*> children() override;
-
-    IntegerNode(int value) { this->value = value; }
-
-    childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
-    ShuLangNode*egressVisitor(ShuLangVisitor *visitor) override;
+    public:
+      int value;
+      std::vector<ShuLangNode*> children() override;
+      IntegerNode(int value) { this->value = value; }
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
   class VariableReferenceNode : public ValueNode {
-  public:
-    std::string identifier;
-    VariableReferenceNode(std::string identifier);
-    std::vector<ShuLangNode*> children() override;
-    childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
-    ShuLangNode*egressVisitor(ShuLangVisitor *visitor) override;
+    public:
+      std::string identifier;
+      VariableReferenceNode(std::string identifier);
+      std::vector<ShuLangNode*> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
   class BindingNode : public StatementNode {
-  public:
-    std::string name;
-    std::string ty;
-    ValueNode *value;
-
-    std::vector<ShuLangNode*> children() override;
-    childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
-    ShuLangNode*egressVisitor(ShuLangVisitor *visitor) override;
+    public:
+      std::string name;
+      std::string ty;
+      std::unique_ptr<ValueNode> value;
+      std::vector<ShuLangNode*> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
   class OperatorApplicationNode : public ValueNode {
-  public:
-    std::string op;
-    StatementNode *lhs;
-    StatementNode *rhs;
-
-    std::vector<ShuLangNode*> children() override;
-    childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
-    ShuLangNode*egressVisitor(ShuLangVisitor *visitor) override;
+    public:
+      std::string op;
+      std::unique_ptr<ValueNode> lhs;
+      std::unique_ptr<ValueNode> rhs;
+      std::vector<ShuLangNode*> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
   class ProgramNode : public ShuLangNode {
-  public:
-    std::vector<ShuLangNode*> nodes;
-
-    std::vector<ShuLangNode*> children() override;
-    childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
-    ShuLangNode*egressVisitor(ShuLangVisitor *visitor) override;
+    std::vector<std::unique_ptr<ShuLangNode>> nodes;
+    public:
+      void AddNode(std::unique_ptr<ShuLangNode> node);
+      std::vector<ShuLangNode*> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
-
 }
