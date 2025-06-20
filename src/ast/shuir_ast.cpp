@@ -41,7 +41,7 @@ llvm::Value* ReferenceNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
 }
 
-std::vector<std::string> AddNode::get_usages() {
+std::vector<std::string> BinOpNode::get_usages() {
     std::vector<std::string> lhs_usage = lhs->get_usages();
     std::vector<std::string> rhs_usage = rhs->get_usages();
     lhs_usage.insert(lhs_usage.end(), rhs_usage.begin(), rhs_usage.end());
@@ -49,6 +49,14 @@ std::vector<std::string> AddNode::get_usages() {
 }
 
 llvm::Value* AddNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->codegen(this);
+}
+
+llvm::Value* SubNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->codegen(this);
+}
+
+llvm::Value* MultNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
 }
 

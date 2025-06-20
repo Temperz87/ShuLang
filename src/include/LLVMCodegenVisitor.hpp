@@ -1,7 +1,6 @@
 #pragma once
 
 // #include <ShuIRAST.hpp>
-#include "ShuLangAST.hpp"
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -12,6 +11,8 @@ namespace shuir {
     class ImmediateNode;
     class ReferenceNode;
     class AddNode;
+    class SubNode;
+    class MultNode;
     class DefinitionNode;
     class PrintNode;
     class ProgramNode;
@@ -33,6 +34,8 @@ namespace shuir {
             llvm::Value* codegen(ImmediateNode* node);
             llvm::Value* codegen(ReferenceNode* node);
             llvm::Value* codegen(AddNode* node);
+            llvm::Value* codegen(SubNode* node);
+            llvm::Value* codegen(MultNode* node);
             llvm::Value* codegen(DefinitionNode* node);
             llvm::Value* codegen(PrintNode* node);
             llvm::Value* codegen(ProgramNode* node);

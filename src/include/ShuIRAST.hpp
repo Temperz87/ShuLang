@@ -35,11 +35,25 @@ namespace shuir {
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
     };
 
-    class AddNode : public ValueNode {
+    class BinOpNode : public ValueNode {
         public:
             ValueNode* lhs;
             ValueNode* rhs;
             std::vector<std::string> get_usages() override;
+    };
+
+    class AddNode : public BinOpNode {
+        public:
+            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+    };
+
+    class SubNode : public BinOpNode {
+        public:
+            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+    };
+
+    class MultNode : public BinOpNode {
+        public:
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
     };
 

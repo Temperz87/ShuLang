@@ -16,15 +16,15 @@ void advance() {
     iter.advance();
     
     // if (!iter.empty())
-    //     std::cout << "Iterator now at " << currenttoken.value << std::endl;
+        // std::cout << "Iterator now at " << currenttoken.value << std::endl;
     // else
-    //     std::cout << "Iterator empty" << std::endl;
+        // std::cout << "Iterator empty" << std::endl;
 
     iter.get(currenttoken);
 }
 
 void parse_error(std::string msg) {
-    std::cout << msg << std::endl << "\tWhile parsing " << currenttoken.value << std::endl << "At " << filename << ":" << currenttoken.line << ":" << currenttoken.col_start << std::endl; 
+    std::cout << msg << std::endl << "\tWhile at token " << currenttoken.value << std::endl << "At " << filename << ":" << currenttoken.line << ":" << currenttoken.col_start << std::endl; 
     exit(1);
 }
 
@@ -47,7 +47,7 @@ void assert_at_type(token_type expected) {
     }
 }
 
-std::unique_ptr<ValueNode> parse_complex_value();
+std::shared_ptr<ValueNode> parse_complex_value();
 
 void parse_identifier(std::string& buf) {
     if (currenttoken.type != IDENTIFIER) {
@@ -76,13 +76,13 @@ void parse_type_annot(std::string& buf) {
     parse_type(buf);
 }
 
-std::unique_ptr<IntegerNode> parse_integer() {
+std::shared_ptr<IntegerNode> parse_integer() {
     token mytoken = currenttoken;
     advance();
-    return std::make_unique<IntegerNode>(IntegerNode(stoi(mytoken.value)));
+    return std::make_shared<IntegerNode>(IntegerNode(stoi(mytoken.value)));
 }
 
-std::unique_ptr<ValueNode> parse_value() {
+std::shared_ptr<ValueNode> parse_value() {
     switch (currenttoken.type){
         case INTEGER:
             return parse_integer();
@@ -92,25 +92,28 @@ std::unique_ptr<ValueNode> parse_value() {
         case IDENTIFIER:
             std::string ident = currenttoken.value;
             advance();
-            return std::make_unique<VariableReferenceNode>(VariableReferenceNode(ident));
+            return std::make_shared<VariableReferenceNode>(VariableReferenceNode(ident));
     }
     parse_error("Expected a value (e.g. 5)");
 }
 
-std::unique_ptr<OperatorApplicationNode> parse_operator_application(std::unique_ptr<ValueNode> lhs) {
+std::shared_ptr<OperatorApplicationNode> parse_operator_application(std::shared_ptr<ValueNode> lhs) {
     std::string op = currenttoken.value;
+    if (op != "+" && op != "-" && op != "*") {
+        parse_error("Expected +, -, or *");
+    }
     advance();
-    std::unique_ptr<ValueNode> rhs = parse_complex_value();
+    std::shared_ptr<ValueNode> rhs = parse_complex_value();
     
-    std::unique_ptr<OperatorApplicationNode> node = std::make_unique<OperatorApplicationNode>();
+    std::shared_ptr<OperatorApplicationNode> node = std::make_shared<OperatorApplicationNode>();
     node->lhs = std::move(lhs); 
     node->rhs = std::move(rhs);
     node->op = op;
     return node; 
 }
 
-std::unique_ptr<ValueNode> parse_complex_value() {
-    std::unique_ptr<ValueNode> ret;
+std::shared_ptr<ValueNode> parse_complex_value() {
+    std::shared_ptr<ValueNode> ret;
     switch (currenttoken.type) {
         case INTEGER:
         case VALUE:
@@ -133,10 +136,10 @@ std::unique_ptr<ValueNode> parse_complex_value() {
     }
 }
 
-std::unique_ptr<StatementNode> parse_statement() {
+std::shared_ptr<StatementNode> parse_statement() {
     if (currenttoken.value == "bind") {
         advance();
-        std::unique_ptr<BindingNode> b = {};
+        std::shared_ptr<BindingNode> b = std::make_shared<BindingNode>();
         parse_identifier(b->name);
         parse_type_annot(b->ty);
         assert_strings_equal(currenttoken.value, "to");
@@ -148,10 +151,10 @@ std::unique_ptr<StatementNode> parse_statement() {
         advance();
         assert_strings_equal(currenttoken.value, "(");
         advance();
-        std::unique_ptr<ValueNode> to_print = parse_complex_value();
+        std::shared_ptr<ValueNode> to_print = parse_complex_value();
         assert_strings_equal(currenttoken.value, ")");
         advance();
-        return std::make_unique<PrintNode>(std::move(to_print));
+        return std::make_shared<PrintNode>(std::move(to_print));
     }
     else {
         parse_error("Expected a statement");

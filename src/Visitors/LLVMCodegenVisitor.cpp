@@ -19,9 +19,6 @@
 
 using namespace shuir;
 
-// TODO:
-// PUT THIS IN ANOTHER FILE
-// FOR THE LOVE OF GOD
 llvm::Value* LLVMCodegenVisitor::codegen(ImmediateNode* node) {
     return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(context), node->number);
 }
@@ -34,6 +31,13 @@ llvm::Value* LLVMCodegenVisitor::codegen(AddNode* node) {
     return builder->CreateAdd(node->lhs->accept(this), node->rhs->accept(this));
 }
 
+llvm::Value* LLVMCodegenVisitor::codegen(SubNode* node) {
+    return builder->CreateSub(node->lhs->accept(this), node->rhs->accept(this));
+}
+
+llvm::Value* LLVMCodegenVisitor::codegen(MultNode* node) {
+    return builder->CreateMul(node->lhs->accept(this), node->rhs->accept(this));
+}
 
 llvm::Value* LLVMCodegenVisitor::codegen(DefinitionNode* node) {
     llvm::Value* bind_to = node->binding->accept(this);
@@ -41,7 +45,6 @@ llvm::Value* LLVMCodegenVisitor::codegen(DefinitionNode* node) {
     this->bindings.insert({node->identifier, fresh_binding});
     return builder->CreateStore(bind_to, fresh_binding);
 }
-
 
 llvm::Value* LLVMCodegenVisitor::codegen(PrintNode* node) {
     llvm::Function* print_func = module->getFunction("printf");

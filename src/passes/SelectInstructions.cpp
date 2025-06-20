@@ -3,6 +3,7 @@
 #include <ShuIRAST.hpp>
 #include <ShuLangVisitor.hpp>
 #include <string>
+#include <vector>
 
 class SLTranslator : public ShuLangVisitor {
     private:
@@ -38,6 +39,20 @@ class SLTranslator : public ShuLangVisitor {
                 completed.clear();
                 completed.push_back(add);
             }
+            else if (node->op == "-") {
+                shuir::SubNode* sub = new shuir::SubNode();
+                sub->lhs = completed.at(0);
+                sub->rhs = completed.at(1);
+                completed.clear();
+                completed.push_back(sub);
+            }
+            else if (node->op == "*") {
+                shuir::MultNode* mult = new shuir::MultNode();
+                mult->lhs = completed.at(0);
+                mult->rhs = completed.at(1);
+                completed.clear();
+                completed.push_back(mult);
+            }
             else {
                 // TODO: More operators
             }
@@ -69,7 +84,10 @@ shuir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
     // We don't have functions yet so we only have one block
     shuir::SIRBlock block = shuir::SIRBlock("main");
     SLTranslator translator = SLTranslator(block);
-    for (shulang::ShuLangNode* node : sl_program->children()) {
+
+    std::vector<std::shared_ptr<ShuLangNode>> instructions = sl_program->children();
+    for (int i = instructions.size() - 1; i >= 0; i--) {
+        ShuLangNode* node = instructions.at(i).get();
         translator.walk(node);
     }
     shuir::ProgramNode node = shuir::ProgramNode();

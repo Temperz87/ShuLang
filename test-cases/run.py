@@ -2,6 +2,9 @@ import os
 import sys
 from shulang import *
 
+# Because of pybind11 and unique_ptr interop weirdness
+# We need to "inject" a couple methods
+
 def print_ast(node : ASTNode, indentation = 0):
     if indentation > 0:
         print("  " * indentation, end='')
@@ -9,12 +12,12 @@ def print_ast(node : ASTNode, indentation = 0):
         case ProgramNode():
             indentation = 0
             print("PROGRAM:")
-            for node in node.nodes:
+            for node in reversed(node.children()):
                 print_ast(node, indentation + 1)
         case OperatorApplicationNode():
             print("OPERATOR(" + node.op + ")")
-            print_ast(node.lhs, indentation + 1)
             print_ast(node.rhs, indentation + 1)
+            print_ast(node.lhs, indentation + 1)
         case BindingNode():
             print("BIND(" + node.name + ") to")
             print_ast(node.value, indentation + 1)
@@ -38,6 +41,10 @@ def get_value(node, env):
             match node.op:
                 case '+':
                     return lhs + rhs
+                case '-':
+                    return rhs - lhs
+                case '*':
+                    return lhs * rhs
                 case _:
                     print("Unrecognized operator", node.op)
                     exit(1)
@@ -45,7 +52,7 @@ def get_value(node, env):
 def run_ast(node, env = {}, stdout = []):
     match node:
         case ProgramNode():
-            for node in node.nodes:
+            for node in reversed(node.children()):
                 run_ast(node, env, stdout)
             return stdout
         case BindingNode():
@@ -63,6 +70,10 @@ def stringify_value(node):
             return "%" + node.identifier
         case AddNode():
             return stringify_value(node.lhs) + " + " + stringify_value(node.rhs)
+        case SubNode():
+            return stringify_value(node.rhs) + " - " + stringify_value(node.lhs)
+        case MultNode():
+            return stringify_value(node.lhs) + " * " + stringify_value(node.rhs)
         case _:
             print("Unknown value", node)
             exit(1)
@@ -94,6 +105,10 @@ def get_sir_value(node, env):
             return env[node.identifier]
         case AddNode():
             return get_sir_value(node.lhs, env) + get_sir_value(node.rhs, env)
+        case SubNode():
+            return get_sir_value(node.rhs, env) - get_sir_value(node.lhs, env)
+        case MultNode():
+            return get_sir_value(node.lhs, env) * get_sir_value(node.rhs, env)
 
 def run_sir_ast(node, env, stdout):
     match node:
@@ -110,15 +125,17 @@ def run_sir_ast(node, env, stdout):
             env[node.identifier] = val
     return stdout
             
-def compare_stdout(out1, out2):
+def compare_stdout(out1, out2, filename, pass_name):
     if len(out1) != len(out2):
         print("Hmm, these standard outs look different")
         print("Did you insert or remove a print node somewhere?")
+        print("Error during compilation of", filename, "during pass", pass_name)
         exit(-1)
     
     for (f, s) in zip(out1, out2):
         if str(f) != str(s):
-            print(f, "is not the same as", s)
+            print(f, "was expected but instead got", s)
+            print("Error during compilation of", filename)
             exit(1)
 
 def run_case(file_name):
@@ -134,20 +151,20 @@ def run_case(file_name):
     print_ast(ast)
     print("Running")
     uniquify_stdout = run_ast(ast, {}, [])
-    compare_stdout(first_stdout, uniquify_stdout)
+    compare_stdout(first_stdout, uniquify_stdout, file_name, "uniquify")
 
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
     print_ast(ast)
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
-    compare_stdout(first_stdout, rco_stdout)
+    compare_stdout(first_stdout, rco_stdout, file_name, "remove complex opereands")
 
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
     print_sir_ast(sir_program)
     select_stdout = run_sir_ast(sir_program, {}, [])
-    compare_stdout(first_stdout, select_stdout)
+    compare_stdout(first_stdout, select_stdout, file_name, "select SIR instructions")
 
     print("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
@@ -157,7 +174,7 @@ def run_case(file_name):
     with open("output.log", "r") as fd:
         output = [x.strip() for x in fd.readlines()]
     os.system("rm -f a.ll a.out output.log")
-    compare_stdout(first_stdout, output)
+    compare_stdout(first_stdout, output, file_name, "select LLVM instructions")
 
     print("Test", file_name, "passed")
 

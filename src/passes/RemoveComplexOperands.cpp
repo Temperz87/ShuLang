@@ -35,29 +35,29 @@ class ComplexDetector : public ShuLangVisitor {
 // And tries to ensure its children are
 class target_complex : public ShuLangVisitor {
     private:
-        std::unique_ptr<VariableReferenceNode> generate_binding(std::unique_ptr<ValueNode> complex_value) {
-            std::unique_ptr<BindingNode> fresh;
-            fresh->name = gen_tmp_name();
-            fresh->value = std::move(complex_value);
-            bindings.push_back(std::move(fresh));
-            return std::make_unique<VariableReferenceNode>(fresh->name);
+        std::shared_ptr<VariableReferenceNode> generate_binding(std::shared_ptr<ValueNode> complex_value) {
+            std::shared_ptr<BindingNode> fresh = std::make_unique<BindingNode>();
+            std::string name = gen_tmp_name();
+            fresh->name = name;
+            // TODO: Assign type
+            fresh->ty = "Integer";
+            fresh->value = complex_value;
+            bindings.push_back(fresh);
+            return std::make_unique<VariableReferenceNode>(name);
         }
 
     public:
-        std::vector<std::unique_ptr<BindingNode>> bindings;
+        std::vector<std::shared_ptr<BindingNode>> bindings;
         
         ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
-            // The bindings in the class clearly get propagated through every egress
-            // So we must have unique bindings for every time we Atomify
-
             // For operators, their lhs and rhs must be atomic
             ComplexDetector det;
             if (det.NeedToRebind(node->lhs.get())) {
-                node->lhs = generate_binding(std::move(node->lhs));
+                node->lhs = generate_binding(node->lhs);
             }
 
             if (det.NeedToRebind(node->rhs.get())) {
-                node->rhs = generate_binding(std::move(node->rhs));
+                node->rhs = generate_binding(node->rhs);
             }
 
             return ShuLangVisitor::egressOperatorApplicationNode(node);
@@ -67,7 +67,7 @@ class target_complex : public ShuLangVisitor {
             ComplexDetector det;
             // to_print must be atomic
             if (det.NeedToRebind(node->to_print.get())) {
-                node->to_print = generate_binding(std::move(node->to_print));
+                node->to_print = generate_binding(node->to_print);
             }
             return ShuLangVisitor::egressPrintNode(node);
         }
@@ -80,7 +80,8 @@ void remove_complex_operands(ProgramNode* program) {
 
         int len = visitor.bindings.size();
         for (int j = 0; j < len; j++) {
-            program->nodes.insert(program->nodes.begin() + j, std::move(visitor.bindings.at(j)));
+            program->nodes.insert(program->nodes.begin() + i, std::move(visitor.bindings.at(j)));
+            i += 1;
         }
     }
 }

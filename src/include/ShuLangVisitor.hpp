@@ -90,8 +90,8 @@ class ShuLangVisitor {
                 this->ingress.pop();
 
                 ASTHolder holder = current->ingressVisitor(this);
-                for (ShuLangNode* node : current->children())
-                    ingress.push(node);
+                for (std::shared_ptr<ShuLangNode> node : current->children())
+                    ingress.push(node.get());
 
                 if (holder.waitingfor == 0) {
                     // We know that we can't descend

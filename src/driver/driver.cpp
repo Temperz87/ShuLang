@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
     // std::cout << "-----PARSING-----" << std::endl;
     // Recursive descent parsing
     std::unique_ptr<shulang::ProgramNode> program = begin_parse(token_list, argv[1]);
-    // ShuLangPrinter().walk(program);
+    // ShuLangPrinter().walk(program.get());
 
     // std::cout << "-----UNIQUIFICATION-----" << std::endl;
     // If I do somethingl ike
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     // that becomes bind x.0 to 5 bind x.1 to 6
     // every variable gets a unique name
     Uniquification().walk(program.get());
-    // ShuLangPrinter().walk(program);
+    // ShuLangPrinter().walk(program.get());
 
 
     // std::cout << "-----REMOVE COMPLEX OPERANDS-----" << std::endl;
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     // that gets changed to bind tmp0 to 1 + 2 bind tmp1 to 3 + 4 bind x to tmp0 + tmp1
     // this makes going into ShuIR easier
     remove_complex_operands(program.get());
-    // ShuLangPrinter().walk(program);
+    // ShuLangPrinter().walk(program.get());
 
     // std::cout << "-----SELECT SIR INSTRUCTIONS-----" << std::endl;
     // Lowering to SSA
