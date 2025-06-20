@@ -180,13 +180,17 @@ def compare_stdout(out1, out2, filename, pass_name):
             exit(1)
 
 def run_case(file_name):
+    with open(file_name + ".exp", "r") as f:
+        expected_stdout = [str(x).strip() for x in f.readlines()]
+            
     print("Compiling", file_name)
     ast = parse_file(file_name)
     print("---INITIAL AST---")
     print_ast(ast)
     graph_ast(ast)
     print("Running")
-    first_stdout = run_ast(ast, {}, [])
+    parse_stdout = run_ast(ast, {}, [])
+    compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
 
     print("---UNIQUIFICATION---")
     uniquify(ast)
@@ -194,7 +198,7 @@ def run_case(file_name):
     graph_ast(ast)
     print("Running")
     uniquify_stdout = run_ast(ast, {}, [])
-    compare_stdout(first_stdout, uniquify_stdout, file_name, "uniquify")
+    compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
 
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
@@ -202,13 +206,13 @@ def run_case(file_name):
     graph_ast(ast)
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
-    compare_stdout(first_stdout, rco_stdout, file_name, "remove complex opereands")
+    compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
 
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
     print_sir_ast(sir_program)
     select_stdout = run_sir_ast(sir_program, {}, [])
-    compare_stdout(first_stdout, select_stdout, file_name, "select SIR instructions")
+    compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
 
     print("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
@@ -220,7 +224,7 @@ def run_case(file_name):
     with open("output.log", "r") as fd:
         output = [x.strip() for x in fd.readlines()]
     os.system("rm -f a.ll a.out output.log")
-    compare_stdout(first_stdout, output, file_name, "select LLVM instructions")
+    compare_stdout(expected_stdout, output, file_name, "select LLVM instructions")
 
     print("Test", file_name, "passed")
 
@@ -238,6 +242,12 @@ if __name__ == '__main__':
             files = sorted(os.listdir(shulangable))
             for file in files:      
                 fp = os.path.join(shulangable, file)
+                if fp[-3:] != '.sl':
+                    continue
+                if not os.path.exists(fp + ".exp"):
+                    print("Could not find", fp + '.exp', "Please add it")
+                    continue
+                
                 run_case(fp)
                 print()
                 tests_ran += 1
