@@ -2,8 +2,9 @@ import os
 import sys
 from shulang import *
 
-# Because of pybind11 and unique_ptr interop weirdness
-# We need to "inject" a couple methods
+def print_indentation(indentation):
+    if indentation > 0:
+        print("\t" * indentation, end='')
 
 def print_ast(node : ASTNode, indentation = 0):
     if indentation > 0:
@@ -12,7 +13,7 @@ def print_ast(node : ASTNode, indentation = 0):
         case ProgramNode():
             indentation = 0
             print("PROGRAM:")
-            for node in reversed(node.children()):
+            for node in node.children():
                 print_ast(node, indentation + 1)
         case OperatorApplicationNode():
             print("OPERATOR(" + node.op + ")")
@@ -29,6 +30,46 @@ def print_ast(node : ASTNode, indentation = 0):
             print("PRINT")
             print_ast(node.to_print, indentation + 1)
 
+node_counter = 0
+def get_unique_node_name():
+    global node_counter
+    node_counter += 1
+    return "node" + str(node_counter)
+
+def graph_ast(node, indentation = 0, parent=''):
+    print_indentation(indentation)
+    match node:
+        case ProgramNode():
+            print("digraph ShuLangProgram {")
+            for node in node.children():
+                graph_ast(node, indentation + 1, "program")
+            print("}")
+        case OperatorApplicationNode():
+            my_node = get_unique_node_name()
+            print(my_node + '[label="' + node.op + '"]')
+            print_indentation(indentation)
+            print(parent, "->", my_node)
+            graph_ast(node.lhs, indentation, my_node)
+            graph_ast(node.rhs, indentation, my_node)
+        case BindingNode():
+            my_node = get_unique_node_name()
+            print(my_node + '[label="bind ' + node.name + '"]')
+            graph_ast(node.value, indentation, my_node)
+        case PrintNode():
+            my_node = get_unique_node_name()
+            print(my_node + '[label="print"]')
+            graph_ast(node.to_print, indentation, my_node)
+        case IntegerNode():
+            my_node = get_unique_node_name()
+            print(my_node + '[label="', str(node.value), '"]')
+            print_indentation(indentation)
+            print(parent, "->", my_node)
+        case VariableReferenceNode():
+            my_node = get_unique_node_name()
+            print(my_node + '[label="', node.identifier, '"]')
+            print_indentation(indentation)
+            print(parent, "->", my_node)
+
 def get_value(node, env):
     match node:
         case IntegerNode():
@@ -42,7 +83,7 @@ def get_value(node, env):
                 case '+':
                     return lhs + rhs
                 case '-':
-                    return rhs - lhs
+                    return lhs - rhs
                 case '*':
                     return lhs * rhs
                 case _:
@@ -52,7 +93,7 @@ def get_value(node, env):
 def run_ast(node, env = {}, stdout = []):
     match node:
         case ProgramNode():
-            for node in reversed(node.children()):
+            for node in node.children():
                 run_ast(node, env, stdout)
             return stdout
         case BindingNode():
@@ -71,7 +112,7 @@ def stringify_value(node):
         case AddNode():
             return stringify_value(node.lhs) + " + " + stringify_value(node.rhs)
         case SubNode():
-            return stringify_value(node.rhs) + " - " + stringify_value(node.lhs)
+            return stringify_value(node.lhs) + " - " + stringify_value(node.rhs)
         case MultNode():
             return stringify_value(node.lhs) + " * " + stringify_value(node.rhs)
         case _:
@@ -106,7 +147,7 @@ def get_sir_value(node, env):
         case AddNode():
             return get_sir_value(node.lhs, env) + get_sir_value(node.rhs, env)
         case SubNode():
-            return get_sir_value(node.rhs, env) - get_sir_value(node.lhs, env)
+            return get_sir_value(node.lhs, env) - get_sir_value(node.rhs, env)
         case MultNode():
             return get_sir_value(node.lhs, env) * get_sir_value(node.rhs, env)
 
@@ -143,12 +184,14 @@ def run_case(file_name):
     ast = parse_file(file_name)
     print("---INITIAL AST---")
     print_ast(ast)
+    graph_ast(ast)
     print("Running")
     first_stdout = run_ast(ast, {}, [])
 
     print("---UNIQUIFICATION---")
     uniquify(ast)
     print_ast(ast)
+    graph_ast(ast)
     print("Running")
     uniquify_stdout = run_ast(ast, {}, [])
     compare_stdout(first_stdout, uniquify_stdout, file_name, "uniquify")
@@ -156,6 +199,7 @@ def run_case(file_name):
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
     print_ast(ast)
+    graph_ast(ast)
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
     compare_stdout(first_stdout, rco_stdout, file_name, "remove complex opereands")
@@ -169,7 +213,9 @@ def run_case(file_name):
     print("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
     os.system("clang a.ll -o a.out && ./a.out > output.log")
-    
+    with open("a.ll", "r") as fd:
+        for x in fd.readlines():
+            print(x)    
 
     with open("output.log", "r") as fd:
         output = [x.strip() for x in fd.readlines()]

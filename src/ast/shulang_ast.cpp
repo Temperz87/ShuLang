@@ -73,8 +73,8 @@ ShuLangNode* BindingNode::egressVisitor(ShuLangVisitor* visitor) {
 
 std::vector<std::shared_ptr<ShuLangNode>> OperatorApplicationNode::children() {
   std::vector<std::shared_ptr<ShuLangNode>> children;
-  children.push_back(rhs);
   children.push_back(lhs);
+  children.push_back(rhs);
   return children;
 }
 
@@ -86,22 +86,8 @@ ShuLangNode* OperatorApplicationNode::egressVisitor(ShuLangVisitor* visitor) {
 }
 
 std::vector<std::shared_ptr<ShuLangNode>> ProgramNode::children() {
-  // This function exists solely for the Visitor
-  // And as such is tailored to its needs
-
-  // The Visitor is trying to do a depth first traversal
-  // Meaning we have to reverse the instructions
-
-  // Take the example of
-  // bind x : Integer to 5 print(x)
-  // If to the vector in the normal order
-  // We end up with {bind, print}
-  // However, when the Visitor push's onto a stack
-  // It ends up with {print, bind}
-  // Then descends into the print before the bind
-  // Which is bad!!!
   std::vector<std::shared_ptr<ShuLangNode>> reversed;
-  for (int i = nodes.size() - 1; i >= 0; i--)
+  for (int i = 0; i < nodes.size(); i++)
     reversed.push_back(nodes.at(i));
   return reversed;
 }

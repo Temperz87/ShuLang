@@ -2,8 +2,6 @@
 #include <ShuLangPrinter.hpp>
 #include <ShuLangVisitor.hpp>
 #include <iostream>
-#include <vector>
-
 using namespace shulang;
 
 ShuLangPrinter::ShuLangPrinter() { }

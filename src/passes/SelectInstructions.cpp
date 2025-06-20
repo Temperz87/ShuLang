@@ -86,7 +86,7 @@ shuir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
     SLTranslator translator = SLTranslator(block);
 
     std::vector<std::shared_ptr<ShuLangNode>> instructions = sl_program->children();
-    for (int i = instructions.size() - 1; i >= 0; i--) {
+    for (int i = 0; i < instructions.size(); i++) {
         ShuLangNode* node = instructions.at(i).get();
         translator.walk(node);
     }

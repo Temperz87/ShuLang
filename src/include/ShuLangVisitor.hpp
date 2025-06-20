@@ -90,8 +90,20 @@ class ShuLangVisitor {
                 this->ingress.pop();
 
                 ASTHolder holder = current->ingressVisitor(this);
-                for (std::shared_ptr<ShuLangNode> node : current->children())
-                    ingress.push(node.get());
+
+
+                // Take the example of
+                // bind x : Integer to 5 print(x)
+                // If to the vector in the normal order
+                // We end up with {bind, print}
+                // However, when we push onto a stack
+                // It ends up with {print, bind}
+                // Then descends into the print before the bind
+                // Which is bad!!!
+                std::vector<std::shared_ptr<ShuLangNode>> children = current->children();
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    ingress.push(children.at(i).get());
+                }
 
                 if (holder.waitingfor == 0) {
                     // We know that we can't descend

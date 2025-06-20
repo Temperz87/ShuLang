@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string.h>
 #include <vector>
 
@@ -25,8 +26,12 @@ class Iterator {
         }
 
         bool advance() {
-            if (empty())
+            if (empty()) {
+#if __cpp_exceptions
+                throw std::out_of_range("THE ITERATOR IS OUT OF RANGE");
+#endif
                 return false;
+            }
             position += 1;
             return true;
         }

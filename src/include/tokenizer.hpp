@@ -7,16 +7,16 @@
 #include <vector>
 
 enum token_type {
-    IDENTIFIER,
-    INTEGER,
-    KEYWORD,
-    OPERATOR,
-    PUNCTUATOR,
-    STATEMENT,
-    TYPE,
-    WHITESPACE,
-    UNKNOWN,
-    VALUE
+    IDENTIFIER = 1,
+    VALUE = 2,
+    INTEGER = 4,
+    KEYWORD = 8,
+    OPERATOR = 16,
+    PUNCTUATOR = 32,
+    STATEMENT = 64,
+    TYPE = 128,
+    WHITESPACE = 256,
+    UNKNOWN = 512,
 };
 
 class token {

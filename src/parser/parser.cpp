@@ -40,7 +40,7 @@ void assert_at_value(std::string expected) {
 
 
 void assert_at_type(token_type expected) {
-    if (expected != currenttoken.type) {
+    if ((expected & currenttoken.type) != 0) {
         // TODO: Make error better
         // I need a way to go from enum to string
         parse_error("Unexpected token");
@@ -48,6 +48,10 @@ void assert_at_type(token_type expected) {
 }
 
 std::shared_ptr<ValueNode> parse_complex_value();
+std::shared_ptr<ValueNode> parse_low_prec_op(std::vector<token>& tokens, int start, int end);
+std::shared_ptr<ValueNode> parse_high_prec_op(std::vector<token>& tokens, int start, int end);
+std::shared_ptr<ValueNode> parse_integer_or_op(std::vector<token>& tokens, int start, int end);
+
 
 void parse_identifier(std::string& buf) {
     if (currenttoken.type != IDENTIFIER) {
@@ -76,64 +80,125 @@ void parse_type_annot(std::string& buf) {
     parse_type(buf);
 }
 
-std::shared_ptr<IntegerNode> parse_integer() {
-    token mytoken = currenttoken;
-    advance();
-    return std::make_shared<IntegerNode>(IntegerNode(stoi(mytoken.value)));
-}
-
-std::shared_ptr<ValueNode> parse_value() {
-    switch (currenttoken.type){
+std::shared_ptr<ValueNode> parse_value(token tok) {
+    switch (tok.type){
         case INTEGER:
-            return parse_integer();
+        return std::make_shared<IntegerNode>(IntegerNode(stoi(tok.value)));
         case VALUE:
             // TODO: PARSE EVERYTHING ELSE
             break;
         case IDENTIFIER:
-            std::string ident = currenttoken.value;
-            advance();
+            std::string ident = tok.value;
             return std::make_shared<VariableReferenceNode>(VariableReferenceNode(ident));
     }
-    parse_error("Expected a value (e.g. 5)");
+    parse_error("Expected a value (e.g. variable reference or integer)");
+    return nullptr;
 }
 
-std::shared_ptr<OperatorApplicationNode> parse_operator_application(std::shared_ptr<ValueNode> lhs) {
-    std::string op = currenttoken.value;
-    if (op != "+" && op != "-" && op != "*") {
-        parse_error("Expected +, -, or *");
+// Operator mode should go like this
+// 0. Enter this mode upon the first operator being found
+// 1. Consume tokens until I see a statement (e.g. print)
+// 2. Try to parse a low precedence operator, if I suceed try to parse another 
+// 3. If I can't find a low precedence operator, parse a high precedence one
+//      If I suceed to do this, parse a number
+// 4. If I can't find either I forgot to declare oeprator precedence :(
+// 5. Once an operator is parsed, determine left and right extents to parse next stuff
+// 6. Parse next stuff
+
+// TODO: parse assoc and validate that operators exist
+
+std::shared_ptr<ValueNode> parse_high_prec_op(std::vector<token>& tokens, int start, int end) {
+    // We're looking for a high precedence operator such as multiplication *
+    std::string op;
+    int i = start;
+    for (i = start; i < end; i++) {
+        if (tokens.at(i).value == "*") {
+            op = tokens.at(i).value;
+            break;
+        }
     }
-    advance();
-    std::shared_ptr<ValueNode> rhs = parse_complex_value();
-    
-    std::shared_ptr<OperatorApplicationNode> node = std::make_shared<OperatorApplicationNode>();
-    node->lhs = std::move(lhs); 
-    node->rhs = std::move(rhs);
-    node->op = op;
-    return node; 
+
+    if (i == end) {
+        return parse_value(tokens.at(start));
+    }
+
+    std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
+    ret->op = op;
+    ret->lhs = parse_integer_or_op(tokens, start, i);
+    ret->rhs = parse_integer_or_op(tokens, i + 1, end);
+    return ret;
+}
+
+std::shared_ptr<ValueNode> parse_low_prec_op(std::vector<token>& tokens, int start, int end) {
+    // We're looking for a low precedence operator such as +
+    std::string op;
+    int i = start;
+    for (i = start; i < end; i++) {
+        if (tokens.at(i).value == "(") {
+            return parse_high_prec_op(tokens, start, end);
+        }
+        else if (tokens.at(i).value == "+" || tokens.at(i).value == "-") {
+            // We know there isn't a parenthesis in the lhs
+            // As if there was we that previous if statement would've fired
+            op = tokens.at(i).value;
+            break;
+        }
+    }
+    if (i == end)
+        return parse_high_prec_op(tokens, start, end);
+
+
+    std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
+    ret->op = op;
+    ret->lhs = parse_integer_or_op(tokens, start, i);
+    ret->rhs = parse_integer_or_op(tokens, i + 1, end);
+    return ret;
+}
+
+std::shared_ptr<ValueNode> parse_integer_or_op(std::vector<token>& tokens, int start, int end) {
+    if (end - start == 1) {
+        return parse_value(tokens.at(start));
+    }
+    else if (tokens.at(start).value == "(" || tokens.at(start).value == ")") {
+        return parse_integer_or_op(tokens, start + 1, end);
+    }
+    else 
+        return parse_low_prec_op(tokens, start, end);
 }
 
 std::shared_ptr<ValueNode> parse_complex_value() {
-    std::shared_ptr<ValueNode> ret;
-    switch (currenttoken.type) {
-        case INTEGER:
-        case VALUE:
-        case IDENTIFIER:
-            ret = parse_value();
-            if (currenttoken.type == OPERATOR)
-                return parse_operator_application(std::move(ret));
-            return ret;
-        case PUNCTUATOR:
-            assert_at_value("(");
-            advance();
-            ret = parse_complex_value();
-            assert_at_value(")");
-            advance();
-            if (currenttoken.type == OPERATOR)
-                return parse_operator_application(std::move(ret));
-            return ret;
-        default:
-            parse_error("Expected a value");
-    }
+    std::vector<token> tokens;
+    token last_inserted;
+    int scope = 1;
+    if (currenttoken.value == "(")
+        scope += 1;
+
+    do {
+        last_inserted = currenttoken;
+        tokens.push_back(last_inserted);
+        advance();
+        if (currenttoken.type == PUNCTUATOR) {
+            // Spahgetti code
+            if (currenttoken.value == "(")
+                scope += 1;
+            else if (currenttoken.value == ")") {
+                scope -= 1;
+                if (scope == 0) {
+                    break;
+                }
+            }
+            else if (currenttoken.value == "{" || currenttoken.value == "}")
+                parse_error("Unexpected token");
+        }
+        else if (last_inserted.type == OPERATOR && currenttoken.type == STATEMENT)
+            parse_error("Expected an integer or value but instead got a statement");
+        else if (last_inserted.type == (INTEGER | VALUE) && currenttoken.type == (INTEGER | VALUE))
+            parse_error("There appears to be two values next to each other, I don't know what to do with this code");
+    } while ((currenttoken.type & (OPERATOR | VALUE | INTEGER | IDENTIFIER | PUNCTUATOR)) != 0);
+    
+    if (scope > 1)
+        parse_error("Unmatched '('");
+    return parse_integer_or_op(tokens, 0, tokens.size());
 }
 
 std::shared_ptr<StatementNode> parse_statement() {
