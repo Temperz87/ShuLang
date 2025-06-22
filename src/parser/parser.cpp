@@ -63,13 +63,15 @@ void parse_identifier(std::string& buf) {
 
 void parse_type(std::string& buf) {
     if (currenttoken.type != TYPE) {
-        // TODO: ERROR
         parse_error("Expected a type");
     }
 
     buf = "";
     while (currenttoken.type == TYPE) {
-        buf += currenttoken.value; // TODO: SOMETHING THAT ISNT AS EXPENSIVE AS CONCAT
+        // TODO: SOMETHING THAT ISNT AS EXPENSIVE AS CONCAT
+        // This'll be important when we have (ty1 -> ty2) types
+        // But for now here we are
+        buf += currenttoken.value; 
         advance();
     }
 }

@@ -185,11 +185,6 @@ bool isterminal(char c) {
 // When we've hit a whitespace
 // This function gets called to toss tokens into the list
 int add_tokens(std::vector<char> tokenizing, std::vector<token>& token_list, int col, int line) {
-    if (tokenizing.size() == 0) {
-        // TODO: ERROR
-        return 0;
-    }
-
     int created = 0;
     int next_token_start = 0;
     for (int i = 0; i < tokenizing.size(); i++) {
@@ -266,7 +261,7 @@ int tokenize(std::ifstream& file, std::vector<token>& token_list) {
                 tokenizing.clear();
                 start_col += add_col;
             }
-            
+
             if (curr == '\n') {
                 start_col = 1;
                 line += 1;

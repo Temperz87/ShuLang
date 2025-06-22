@@ -9,8 +9,6 @@ Uniquification::Uniquification() { };
 Uniquification::~Uniquification() { };
 
 // TODO: Make this work when I introduce functions
-
-
 ShuLangNode* Uniquification::egressBindingNode(BindingNode* node) {
     std::string unique_name = node->name + "." + std::to_string(unique_id++);
 
