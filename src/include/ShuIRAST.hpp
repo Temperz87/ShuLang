@@ -24,7 +24,7 @@ namespace shuir {
     class ImmediateNode : public ValueNode {
         public:
             int number;
-            ImmediateNode(int number);
+            ImmediateNode(int number):number(number) { };
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
     };
 
@@ -37,8 +37,8 @@ namespace shuir {
 
     class BinOpNode : public ValueNode {
         public:
-            ValueNode* lhs;
-            ValueNode* rhs;
+            std::shared_ptr<ValueNode> lhs;
+            std::shared_ptr<ValueNode> rhs;
             std::vector<std::string> get_usages() override;
     };
 
@@ -60,23 +60,27 @@ namespace shuir {
     class DefinitionNode : public InstructionNode {
         public:
             std::string identifier;
-            ValueNode* binding;
-            DefinitionNode(std::string identifier, ValueNode* binding);
+            std::shared_ptr<ValueNode> binding;
+            DefinitionNode(std::string identifier, std::shared_ptr<ValueNode> binding):
+                identifier(identifier), binding(binding) { };
+
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
     };
 
     class PrintNode : public InstructionNode {
         public:
-            ValueNode* to_print;
-            PrintNode(ValueNode* to_print);
+            std::shared_ptr<ValueNode> to_print;
+            PrintNode(std::shared_ptr<ValueNode> to_print):
+                to_print(to_print) { };
+                
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
     };
 
     class SIRBlock {
         public:
-            std::vector<InstructionNode*> instructions;
+            std::vector<std::shared_ptr<InstructionNode>> instructions;
             std::string name;
             SIRBlock(std::string name);
     };

@@ -112,13 +112,13 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("rhs", &shuir::MultNode::rhs);
 
     py::class_<shuir::DefinitionNode, shuir::InstructionNode, std::shared_ptr<shuir::DefinitionNode>>(m, "DefinitionNode")
-    .def(py::init<std::string, shuir::ValueNode*>())
+    .def(py::init<std::string, std::shared_ptr<shuir::ValueNode>>())
     .def("get_usages", &shuir::DefinitionNode::get_usages)
     .def_readwrite("identifier", &shuir::DefinitionNode::identifier)
     .def_readwrite("binding", &shuir::DefinitionNode::binding);
 
     py::class_<shuir::PrintNode, shuir::InstructionNode, std::shared_ptr<shuir::PrintNode>>(m, "SIRPrintNode")
-    .def(py::init<shuir::ValueNode*>())
+    .def(py::init<std::shared_ptr<shuir::ValueNode>>())
     .def("get_usages", &shuir::PrintNode::get_usages)
     .def_readwrite("to_print", &shuir::PrintNode::to_print);
 

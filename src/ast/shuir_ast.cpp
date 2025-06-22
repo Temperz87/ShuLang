@@ -10,11 +10,6 @@ std::vector<std::string> SIRNode::get_usages() {
     return std::vector<std::string>();
 }
 
-DefinitionNode::DefinitionNode(std::string identifier, ValueNode* binding) {
-    this->identifier = identifier;
-    this->binding = binding;
-}
-
 std::vector<std::string> DefinitionNode::get_usages() {
     std::vector<std::string> other_usages = binding->get_usages();
     other_usages.insert(other_usages.begin(), this->identifier);
@@ -23,10 +18,6 @@ std::vector<std::string> DefinitionNode::get_usages() {
 
 llvm::Value* DefinitionNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
-}
-
-ImmediateNode::ImmediateNode(int number) {
-    this->number = number;
 }
 
 llvm::Value* ImmediateNode::accept(LLVMCodegenVisitor* visitor) {
@@ -60,9 +51,6 @@ llvm::Value* MultNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
 }
 
-PrintNode::PrintNode(ValueNode* to_print) {
-    this->to_print= to_print;
-}
 std::vector<std::string> PrintNode::get_usages() {
     return to_print->get_usages();
 }
@@ -75,12 +63,10 @@ SIRBlock::SIRBlock(std::string name) {
     this->name = name;
 }
 
-
-
 std::vector<std::string> ProgramNode::get_usages() {
     std::vector<std::string> ret;
     for (SIRBlock block : blocks) {
-        for (InstructionNode* node : block.instructions) {
+        for (std::shared_ptr<InstructionNode> node : block.instructions) {
             std::vector<std::string> usages = node->get_usages();
             ret.insert(ret.end(), usages.begin(), usages.end());
         }

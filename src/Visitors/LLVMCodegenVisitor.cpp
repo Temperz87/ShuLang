@@ -79,7 +79,7 @@ llvm::Value* LLVMCodegenVisitor::codegen(ProgramNode* node) {
 }
 
 void LLVMCodegenVisitor::walk(SIRBlock block) {
-    for (InstructionNode* node : block.instructions) {
+    for (std::shared_ptr<InstructionNode> node : block.instructions) {
         node->accept(this);
     }
 }
