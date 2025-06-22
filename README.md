@@ -13,7 +13,32 @@ This language is using a recursive descent parser and tokenization is pretty muc
 
 If you want a timeline of whats going on, one can be find in [timeline.md](timeline.md). Here's what I'm currently working on.
 
-## INTERMISSION: General cleanup and making pointers smart
-I used zero smart pointers so now I have to go back and decide on how ownership should work. I also want to create some .cpp files for my .hpp stuff, and get rid of todo's. There's also some errors when I compile which can't be good, so those need to be gotten rid of.
 
-I also want to implement multiplication and subtraction. This shouldn't be that bad but it seems really tedious as I'll need the corrsponding SIR nodes and what not.
+## Act 2: Conditionals
+Here I'll introduce the `if` and `true` and `false` stuff, as well as the funny boolean operators (e.g. `and`).
+
+### Parser changes
+Now we have a construct that has a body. So I'll have to start parsing a list of statements which will be fun and won't make me rip out my hair.
+
+I also to write another precedence function!!!
+
+### Type checking
+Everything in ShuLang before was an Integer, but in order to implement conditionals we need to implement a type checker. I'll just do the standard bidirectional "do I synthesize or check a type :O"
+
+### Uniquify 
+This pass doesn't change at all.
+
+### Remove complex operands
+I have to target the condition of an if statement to make sure it's not complex.
+
+If I encounter an `and` or an `or` and the arguments are not atomic, then to support short circuting I should change `p and q` into `if (p) q else false` and change `p or q` into `if (p) true else q`. 
+
+### Select SIR instructions
+The first pass that's different in a meaningful way. 
+
+When I encounter an if statement I must create a block for the condition portion of the if statement, the "then" portion, another for an "else" portion if it exists, and also a block for the continuation if it exists. The newly created blocks should then jump to the continuation or an "exit" block, which means I have to create an exit block
+
+### Select LLVM instructions
+Basically I have to levarage IR builder correctly :D
+
+This is where I'll be creating the exit block as well as figuring out how to compile booleans and jumps. 
