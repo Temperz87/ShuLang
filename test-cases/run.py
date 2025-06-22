@@ -186,24 +186,24 @@ def run_case(file_name):
     print("Compiling", file_name)
     ast = parse_file(file_name)
     print("---INITIAL AST---")
-    print_ast(ast)
-    graph_ast(ast)
+    # print_ast(ast)
+    # graph_ast(ast)
     print("Running")
     parse_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
 
     print("---UNIQUIFICATION---")
     uniquify(ast)
-    print_ast(ast)
-    graph_ast(ast)
+    # print_ast(ast)
+    # graph_ast(ast)
     print("Running")
     uniquify_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
 
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
-    print_ast(ast)
-    graph_ast(ast)
+    # print_ast(ast)
+    # graph_ast(ast)
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
@@ -230,7 +230,7 @@ def run_case(file_name):
 
 if __name__ == '__main__':
     tests_ran = 0
-    if len(sys.argv) == 0:
+    if len(sys.argv) == 1:
         # Halo
         print("I need a test case")
     
