@@ -105,53 +105,87 @@ std::shared_ptr<ValueNode> parse_value(token tok) {
 // 5. Once an operator is parsed, determine left and right extents to parse next stuff
 // 6. Parse next stuff
 
-// TODO: parse assoc and validate that operators exist
+
+// Assoc helper functions
+
+
+// Given a token (
+// Find its matching )
+int get_closing_idx(std::vector<token>& tokens, int start, int end) {
+    for (int i = start + 1; i < end; i++) {
+        if (tokens.at(i).value == "(") {
+            i = get_closing_idx(tokens, i, end);
+        }
+        else if (tokens.at(i).value == ")")
+            return i;
+    }
+    return end;
+}
+
+// Given a token )
+// Find its mactching (
+int get_matching_open_idx(std::vector<token>& tokens, int start) {
+    for (int i = start - 1; i > 1; i--) {
+        if (tokens.at(i).value == ")") {
+            i = get_matching_open_idx(tokens, i);
+        }
+        else if (tokens.at(i).value == "(")
+            return i;
+    }
+    return 0;
+}
+
+// Consider: 1 + (2 * 3 + 4) + 5
+// previous of 5 is +
+// previous of + is )
+// previous of ) is +
+// previous of + is 1
+int get_previous_atm_idx(std::vector<token>& tokens, int start) { 
+    if (tokens.at(start).value == ")") {
+        return get_matching_open_idx(tokens, start);
+    }
+    return start - 1;
+}
 
 std::shared_ptr<ValueNode> parse_high_prec_op(std::vector<token>& tokens, int start, int end) {
     // We're looking for a high precedence operator such as multiplication *
-    std::string op;
-    int i = start;
-    for (i = start; i < end; i++) {
+    int selected = -1;
+    for (int i = end - 1; i > start; i = get_previous_atm_idx(tokens, i)) {
         if (tokens.at(i).value == "*") {
-            op = tokens.at(i).value;
+            selected = i;
             break;
         }
     }
 
-    if (i == end) {
+    if (selected == -1) {
         return parse_value(tokens.at(start));
     }
 
     std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
-    ret->op = op;
-    ret->lhs = parse_integer_or_op(tokens, start, i);
-    ret->rhs = parse_integer_or_op(tokens, i + 1, end);
+    ret->op = tokens.at(selected).value;
+    ret->lhs = parse_integer_or_op(tokens, start, selected);
+    ret->rhs = parse_integer_or_op(tokens, selected + 1, end);
     return ret;
 }
 
 std::shared_ptr<ValueNode> parse_low_prec_op(std::vector<token>& tokens, int start, int end) {
     // We're looking for a low precedence operator such as +
-    std::string op;
-    int i = start;
-    for (i = start; i < end; i++) {
-        if (tokens.at(i).value == "(") {
-            return parse_high_prec_op(tokens, start, end);
-        }
-        else if (tokens.at(i).value == "+" || tokens.at(i).value == "-") {
-            // We know there isn't a parenthesis in the lhs
-            // As if there was we that previous if statement would've fired
-            op = tokens.at(i).value;
+    int selected = -1;
+    for (int i = end - 1; i > start; i = get_previous_atm_idx(tokens, i)) {
+        if (tokens.at(i).value == "+" || tokens.at(i).value == "-") {
+            selected = i;
             break;
         }
     }
-    if (i == end)
+
+    if (selected == -1)
         return parse_high_prec_op(tokens, start, end);
 
 
     std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
-    ret->op = op;
-    ret->lhs = parse_integer_or_op(tokens, start, i);
-    ret->rhs = parse_integer_or_op(tokens, i + 1, end);
+    ret->op = tokens.at(selected).value;
+    ret->lhs = parse_integer_or_op(tokens, start, selected);
+    ret->rhs = parse_integer_or_op(tokens, selected + 1, end);
     return ret;
 }
 
@@ -159,10 +193,9 @@ std::shared_ptr<ValueNode> parse_integer_or_op(std::vector<token>& tokens, int s
     if (end - start == 1) {
         return parse_value(tokens.at(start));
     }
-    else if (tokens.at(start).value == "(" || tokens.at(start).value == ")") {
-        return parse_integer_or_op(tokens, start + 1, end);
-    }
-    else 
+    else if (tokens.at(start).value == "(" && get_closing_idx(tokens, start, end) == end - 1)
+        return parse_integer_or_op(tokens, start + 1, end - 1);
+    else
         return parse_low_prec_op(tokens, start, end);
 }
 
