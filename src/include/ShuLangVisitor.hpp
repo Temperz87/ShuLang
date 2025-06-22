@@ -58,6 +58,9 @@ class ShuLangVisitor {
         virtual ASTHolder ingressIntegerNode(IntegerNode* node, int childcount) { return this->ingressNode(node, childcount); }
         virtual ShuLangNode* egressIntegerNode(IntegerNode* node) { return this->egressNode(node); }
 
+        virtual ASTHolder ingressBooleanNode(BooleanNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        virtual ShuLangNode* egressBooleanNode(BooleanNode* node) { return this->egressNode(node); }
+
         virtual ASTHolder ingressVariableReferenceNode(VariableReferenceNode* node, int childcount) { return this->ingressNode(node, childcount); }
         virtual ShuLangNode* egressVariableReferenceNode(VariableReferenceNode* node) { return this->egressNode(node); }
 
@@ -66,6 +69,9 @@ class ShuLangVisitor {
 
         virtual ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) { return this->ingressNode(node, childcount); }
         virtual ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) { return this->egressNode(node); }
+
+        virtual ASTHolder ingressIfNode(IfNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        virtual ShuLangNode* egressIfNode(IfNode* node) { return this->egressNode(node); }
 
         virtual ASTHolder ingressProgramNode(ProgramNode* node, int childcount) { return this->ingressNode(node, childcount); }
         virtual ShuLangNode* egressProgramNode(ProgramNode* node) { return this->egressNode(node); }

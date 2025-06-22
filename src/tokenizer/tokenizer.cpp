@@ -21,11 +21,12 @@ const char* operators[] = {
     ">",
     ">=",
     ":",
-    "and",
-    "equals", 
-    "nequals",
+    "=", 
+    "!=",
     "not",
+    "and",
     "or",
+    "xor"
 };
 
 const char* keyword[] = {

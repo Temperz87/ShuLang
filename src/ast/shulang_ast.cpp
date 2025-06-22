@@ -46,6 +46,16 @@ ShuLangNode* IntegerNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressIntegerNode(this);
 }
 
+std::vector<std::shared_ptr<ShuLangNode>> BooleanNode::children() {
+  return std::vector<std::shared_ptr<ShuLangNode>>();
+}
+childholder<ShuLangNode> BooleanNode::ingressVisitor(ShuLangVisitor* visitor) {
+  return visitor->ingressBooleanNode(this, 0);
+}
+ShuLangNode* BooleanNode::egressVisitor(ShuLangVisitor* visitor) {
+  return visitor->egressBooleanNode(this);
+}
+
 VariableReferenceNode::VariableReferenceNode(std::string identifier) {
   this->identifier = identifier;
 }
@@ -85,11 +95,24 @@ ShuLangNode* OperatorApplicationNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressOperatorApplicationNode(this);
 }
 
+std::vector<std::shared_ptr<ShuLangNode>> IfNode::children() {
+  std::vector<std::shared_ptr<ShuLangNode>> childs;
+  childs.push_back(condition);
+  childs.insert(childs.end(), then_block.begin(), then_block.end());
+  childs.insert(childs.end(), else_block.begin(), else_block.end());
+  return childs;
+}
+childholder<ShuLangNode> IfNode::ingressVisitor(ShuLangVisitor* visitor) {
+  return visitor->ingressIfNode(this, 2);
+}
+ShuLangNode* IfNode::egressVisitor(ShuLangVisitor* visitor) {
+  return visitor->egressIfNode(this);
+}
+
 std::vector<std::shared_ptr<ShuLangNode>> ProgramNode::children() {
-  std::vector<std::shared_ptr<ShuLangNode>> reversed;
-  for (int i = 0; i < nodes.size(); i++)
-    reversed.push_back(nodes.at(i));
-  return reversed;
+  std::vector<std::shared_ptr<ShuLangNode>> childs;
+  childs.insert(childs.end(), nodes.begin(), nodes.end());
+  return childs;
 }
 childholder<ShuLangNode> ProgramNode::ingressVisitor(ShuLangVisitor* visitor) {
   return visitor->ingressProgramNode(this, nodes.size());

@@ -56,6 +56,11 @@ PYBIND11_MODULE(shulang, m) {
     .def(py::init<int>())
     .def_readwrite("value", &shulang::IntegerNode::value);
 
+    // BooleanNode
+    py::class_<shulang::BooleanNode, shulang::ValueNode, std::shared_ptr<shulang::BooleanNode>>(m, "BooleanNode")
+    .def(py::init<bool>())
+    .def_readwrite("value", &shulang::BooleanNode::value);
+
     // VariableReferenceNode
     py::class_<shulang::VariableReferenceNode, shulang::ValueNode, std::shared_ptr<shulang::VariableReferenceNode>>(m, "VariableReferenceNode")
     .def("children", &shulang::VariableReferenceNode::children)
@@ -75,6 +80,13 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("op", &shulang::OperatorApplicationNode::op)
     .def_readwrite("lhs", &shulang::OperatorApplicationNode::lhs)
     .def_readwrite("rhs", &shulang::OperatorApplicationNode::rhs);
+
+    // IfNode
+    py::class_<shulang::IfNode, shulang::ShuLangNode, std::shared_ptr<shulang::IfNode>>(m, "IfNode")
+    .def("children", &shulang::IfNode::children)
+    .def_readwrite("then_block", &shulang::IfNode::then_block)
+    .def_readwrite("else_block", &shulang::IfNode::else_block)
+    .def_readwrite("condition", &shulang::IfNode::condition);
 
     // ProgramNode
     py::class_<shulang::ProgramNode, shulang::ShuLangNode, std::shared_ptr<shulang::ProgramNode>>(m, "ProgramNode")

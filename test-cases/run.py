@@ -8,8 +8,7 @@ def print_indentation(indentation):
         print("\t" * indentation, end='')
 
 def print_ast(node : ASTNode, indentation = 0):
-    if indentation > 0:
-        print("  " * indentation, end='')
+    print_indentation(indentation)
     match node:
         case ProgramNode():
             indentation = 0
@@ -27,15 +26,35 @@ def print_ast(node : ASTNode, indentation = 0):
             print("REFERENCE(" + node.identifier + ")")
         case IntegerNode():
             print("INTEGER(" + str(node.value) + ")")
+        case BooleanNode():
+            print("BOOL(" + str(node.value) + ")")
         case PrintNode():
             print("PRINT")
             print_ast(node.to_print, indentation + 1)
+        case IfNode():
+            print("IF")
+            print_ast(node.condition, indentation + 1)
+            print_indentation(indentation)
+            print("THEN")
+            print_ast(node.then_block, indentation + 1)
+            print("ELSE")
+            print_indentation(indentation)
+            print_ast(node.else_block, indentation + 1)
 
 node_counter = 0
 def get_unique_node_name():
     global node_counter
     node_counter += 1
     return "node" + str(node_counter)
+
+def graph_this_stuff(label, parent):
+    print_indentation(1)
+    unique = get_unique_node_name()
+    label_str = unique + '[label="' + str(label) + '"]'
+    print(label_str)
+    print(parent, "->", label_str)
+    return unique
+
 
 def graph_ast(node, indentation = 0, parent=''):
     print_indentation(indentation)
@@ -46,34 +65,38 @@ def graph_ast(node, indentation = 0, parent=''):
                 graph_ast(node, indentation + 1, "program")
             print("}")
         case OperatorApplicationNode():
-            my_node = get_unique_node_name()
-            print(my_node + '[label="' + node.op + '"]')
-            print_indentation(indentation)
-            print(parent, "->", my_node)
+            my_node = graph_this_stuff(node.ops, parent)
             graph_ast(node.lhs, indentation, my_node)
             graph_ast(node.rhs, indentation, my_node)
         case BindingNode():
-            my_node = get_unique_node_name()
-            print(my_node + '[label="bind ' + node.name + '"]')
+            my_node = graph_this_stuff(node.name, parent)
             graph_ast(node.value, indentation, my_node)
         case PrintNode():
-            my_node = get_unique_node_name()
-            print(my_node + '[label="print"]')
+            my_node = graph_this_stuff("print", parent)
             graph_ast(node.to_print, indentation, my_node)
         case IntegerNode():
-            my_node = get_unique_node_name()
-            print(my_node + '[label="', str(node.value), '"]')
-            print_indentation(indentation)
-            print(parent, "->", my_node)
+            my_node = graph_this_stuff(node.value, parent)
+        case BooleanNode():
+            my_node = graph_this_stuff(node.value, parent)
         case VariableReferenceNode():
-            my_node = get_unique_node_name()
-            print(my_node + '[label="', node.identifier, '"]')
-            print_indentation(indentation)
-            print(parent, "->", my_node)
+            my_node = graph_this_stuff(node.identifier, parent)
+        case IfNode():
+            my_node = graph_this_stuff("if", parent)
+            last = graph_this_stuff("then", my_node)
+            for node in node.then_block:
+                graph_ast(node, indentation, last)
+                last = node
+
+            last = graph_this_stuff("else", my_node)
+            for node in node.else_block:
+                graph_ast(node, indentation, last)
+                last = node
 
 def get_value(node, env):
     match node:
         case IntegerNode():
+            return node.value
+        case BooleanNode():
             return node.value
         case VariableReferenceNode():
             return env[node.identifier]
@@ -87,6 +110,16 @@ def get_value(node, env):
                     return lhs - rhs
                 case '*':
                     return lhs * rhs
+                case '=':
+                    return lhs == rhs
+                case '!=':
+                    return lhs != rhs
+                case 'or':
+                    return lhs or rhs
+                case 'and':
+                    return lhs and rhs
+                case 'xor':
+                    return lhs ^ rhs
                 case _:
                     print("Unrecognized operator", node.op)
                     exit(1)
@@ -101,8 +134,20 @@ def run_ast(node, env = {}, stdout = []):
             env[node.name] = get_value(node.value, env)
         case PrintNode():
             printable = get_value(node.to_print, env)
+            if str(printable) == "True":
+                printable = "true"
+            elif str(printable) == "False":
+                printable = "false"
             print(printable)
             stdout.append(printable)
+        case IfNode():
+            path = get_value(node.condition, env)
+            if path:
+                for x in node.then_block:
+                    run_ast(x, env, stdout)
+            else:
+                for x in node.else_block:
+                    run_ast(x, env, stdout)
 
 def stringify_value(node):
     match node:
@@ -192,7 +237,7 @@ def run_case(file_name):
     print("Running")
     parse_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
-
+    return
     print("---UNIQUIFICATION---")
     uniquify(ast)
     # print_ast(ast)

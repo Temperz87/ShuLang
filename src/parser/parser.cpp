@@ -51,7 +51,7 @@ std::shared_ptr<ValueNode> parse_complex_value();
 std::shared_ptr<ValueNode> parse_low_prec_op(std::vector<token>& tokens, int start, int end);
 std::shared_ptr<ValueNode> parse_high_prec_op(std::vector<token>& tokens, int start, int end);
 std::shared_ptr<ValueNode> parse_integer_or_op(std::vector<token>& tokens, int start, int end);
-
+std::shared_ptr<StatementNode> parse_statement();
 
 void parse_identifier(std::string& buf) {
     if (currenttoken.type != IDENTIFIER) {
@@ -85,10 +85,12 @@ void parse_type_annot(std::string& buf) {
 std::shared_ptr<ValueNode> parse_value(token tok) {
     switch (tok.type){
         case INTEGER:
-        return std::make_shared<IntegerNode>(IntegerNode(stoi(tok.value)));
+            return std::make_shared<IntegerNode>(stoi(tok.value));
         case VALUE:
-            // TODO: PARSE EVERYTHING ELSE
-            break;
+            if (tok.value == "true")
+                return std::make_shared<BooleanNode>(true);
+            else if (tok.value == "false")
+                return std::make_shared<BooleanNode>(false);
         case IDENTIFIER:
             std::string ident = tok.value;
             return std::make_shared<VariableReferenceNode>(VariableReferenceNode(ident));
@@ -153,7 +155,7 @@ std::shared_ptr<ValueNode> parse_high_prec_op(std::vector<token>& tokens, int st
     // We're looking for a high precedence operator such as multiplication *
     int selected = -1;
     for (int i = end - 1; i > start; i = get_previous_atm_idx(tokens, i)) {
-        if (tokens.at(i).value == "*") {
+        if (tokens.at(i).value == "and" || tokens.at(i).value == "or" || tokens.at(i).value == "xor" || tokens.at(i).value == "=" || tokens.at(i).value == "!=") {
             selected = i;
             break;
         }
@@ -161,6 +163,27 @@ std::shared_ptr<ValueNode> parse_high_prec_op(std::vector<token>& tokens, int st
 
     if (selected == -1) {
         return parse_value(tokens.at(start));
+    }
+
+    std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
+    ret->op = tokens.at(selected).value;
+    ret->lhs = parse_integer_or_op(tokens, start, selected);
+    ret->rhs = parse_integer_or_op(tokens, selected + 1, end);
+    return ret;
+}
+
+std::shared_ptr<ValueNode> parse_med_prec_op(std::vector<token>& tokens, int start, int end) {
+    // We're looking for a high precedence operator such as multiplication *
+    int selected = -1;
+    for (int i = end - 1; i > start; i = get_previous_atm_idx(tokens, i)) {
+        if (tokens.at(i).value == "*") {
+            selected = i;
+            break;
+        }
+    }
+
+    if (selected == -1) {
+        return parse_high_prec_op(tokens, start, end);
     }
 
     std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
@@ -181,7 +204,7 @@ std::shared_ptr<ValueNode> parse_low_prec_op(std::vector<token>& tokens, int sta
     }
 
     if (selected == -1)
-        return parse_high_prec_op(tokens, start, end);
+        return parse_med_prec_op(tokens, start, end);
 
 
     std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
@@ -223,7 +246,7 @@ std::shared_ptr<ValueNode> parse_complex_value() {
                 }
             }
             else if (currenttoken.value == "{" || currenttoken.value == "}")
-                parse_error("Unexpected token");
+                break;
         }
         else if (last_inserted.type == OPERATOR && currenttoken.type == STATEMENT)
             parse_error("Expected an integer or value but instead got a statement");
@@ -234,6 +257,17 @@ std::shared_ptr<ValueNode> parse_complex_value() {
     if (scope > 1)
         parse_error("Unmatched '('");
     return parse_integer_or_op(tokens, 0, tokens.size());
+}
+
+void parse_body(std::vector<std::shared_ptr<StatementNode>>& buf) {
+    if (currenttoken.value == "{") {
+        advance();
+        while (currenttoken.value != "}")
+            buf.push_back(parse_statement());
+        advance();
+    }
+    else
+        buf.push_back(parse_statement());
 }
 
 std::shared_ptr<StatementNode> parse_statement() {
@@ -256,9 +290,25 @@ std::shared_ptr<StatementNode> parse_statement() {
         advance();
         return std::make_shared<PrintNode>(std::move(to_print));
     }
+    else if (currenttoken.value == "if") {
+        advance();
+        std::shared_ptr<IfNode> ret = std::make_shared<IfNode>();
+        std::shared_ptr<ValueNode> cond = parse_complex_value();
+        ret->condition = cond;
+        parse_body(ret->then_block);
+
+        if (currenttoken.value == "else") {
+            advance();
+            parse_body(ret->else_block);
+        }
+        
+        return ret;
+    }
     else {
         parse_error("Expected a statement");
     }
+
+    return nullptr;
 }
 
 std::unique_ptr<ProgramNode> begin_parse(std::vector<token> tokenlist, std::string fileToParse) {
