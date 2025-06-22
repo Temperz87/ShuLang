@@ -17,8 +17,8 @@ def print_ast(node : ASTNode, indentation = 0):
                 print_ast(node, indentation + 1)
         case OperatorApplicationNode():
             print("OPERATOR(" + node.op + ")")
-            print_ast(node.rhs, indentation + 1)
             print_ast(node.lhs, indentation + 1)
+            print_ast(node.rhs, indentation + 1)
         case BindingNode():
             print("BIND(" + node.name + ") to")
             print_ast(node.value, indentation + 1)
@@ -36,61 +36,66 @@ def print_ast(node : ASTNode, indentation = 0):
             print_ast(node.condition, indentation + 1)
             print_indentation(indentation)
             print("THEN")
-            print_ast(node.then_block, indentation + 1)
+            for x in node.then_block:
+                print_ast(node.x, indentation + 1)
             print("ELSE")
             print_indentation(indentation)
-            print_ast(node.else_block, indentation + 1)
+            for x in node.else_block:
+                print_ast(x, indentation + 1)
 
 node_counter = 0
-def get_unique_node_name():
-    global node_counter
-    node_counter += 1
-    return "node" + str(node_counter)
-
 def graph_this_stuff(label, parent):
-    print_indentation(1)
-    unique = get_unique_node_name()
+    global node_counter
+    
+    unique = "node" + str(node_counter)
+    node_counter += 1
     label_str = unique + '[label="' + str(label) + '"]'
+    print_indentation(1)
     print(label_str)
-    print(parent, "->", label_str)
+    print_indentation(1)
+    print(parent, "->", unique)
     return unique
 
 
-def graph_ast(node, indentation = 0, parent=''):
-    print_indentation(indentation)
+def graph_ast(node, parent=''):
     match node:
         case ProgramNode():
             print("digraph ShuLangProgram {")
             for node in node.children():
-                graph_ast(node, indentation + 1, "program")
+                graph_ast(node, "program")
             print("}")
         case OperatorApplicationNode():
-            my_node = graph_this_stuff(node.ops, parent)
-            graph_ast(node.lhs, indentation, my_node)
-            graph_ast(node.rhs, indentation, my_node)
+            my_node = graph_this_stuff(node.op, parent)
+            graph_ast(node.lhs, my_node)
+            graph_ast(node.rhs, my_node)
+            return my_node
         case BindingNode():
-            my_node = graph_this_stuff(node.name, parent)
-            graph_ast(node.value, indentation, my_node)
+            my_node = graph_this_stuff("bind " + node.name, parent)
+            graph_ast(node.value, my_node)
+            return my_node
         case PrintNode():
             my_node = graph_this_stuff("print", parent)
-            graph_ast(node.to_print, indentation, my_node)
+            graph_ast(node.to_print, my_node)
+            return my_node
         case IntegerNode():
             my_node = graph_this_stuff(node.value, parent)
+            return my_node
         case BooleanNode():
             my_node = graph_this_stuff(node.value, parent)
+            return my_node
         case VariableReferenceNode():
             my_node = graph_this_stuff(node.identifier, parent)
+            return my_node
         case IfNode():
             my_node = graph_this_stuff("if", parent)
             last = graph_this_stuff("then", my_node)
-            for node in node.then_block:
-                graph_ast(node, indentation, last)
-                last = node
-
+            for child in node.then_block:
+                graph_ast(child, last)
+            
             last = graph_this_stuff("else", my_node)
-            for node in node.else_block:
-                graph_ast(node, indentation, last)
-                last = node
+            for child in node.else_block:
+                graph_ast(child, last)
+            return my_node
 
 def get_value(node, env):
     match node:
@@ -233,7 +238,7 @@ def run_case(file_name):
     ast = parse_file(file_name)
     print("---INITIAL AST---")
     # print_ast(ast)
-    # graph_ast(ast)
+    graph_ast(ast)
     print("Running")
     parse_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
