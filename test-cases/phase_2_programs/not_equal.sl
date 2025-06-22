@@ -1,4 +1,4 @@
 if 1 != 2
-    print(0)
-else
     print(1)
+else
+    print(0)
