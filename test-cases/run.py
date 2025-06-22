@@ -1,6 +1,7 @@
 import os
 import sys
 from shulang import *
+import subprocess
 
 def print_indentation(indentation):
     if indentation > 0:
@@ -168,7 +169,7 @@ def run_sir_ast(node, env, stdout):
             
 def compare_stdout(out1, out2, filename, pass_name):
     if len(out1) != len(out2):
-        print("Hmm, these standard outs look different")
+        print("Hmm, the lengths of these standard outs look different")
         print("Did you insert or remove a print node somewhere?")
         print("Error during compilation of", filename, "during pass", pass_name)
         exit(-1)
@@ -216,15 +217,12 @@ def run_case(file_name):
 
     print("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
-    os.system("clang a.ll -o a.out && ./a.out > output.log")
-    with open("a.ll", "r") as fd:
-        for x in fd.readlines():
-            print(x)    
+    subprocess.run("clang a.ll -o a.out", shell=True)
+    output = subprocess.run("./a.out", shell=True, capture_output=True)
+    output_stdout = output.stdout.decode("utf-8")[0:-1].split("\n")
+    os.system("rm -f a.ll a.out")
 
-    with open("output.log", "r") as fd:
-        output = [x.strip() for x in fd.readlines()]
-    os.system("rm -f a.ll a.out output.log")
-    compare_stdout(expected_stdout, output, file_name, "select LLVM instructions")
+    compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
 
     print("Test", file_name, "passed")
 
