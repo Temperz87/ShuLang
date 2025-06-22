@@ -8,17 +8,18 @@ using namespace shulang;
 Uniquification::Uniquification() { };
 Uniquification::~Uniquification() { };
 
-// TODO: Make this work when I introduce functions
 ShuLangNode* Uniquification::egressBindingNode(BindingNode* node) {
-    std::string unique_name = node->name + "." + std::to_string(unique_id++);
 
     // Check if we've already assigned a name
-    // If so update it 
-    if (map.find(node->name) == map.end())
+    if (map.find(node->name) == map.end()) {
+        std::string unique_name = node->name + "." + std::to_string(unique_id++);
         map.insert({node->name, unique_name});
-    else
-        map[node->name] = unique_name;
-    node->name = unique_name;
+    }
+    
+    // No need to reupdate when we can use alloca's later
+    // At some point I'll need to phi 
+    // But we'll get there when we get there
+    node->name = map.at(node->name);
     return ShuLangVisitor::egressBindingNode(node);
 }
 

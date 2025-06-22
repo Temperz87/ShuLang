@@ -18,15 +18,17 @@ If you want a timeline of whats going on, one can be find in [timeline.md](timel
 Here I'll introduce the `if` and `true` and `false` stuff, as well as the funny boolean operators (e.g. `and`).
 
 ### Parser changes
-Now we have a construct that has a body. So I'll have to start parsing a list of statements which will be fun and won't make me rip out my hair.
+Now we have a construct that has a body, meaning I need a `parse_body` function. This functions check if there's a `{`, and if so parses a sequence of statement, other wise parses a single statement.
 
 I also to write another precedence function!!!
+- I defered this to later because I really don't want to...
+
 
 ### Type checking
 Everything in ShuLang before was an Integer, but in order to implement conditionals we need to implement a type checker. I'll just do the standard bidirectional "do I synthesize or check a type :O"
 
 ### Uniquify 
-This pass doesn't change at all.
+I changed how variables get uniquified in this pass. Basically instead of reuniquifying already uniquified variables in order to get unique variabels, I just use the already uniquified name.
 
 ### Remove complex operands
 I have to target the condition of an if statement to make sure it's not complex.

@@ -104,6 +104,11 @@ def get_value(node, env):
         case BooleanNode():
             return node.value
         case VariableReferenceNode():
+            if node.identifier not in env:
+                print(node.identifier, "was not found!")
+                print(env)
+                exit(1)
+            
             return env[node.identifier]
         case OperatorApplicationNode():
             lhs = get_value(node.lhs, env)
@@ -242,14 +247,14 @@ def run_case(file_name):
     print("Running")
     parse_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
-    return
     print("---UNIQUIFICATION---")
     uniquify(ast)
     # print_ast(ast)
     # graph_ast(ast)
-    print("Running")
+    # print("Running")
     uniquify_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
+    return
 
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
