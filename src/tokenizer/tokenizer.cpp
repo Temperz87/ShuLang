@@ -260,15 +260,16 @@ int tokenize(std::ifstream& file, std::vector<token>& token_list) {
     // Read in tokens until EOF or until we hit a non alphanumeric character
     while (file.get(curr)) {
         if (iswhitespace(curr)) {
-            if (curr == '\n') {
-                start_col = 1;
-                line += 1;
-            }
             // We have hit a new token
             if (tokenizing.size() > 0) {
                 tokens_created += add_tokens(tokenizing, token_list, start_col, line);
                 tokenizing.clear();
                 start_col += add_col;
+            }
+            
+            if (curr == '\n') {
+                start_col = 1;
+                line += 1;
             }
             add_col = 1;
         }
