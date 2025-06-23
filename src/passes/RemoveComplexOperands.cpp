@@ -40,7 +40,7 @@ class target_complex : public ShuLangVisitor {
             std::string name = gen_tmp_name();
             fresh->name = name;
             // TODO: Assign type
-            fresh->ty = "Integer";
+            fresh->ty = complex_value->type;
             fresh->value = complex_value;
             bindings.push_back(fresh);
             return std::make_unique<VariableReferenceNode>(name);
@@ -70,6 +70,19 @@ class target_complex : public ShuLangVisitor {
                 node->to_print = generate_binding(node->to_print);
             }
             return ShuLangVisitor::egressPrintNode(node);
+        }
+
+        ShuLangNode* egressIfNode(IfNode* node) override {
+            ComplexDetector det;
+            // Condition must be atomic
+            if (det.NeedToRebind(node->condition.get())) {
+                node->condition = generate_binding(node->condition);
+            }
+
+            // TODO
+            // Test cases for complex operands inside of if bodies 
+            // as well as the condition :3
+            return ShuLangVisitor::egressIfNode(node);
         }
 };
 

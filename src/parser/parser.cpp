@@ -4,6 +4,7 @@
 #include <iterator.hpp>
 #include <memory>
 #include <parser.hpp>
+#include <string>
 #include <tokenizer.hpp>
 #include <vector>
 
@@ -47,10 +48,56 @@ void assert_at_type(token_type expected) {
     }
 }
 
-std::shared_ptr<ValueNode> parse_complex_value();
-std::shared_ptr<ValueNode> parse_low_prec_op(std::vector<token>& tokens, int start, int end);
-std::shared_ptr<ValueNode> parse_high_prec_op(std::vector<token>& tokens, int start, int end);
+std::string operator_highest[] = {
+    "and",
+    "or",
+    "xor"      
+};
+
+std::string operator_high[] = {
+    "=", 
+    "!=",
+    "<" ,
+    "<=",
+    ">",       
+    ">="       
+};
+
+std::string operator_medium[] = {
+    "*"
+};
+
+std::string operator_low[] = {
+        "+",
+        "-"
+};
+
+int operator_len[] = {
+    sizeof(operator_low) / sizeof(std::string),
+    sizeof(operator_medium) / sizeof(std::string),
+    sizeof(operator_high) / sizeof(std::string),
+    sizeof(operator_highest) / sizeof(std::string)
+};
+
+std::string* operators[] {
+    operator_low,
+    operator_medium,
+    operator_high,
+    operator_highest
+};
+
+bool in_array(const std::string& str, int idx) {
+    int len = operator_len[idx];
+    std::string* ops = operators[idx];
+    for (int i = 0; i < len; i++)
+        if (ops[i] == str)
+            return true;
+    return false;
+}
+
+
 std::shared_ptr<ValueNode> parse_integer_or_op(std::vector<token>& tokens, int start, int end);
+std::shared_ptr<ValueNode> parse_complex_value();
 std::shared_ptr<StatementNode> parse_statement();
 
 void parse_identifier(std::string& buf) {
@@ -93,7 +140,7 @@ std::shared_ptr<ValueNode> parse_value(token tok) {
                 return std::make_shared<BooleanNode>(false);
         case IDENTIFIER:
             std::string ident = tok.value;
-            return std::make_shared<VariableReferenceNode>(VariableReferenceNode(ident));
+            return std::make_shared<VariableReferenceNode>(ident);
     }
     parse_error("Expected a value (e.g. variable reference or integer)");
     return nullptr;
@@ -151,61 +198,21 @@ int get_previous_atm_idx(std::vector<token>& tokens, int start) {
     return start - 1;
 }
 
-std::shared_ptr<ValueNode> parse_high_prec_op(std::vector<token>& tokens, int start, int end) {
+std::shared_ptr<ValueNode> parse_ops(std::vector<token>& tokens, int start, int end, int op_idx) {
     // We're looking for a high precedence operator such as multiplication *
     int selected = -1;
     for (int i = end - 1; i > start; i = get_previous_atm_idx(tokens, i)) {
-        if (tokens.at(i).value == "and" || tokens.at(i).value == "or" || tokens.at(i).value == "xor" || tokens.at(i).value == "=" || tokens.at(i).value == "!=") {
+        if (in_array(tokens.at(i).value, op_idx)) {
             selected = i;
             break;
         }
     }
 
     if (selected == -1) {
+        if (op_idx + 1 < sizeof(operators) / sizeof(std::string*))
+            return parse_ops(tokens, start, end, op_idx + 1);
         return parse_value(tokens.at(start));
     }
-
-    std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
-    ret->op = tokens.at(selected).value;
-    ret->lhs = parse_integer_or_op(tokens, start, selected);
-    ret->rhs = parse_integer_or_op(tokens, selected + 1, end);
-    return ret;
-}
-
-std::shared_ptr<ValueNode> parse_med_prec_op(std::vector<token>& tokens, int start, int end) {
-    // We're looking for a high precedence operator such as multiplication *
-    int selected = -1;
-    for (int i = end - 1; i > start; i = get_previous_atm_idx(tokens, i)) {
-        if (tokens.at(i).value == "*") {
-            selected = i;
-            break;
-        }
-    }
-
-    if (selected == -1) {
-        return parse_high_prec_op(tokens, start, end);
-    }
-
-    std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
-    ret->op = tokens.at(selected).value;
-    ret->lhs = parse_integer_or_op(tokens, start, selected);
-    ret->rhs = parse_integer_or_op(tokens, selected + 1, end);
-    return ret;
-}
-
-std::shared_ptr<ValueNode> parse_low_prec_op(std::vector<token>& tokens, int start, int end) {
-    // We're looking for a low precedence operator such as +
-    int selected = -1;
-    for (int i = end - 1; i > start; i = get_previous_atm_idx(tokens, i)) {
-        if (tokens.at(i).value == "+" || tokens.at(i).value == "-") {
-            selected = i;
-            break;
-        }
-    }
-
-    if (selected == -1)
-        return parse_med_prec_op(tokens, start, end);
-
 
     std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
     ret->op = tokens.at(selected).value;
@@ -221,7 +228,7 @@ std::shared_ptr<ValueNode> parse_integer_or_op(std::vector<token>& tokens, int s
     else if (tokens.at(start).value == "(" && get_closing_idx(tokens, start, end) == end - 1)
         return parse_integer_or_op(tokens, start + 1, end - 1);
     else
-        return parse_low_prec_op(tokens, start, end);
+        return parse_ops(tokens, start, end, 0);
 }
 
 std::shared_ptr<ValueNode> parse_complex_value() {
@@ -275,7 +282,12 @@ std::shared_ptr<StatementNode> parse_statement() {
         advance();
         std::shared_ptr<BindingNode> b = std::make_shared<BindingNode>();
         parse_identifier(b->name);
-        parse_type_annot(b->ty);
+        
+        if (currenttoken.value == ":")
+            parse_type_annot(b->ty);
+        else
+            b->ty = "Inferred";
+
         assert_strings_equal(currenttoken.value, "to");
         advance();
         b->value = parse_complex_value();
