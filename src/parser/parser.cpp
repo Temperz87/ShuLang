@@ -198,19 +198,23 @@ int get_previous_atm_idx(std::vector<token>& tokens, int start) {
     return start - 1;
 }
 
-std::shared_ptr<ValueNode> parse_ops(std::vector<token>& tokens, int start, int end, int op_idx) {
+std::shared_ptr<ValueNode> parse_ops(std::vector<token>& tokens, int start, int end) {
     // We're looking for a high precedence operator such as multiplication *
     int selected = -1;
-    for (int i = end - 1; i > start; i = get_previous_atm_idx(tokens, i)) {
-        if (in_array(tokens.at(i).value, op_idx)) {
-            selected = i;
-            break;
+
+    for (int operator_idx = 0; operator_idx < sizeof(operators) / sizeof(std::string*); operator_idx++) {
+        for (int i = end - 1; i > start; i = get_previous_atm_idx(tokens, i)) {
+            if (in_array(tokens.at(i).value, operator_idx)) {
+                selected = i;
+                break;
+            }
         }
+
+        if (selected != -1)
+            break;
     }
 
     if (selected == -1) {
-        if (op_idx + 1 < sizeof(operators) / sizeof(std::string*))
-            return parse_ops(tokens, start, end, op_idx + 1);
         return parse_value(tokens.at(start));
     }
 
@@ -228,7 +232,7 @@ std::shared_ptr<ValueNode> parse_integer_or_op(std::vector<token>& tokens, int s
     else if (tokens.at(start).value == "(" && get_closing_idx(tokens, start, end) == end - 1)
         return parse_integer_or_op(tokens, start + 1, end - 1);
     else
-        return parse_ops(tokens, start, end, 0);
+        return parse_ops(tokens, start, end);
 }
 
 std::shared_ptr<ValueNode> parse_complex_value() {

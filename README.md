@@ -20,7 +20,9 @@ Here I'll introduce the `if` and `true` and `false` stuff, as well as the funny 
 ### Parser changes
 Now we have a construct that has a body, meaning I need a `parse_body` function. This functions check if there's a `{`, and if so parses a sequence of statement, other wise parses a single statement.
 
-I also to write another precedence function!!!
+I also changed how operators get parsed in order to make it more extensible. Basically as I was going up in precedence I hard coded a massive `if (op == "op" ||...)` and manually passed through the next function. Now I have everything in an array and it's super easy to add new operators.
+
+I also have to write another precedence function!!!
 - I defered this to later because I really don't want to...
 
 
