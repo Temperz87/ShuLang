@@ -10,6 +10,7 @@
 #include <ShuLangAST.hpp>
 #include <parser.hpp>
 #include <tokenizer.hpp>
+#include <TypeChecker.hpp>
 
 namespace py = pybind11;
 
@@ -27,6 +28,11 @@ std::shared_ptr<shulang::ProgramNode> parse_file(std::string file) {
 void uniquify(shulang::ProgramNode* ast) {
     Uniquification u;
     u.walk(ast);
+}
+
+void type_check(shulang::ProgramNode* ast) {
+    TypeChecker tyc;
+    tyc.walk(ast);
 }
 
 PYBIND11_MODULE(shulang, m) {
@@ -144,6 +150,7 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("blocks", &shuir::ProgramNode::blocks);
 
     m.def("parse_file", &parse_file, "Given a file returns an AST");
+    m.def("type_check", &type_check, "Given a program type check it");
     m.def("uniquify", &uniquify, "Runs the uniquification pass");
     m.def("remove_complex_operands", &remove_complex_operands, "Runs the remove complex operands pass");
     m.def("select_instructions", &select_SIR_instructions, "Translated from ShuLang to SIR");

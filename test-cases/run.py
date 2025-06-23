@@ -88,6 +88,7 @@ def graph_ast(node, parent=''):
             return my_node
         case IfNode():
             my_node = graph_this_stuff("if", parent)
+            graph_ast(node.condition, my_node)
             last = graph_this_stuff("then", my_node)
             for child in node.then_block:
                 graph_ast(child, last)
@@ -130,6 +131,14 @@ def get_value(node, env):
                     return lhs and rhs
                 case 'xor':
                     return lhs ^ rhs
+                case '>':
+                    return lhs > rhs
+                case '>=':
+                    return lhs >= rhs
+                case '<':
+                    return lhs < rhs
+                case '<=':
+                    return lhs <= rhs
                 case _:
                     print("Unrecognized operator", node.op)
                     exit(1)
@@ -244,9 +253,13 @@ def run_case(file_name):
     print("---INITIAL AST---")
     # print_ast(ast)
     graph_ast(ast)
-    print("Running")
+    print("Type checking...")
+    type_check(ast)
+    print("Running...")
     parse_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
+
+
     print("---UNIQUIFICATION---")
     uniquify(ast)
     # print_ast(ast)

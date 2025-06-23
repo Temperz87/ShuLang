@@ -35,6 +35,7 @@ namespace shulang {
   // First class values
   class ValueNode : public StatementNode {
     public:
+      std::string type;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -52,7 +53,7 @@ namespace shulang {
     public:
       int value;
       std::vector<std::shared_ptr<ShuLangNode>> children() override;
-      IntegerNode(int value) { this->value = value; }
+      IntegerNode(int value): value(value) { this->type = "Integer"; }
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -61,7 +62,7 @@ namespace shulang {
     public:
       bool value;
       std::vector<std::shared_ptr<ShuLangNode>> children() override;
-      BooleanNode(bool value) { this->value = value; }
+      BooleanNode(bool value): value(value) { this->type = "Boolean"; }
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };

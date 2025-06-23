@@ -12,6 +12,7 @@
 #include <SelectInstructions.hpp>
 #include <tokenizer.hpp>
 #include <Uniquification.hpp>
+#include <TypeChecker.hpp>
 
 static std::string output_file = "a.ll";
 
@@ -69,6 +70,10 @@ int main(int argc, char** argv) {
     // Recursive descent parsing
     std::unique_ptr<shulang::ProgramNode> program = begin_parse(token_list, argv[1]);
     // ShuLangPrinter().walk(program.get());
+
+    // std::cout << "-----TYPE CHECKING-----" << std::endl;
+    TypeChecker tyc;
+    tyc.walk(program.get());
 
     // std::cout << "-----UNIQUIFICATION-----" << std::endl;
     // If I do somethingl ike

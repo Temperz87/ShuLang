@@ -64,3 +64,18 @@ ShuLangNode* ShuLangPrinter::egressOperatorApplicationNode(OperatorApplicationNo
     indentation -= 1;
     return ShuLangVisitor::egressOperatorApplicationNode(node);
 }
+
+
+ShuLangPrinter::ASTHolder ShuLangPrinter::ingressIfNode(IfNode* node, int childcount)  {
+    printIndentation();
+    std::cout << "IF";
+    indentation += 1;
+    return ShuLangVisitor::ingressIfNode(node, childcount);
+}
+
+ShuLangNode* ShuLangPrinter::egressIfNode(IfNode* node)  {
+    indentation -= 1;
+    printIndentation();
+    std::cout << "FI"; // Stay mad
+    return ShuLangVisitor::egressIfNode(node);
+}

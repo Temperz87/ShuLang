@@ -26,4 +26,6 @@ class ShuLangPrinter : public ShuLangVisitor {
         ShuLangNode* egressPrintNode(PrintNode* node) override;
         ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) override;
         ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override;
+        ASTHolder ingressIfNode(IfNode* node, int childcount) override;
+        ShuLangNode* egressIfNode(IfNode* node) override;
 };
