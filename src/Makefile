@@ -9,6 +9,8 @@ OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
 		  passes/Uniquification.o passes/RemoveComplexOperands.o  \
 		  passes/SelectInstructions.o passes/LLVMSelection.o
 
+PYTHONFILEPATH = ./output/shulang$(shell python3-config --extension-suffix)
+
 DRIVER = ./driver/driver.o
 
 DEPS := $(OBJECTS:.o=.d) ./driver/driver.d ./python_binding/pybind11_stuff.d
@@ -25,15 +27,12 @@ DEPS := $(OBJECTS:.o=.d) ./driver/driver.d ./python_binding/pybind11_stuff.d
 	touch ./output/ShuC.out
 	$(CC) $(CPPFLAGS) $(OBJECTS)  ./driver/driver.o -o ./output/ShuC.out
 
+./output/shulang$(shell python3-config --extension-suffix): $(OBJECTS)
+	touch ./shulang$(shell python3-config --extension-suffix)
+	$(CC) $(PYTHONFLAGS) $(shell llvm-config --libs) $(OBJECTS)  ./python_bindings/pybind11_stuff.cpp -shared -o $(PYTHONFILEPATH)
+	cp $(PYTHONFILEPATH) ../test-cases/shulang$(shell python3-config --extension-suffix)
 
-./python_bindings/pybind11_stuff.o: $(OBJECTS)
-	$(CC) $(CPPFLAGS) $(PYTHONFLAGS) -fPIC ./python_bindings/pybind11_stuff.cpp -c -o ./python_bindings/pybind11_stuff.o
-
-build: ./output/ShuC.out
-
-# Makes the python testing bindings
-python: $(OBJECTS)
-	$(CC) $(PYTHONFLAGS) $(shell llvm-config --libs) $(OBJECTS)  ./python_bindings/pybind11_stuff.cpp -shared -o ../test-cases/shulang$(shell python3-config --extension-suffix)
+build: ./output/ShuC.out $(PYTHONFILEPATH)
 
 clean:
 	$(RM) -f ./output/*

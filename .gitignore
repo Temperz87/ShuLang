@@ -6,3 +6,4 @@ ShuC.out
 src/compile_commands.json
 src/.cache/*
 test-cases/shulang.cpython-313-x86_64-linux-gnu.so
+src/shulang.cpython-313-x86_64-linux-gnu.so
