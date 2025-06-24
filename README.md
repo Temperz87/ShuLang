@@ -34,7 +34,7 @@ I changed how variables get uniquified in this pass. Basically instead of reuniq
 ### New pass: Short Circuit-ification
 In the Racket programming langauge, the expression `(and lhs rhs)` if just a macro for `(if lhs rhs #f)` And similarly `(or lhs rhs)` becomes `(if lhs #t rhs)`. This is useful because it allows for short circuiting, where we only evaluate the right hand side when we need to. The side effect of this change is we're introducing a new jump instruction, and as we know jump instructions are slow. 
 
-If the `rhs` is an atomic value (variable reference, true, or false) then short circuiting because useless, as the `rhs` is already evalutated as ShuLang is call-by value. Hence instead of inserting a new block, we'll leave it as is and use the SIR `cmp` blocks.
+If the `rhs` is an atomic value (variable reference, true, or false) then short circuiting because useless, as the `rhs` is already evalutated as ShuLang is call-by value. Hence instead of inserting a new block, we'll leave it as is and use the SIR `cmp` instructions.
 
 ### Remove complex operands
 We have to make sure that the condition of the if is not complex.

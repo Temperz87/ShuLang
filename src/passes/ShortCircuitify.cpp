@@ -24,8 +24,24 @@ class MarkShortCircuit : public ShuLangVisitor {
     public:
         std::vector<std::shared_ptr<IfNode>> bindings;
 
-        ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) override {
-            // Check if we've found an operator node that should short circuit
+        ShuLangNode* egressBindingNode(BindingNode* node) override {
+            replace_with_mark(node->value);
+            return ShuLangVisitor::egressBindingNode(node);
+        }
+
+        ShuLangNode* egressPrintNode(PrintNode* node) override {
+            replace_with_mark(node->to_print);
+            return ShuLangVisitor::egressPrintNode(node);
+        }
+        
+        ShuLangNode* egressIfNode(IfNode* node) override { 
+            replace_with_mark(node->condition);
+            return ShuLangVisitor::egressNode(node); 
+        }
+
+        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
+            replace_with_mark(node->lhs);
+            replace_with_mark(node->rhs);
             if (node->op == "and" || node->op == "or") {
                 // If the rhs is atomic 
                 // Then because ShuLang is call by value
@@ -68,27 +84,6 @@ class MarkShortCircuit : public ShuLangVisitor {
                     marks.insert({node, ref});
                 }
             }
-            return ShuLangVisitor::ingressOperatorApplicationNode(node, childcount);
-        }
-
-        ShuLangNode* egressBindingNode(BindingNode* node) override {
-            replace_with_mark(node->value);
-            return ShuLangVisitor::egressBindingNode(node);
-        }
-
-        ShuLangNode* egressPrintNode(PrintNode* node) override {
-            replace_with_mark(node->to_print);
-            return ShuLangVisitor::egressPrintNode(node);
-        }
-        
-        ShuLangNode* egressIfNode(IfNode* node) override { 
-            replace_with_mark(node->condition);
-            return ShuLangVisitor::egressNode(node); 
-        }
-
-        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
-            replace_with_mark(node->lhs);
-            replace_with_mark(node->rhs);
             return ShuLangVisitor::egressOperatorApplicationNode(node);
         }
 };
