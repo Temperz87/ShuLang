@@ -13,15 +13,19 @@ static Iterator<token> iter;
 static token currenttoken;
 static std::string filename;
 
-void advance() {
+bool advance() {
+    if (iter.empty())
+        return false;
+
     iter.advance();
     
     // if (!iter.empty())
         // std::cout << "Iterator now at " << currenttoken.value << std::endl;
     // else
-        // std::cout << "Iterator empty" << std::endl;
+        // std::cout << "Iterator now empty" << std::endl;
 
     iter.get(currenttoken);
+    return true;
 }
 
 void parse_error(std::string msg) {
@@ -49,18 +53,18 @@ void assert_at_type(token_type expected) {
 }
 
 std::string operator_highest[] = {
-    "and",
-    "or",
-    "xor"      
-};
-
-std::string operator_high[] = {
     "=", 
     "!=",
     "<" ,
     "<=",
     ">",       
     ">="       
+};
+
+std::string operator_high[] = {
+    "and",
+    "or",
+    "xor"      
 };
 
 std::string operator_medium[] = {
@@ -159,7 +163,6 @@ std::shared_ptr<ValueNode> parse_value(token tok) {
 
 // Assoc helper functions
 
-
 // Given a token (
 // Find its matching )
 int get_closing_idx(std::vector<token>& tokens, int start, int end) {
@@ -245,7 +248,9 @@ std::shared_ptr<ValueNode> parse_complex_value() {
     do {
         last_inserted = currenttoken;
         tokens.push_back(last_inserted);
-        advance();
+        if (!advance()) {
+            parse_error("ShuC: Unexpected end of file. I think you recommend inserting a statement here");
+        }
         if (currenttoken.type == PUNCTUATOR) {
             // Spahgetti code
             if (currenttoken.value == "(")

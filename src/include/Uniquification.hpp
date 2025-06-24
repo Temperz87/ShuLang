@@ -3,7 +3,6 @@
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
 #include <unordered_map>
-#include <vector>
 
 class Uniquification : public ShuLangVisitor {
     private:

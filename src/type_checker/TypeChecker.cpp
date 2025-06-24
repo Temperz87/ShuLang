@@ -20,10 +20,7 @@ void TypeChecker::assert_same(std::string expected, std::string actual, std::str
 
 TypeChecker::ASTHolder TypeChecker::ingressBindingNode(BindingNode* node, int childcount) { 
     if (node->ty != "Inferred") {
-        if (variable_types.find(node->name) == variable_types.end())
-            variable_types.insert({node->name, node->ty});
-        else
-            variable_types.at(node->name) = node->ty;
+        variable_types.insert({node->name, node->ty});
     }
     
     return ShuLangVisitor::ingressBindingNode(node, childcount);
@@ -32,17 +29,13 @@ TypeChecker::ASTHolder TypeChecker::ingressBindingNode(BindingNode* node, int ch
 ShuLangNode* TypeChecker::egressBindingNode(BindingNode* node) { 
     if (node->ty == "Inferred") {
         node->ty = node->value->type;
-        if (variable_types.find(node->name) == variable_types.end())
-            variable_types.insert({node->name, node->ty});
-        else
-            variable_types.at(node->name) = node->ty;
+        variable_types.insert({node->name, node->ty});
     }
     else 
-        assert_same(node->ty, node->value->type, "Variable " + node->name + "was bound to something of the wrong type");
+        assert_same(node->ty, node->value->type, "Variable " + node->name + " was bound to a value of the wrong type");
     
     return ShuLangVisitor::egressBindingNode(node);
 }
-
         
 ShuLangNode* TypeChecker::egressVariableReferenceNode(VariableReferenceNode* node) {
     node->type = variable_types.at(node->identifier);

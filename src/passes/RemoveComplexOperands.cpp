@@ -1,43 +1,21 @@
+#include <ComplexDetector.hpp>
+#include <ShuLangPasses.hpp>
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
-#include <RemoveComplexOperands.hpp>
 #include <memory>
 #include <string>
 #include <vector>
 
-std::string gen_tmp_name() {
-    static int tmp_counter = 0;
-    return "tmp" + std::to_string(tmp_counter++);
-}
-
-// Is this scuffed? YES!
-// Do I care? YES!
-// Is this making me insecure? YES!
-// Will I fix it? Maybe.........
-class ComplexDetector : public ShuLangVisitor {
-    private:
-        bool is_complex = false;
-    public:
-        bool NeedToRebind(ShuLangNode* node) {
-            walk(node);
-            bool ret = is_complex;
-            is_complex = false;
-            return ret;
-        }
-
-        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
-            is_complex = true;
-            return ShuLangVisitor::egressOperatorApplicationNode(node);
-        }
-};
 
 // This class takes in an AST that doesn't have to be atomic
 // And tries to ensure its children are
 class target_complex : public ShuLangVisitor {
     private:
         std::shared_ptr<VariableReferenceNode> generate_binding(std::shared_ptr<ValueNode> complex_value) {
+            static int tmp_counter = 0;
+            std::string name = "rco_output." + std::to_string(tmp_counter++);
+
             std::shared_ptr<BindingNode> fresh = std::make_unique<BindingNode>();
-            std::string name = gen_tmp_name();
             fresh->name = name;
             // TODO: Assign type
             fresh->ty = complex_value->type;
@@ -51,12 +29,11 @@ class target_complex : public ShuLangVisitor {
         
         ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
             // For operators, their lhs and rhs must be atomic
-            ComplexDetector det;
-            if (det.NeedToRebind(node->lhs.get())) {
+            if (ComplexDetector::IsComplex(node->lhs.get())) {
                 node->lhs = generate_binding(node->lhs);
             }
 
-            if (det.NeedToRebind(node->rhs.get())) {
+            if (ComplexDetector::IsComplex(node->rhs.get())) {
                 node->rhs = generate_binding(node->rhs);
             }
 
@@ -66,7 +43,7 @@ class target_complex : public ShuLangVisitor {
         ShuLangNode* egressPrintNode(PrintNode* node) override {
             ComplexDetector det;
             // to_print must be atomic
-            if (det.NeedToRebind(node->to_print.get())) {
+            if (ComplexDetector::IsComplex(node->to_print.get())) {
                 node->to_print = generate_binding(node->to_print);
             }
             return ShuLangVisitor::egressPrintNode(node);
@@ -75,7 +52,7 @@ class target_complex : public ShuLangVisitor {
         ShuLangNode* egressIfNode(IfNode* node) override {
             ComplexDetector det;
             // Condition must be atomic
-            if (det.NeedToRebind(node->condition.get())) {
+            if (ComplexDetector::IsComplex(node->condition.get())) {
                 node->condition = generate_binding(node->condition);
             }
 

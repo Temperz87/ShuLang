@@ -70,7 +70,7 @@ def graph_ast(node, parent=''):
             graph_ast(node.rhs, my_node)
             return my_node
         case BindingNode():
-            my_node = graph_this_stuff("bind " + node.name, parent)
+            my_node = graph_this_stuff("bind " + node.name + " : " + node.ty, parent)
             graph_ast(node.value, my_node)
             return my_node
         case PrintNode():
@@ -245,6 +245,10 @@ def compare_stdout(out1, out2, filename, pass_name):
             exit(1)
 
 def run_case(file_name):
+    if not os.path.exists(file_name + ".exp"):
+        print("Could not find", file_name + '.exp', "Please add it")
+        return 
+    
     with open(file_name + ".exp", "r") as f:
         expected_stdout = [str(x).strip() for x in f.readlines()]
             
@@ -252,7 +256,7 @@ def run_case(file_name):
     ast = parse_file(file_name)
     print("---INITIAL AST---")
     # print_ast(ast)
-    graph_ast(ast)
+    # graph_ast(ast)
     print("Type checking...")
     type_check(ast)
     print("Running...")
@@ -264,9 +268,21 @@ def run_case(file_name):
     uniquify(ast)
     # print_ast(ast)
     # graph_ast(ast)
-    # print("Running")
+    print("Type checking...")
+    type_check(ast)
+    print("Running")
     uniquify_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
+
+    print("---SHORT CIRCUIT-IFICATION")
+    short_circuitify(ast)
+    # print_ast(ast)
+    graph_ast(ast)
+    print("Type checking...")
+    type_check(ast)
+    print("Running")
+    short_stdout = run_ast(ast, {}, [])
+    compare_stdout(expected_stdout, short_stdout, file_name, "uniquify")
     return
 
     print("---REMOVE COMPLEX OPERANDS---")
@@ -310,10 +326,7 @@ if __name__ == '__main__':
                 fp = os.path.join(shulangable, file)
                 if fp[-3:] != '.sl':
                     continue
-                if not os.path.exists(fp + ".exp"):
-                    print("Could not find", fp + '.exp', "Please add it")
-                    continue
-                
+
                 run_case(fp)
                 print()
                 tests_ran += 1

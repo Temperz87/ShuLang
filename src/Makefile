@@ -1,12 +1,12 @@
 CC = clang++
-CPPFLAGS = -Iinclude -MMD -g -Wall -pedantic $(shell llvm-config --cxxflags) $(shell llvm-config --libs)
+CPPFLAGS = -Iinclude -MMD -g -Wall -pedantic $(shell llvm-config --libs) -std=c++20
 PYTHONFLAGS = -O3 -Wall -shared -fPIC $(shell python3 -m pybind11 --include) -Iinclude
 RM = rm
 
 OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
 		  ast/shulang_ast.o ast/shuir_ast.o \
-		  Visitors/LLVMCodegenVisitor.o Visitors/ShuLangPrinter.o \
-		  passes/Uniquification.o passes/RemoveComplexOperands.o  \
+		  Visitors/ComplexDetector.o Visitors/LLVMCodegenVisitor.o Visitors/ShuLangPrinter.o \
+		  passes/Uniquification.o passes/ShortCircuitify.o passes/RemoveComplexOperands.o  \
 		  passes/SelectInstructions.o passes/LLVMSelection.o
 
 PYTHONFILEPATH = ./output/shulang$(shell python3-config --extension-suffix)

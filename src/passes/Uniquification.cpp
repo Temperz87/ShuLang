@@ -27,3 +27,8 @@ Uniquification::ASTHolder Uniquification::ingressVariableReferenceNode(VariableR
     node->identifier = map.at(node->identifier);
     return ShuLangVisitor::ingressVariableReferenceNode(node, childcount);
 }
+
+void uniquify(shulang::ProgramNode* ast) {
+    Uniquification u;
+    u.walk(ast);
+}

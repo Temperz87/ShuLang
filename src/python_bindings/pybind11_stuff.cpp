@@ -1,6 +1,5 @@
-#include "RemoveComplexOperands.hpp"
-#include "ShuIRAST.hpp"
-#include "Uniquification.hpp"
+#include <ShuLangPasses.hpp>
+#include <ShuIRAST.hpp>
 #include <memory>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -23,11 +22,6 @@ std::shared_ptr<shulang::ProgramNode> parse_file(std::string file) {
     myfile.close();
 
     return begin_parse(token_list, file);
-}
-
-void uniquify(shulang::ProgramNode* ast) {
-    Uniquification u;
-    u.walk(ast);
 }
 
 void type_check(shulang::ProgramNode* ast) {
@@ -152,6 +146,7 @@ PYBIND11_MODULE(shulang, m) {
     m.def("parse_file", &parse_file, "Given a file returns an AST");
     m.def("type_check", &type_check, "Given a program type check it");
     m.def("uniquify", &uniquify, "Runs the uniquification pass");
+    m.def("short_circuitify", &short_circuitify, "Runs the funny short circuit pass");
     m.def("remove_complex_operands", &remove_complex_operands, "Runs the remove complex operands pass");
     m.def("select_instructions", &select_SIR_instructions, "Translated from ShuLang to SIR");
     m.def("select_llvm", &select_llvm_instructions, "Perform the final lowering!!!");

@@ -25,17 +25,19 @@ I also changed how operators get parsed in order to make it more extensible. Bas
 I also have to write another precedence function!!!
 - I defered this to later because I really don't want to...
 
-
 ### Type checking
 Everything in ShuLang before was an Integer, but in order to implement conditionals we need to implement a type checker. I'll just do the standard bidirectional "do I synthesize or check a type :O"
 
-### Uniquify 
+### Uniquification
 I changed how variables get uniquified in this pass. Basically instead of reuniquifying already uniquified variables in order to get unique variabels, I just use the already uniquified name.
 
-### Remove complex operands
-I have to target the condition of an if statement to make sure it's not complex.
+### New pass: Short Circuit-ification
+In the Racket programming langauge, the expression `(and lhs rhs)` if just a macro for `(if lhs rhs #f)` And similarly `(or lhs rhs)` becomes `(if lhs #t rhs)`. This is useful because it allows for short circuiting, where we only evaluate the right hand side when we need to. The side effect of this change is we're introducing a new jump instruction, and as we know jump instructions are slow. 
 
-If I encounter an `and` or an `or` and the arguments are not atomic, then to support short circuting I should change `p and q` into `if (p) q else false` and change `p or q` into `if (p) true else q`. 
+If the `rhs` is an atomic value (variable reference, true, or false) then short circuiting because useless, as the `rhs` is already evalutated as ShuLang is call-by value. Hence instead of inserting a new block, we'll leave it as is and use the SIR `cmp` blocks.
+
+### Remove complex operands
+We have to make sure that the condition of the if is not complex.
 
 ### Select SIR instructions
 The first pass that's different in a meaningful way. 

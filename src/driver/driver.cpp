@@ -8,10 +8,9 @@
 #include <ostream>
 #include <parser.hpp>
 #include <vector>
-#include <RemoveComplexOperands.hpp>
+#include <ShuLangPasses.hpp>
 #include <SelectInstructions.hpp>
 #include <tokenizer.hpp>
-#include <Uniquification.hpp>
 #include <TypeChecker.hpp>
 
 static std::string output_file = "a.ll";
@@ -80,9 +79,16 @@ int main(int argc, char** argv) {
     // bind x to 5 bind x to 6
     // that becomes bind x.0 to 5 bind x.1 to 6
     // every variable gets a unique name
-    Uniquification().walk(program.get());
+    uniquify(program.get());
     // ShuLangPrinter().walk(program.get());
 
+
+    // std::cout << "-----SHORT CIRCUIT-IFICATION-----" << std::endl;
+    // And with a complex rhs become
+    //  if (lhs) rhs else false
+    // Or's similarly become
+    //  if (lhs) true else rhs
+    short_circuitify(program.get());
 
     // std::cout << "-----REMOVE COMPLEX OPERANDS-----" << std::endl;
     // Say I do bind x to (1 + 2) + (3 + 4)
