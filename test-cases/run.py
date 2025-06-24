@@ -277,22 +277,22 @@ def run_case(file_name):
     print("---SHORT CIRCUIT-IFICATION")
     short_circuitify(ast)
     # print_ast(ast)
-    graph_ast(ast)
+    # graph_ast(ast)
     print("Type checking...")
     type_check(ast)
     print("Running")
     short_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, short_stdout, file_name, "uniquify")
-    return
 
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
     # print_ast(ast)
-    # graph_ast(ast)
+    graph_ast(ast)
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
 
+    return
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
     print_sir_ast(sir_program)
