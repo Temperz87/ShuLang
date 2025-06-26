@@ -22,7 +22,7 @@ class MarkShortCircuit : public ShuLangVisitor {
         }
 
     public:
-        std::vector<std::shared_ptr<IfNode>> bindings;
+        std::shared_ptr<IfNode> last_binding = nullptr;
 
         ShuLangNode* egressBindingNode(BindingNode* node) override {
             replace_with_mark(node->value);
@@ -61,23 +61,31 @@ class MarkShortCircuit : public ShuLangVisitor {
                     std::shared_ptr<BindingNode> thn = std::make_shared<BindingNode>();
                     thn->ty = "Boolean";
                     thn->name = unique_name;
-                    ifnode->then_block.push_back(thn);
 
                     std::shared_ptr<BindingNode> els = std::make_shared<BindingNode>();
                     els->ty = "Boolean";
                     els->name = unique_name;
-                    ifnode->else_block.push_back(els);
 
                     if (node->op == "and") {
                         thn->value = node->rhs;
+                        if (last_binding != nullptr) {
+                            ifnode->then_block.push_back(last_binding);
+                        }
                         els->value = std::make_shared<BooleanNode>(false);
                     }
                     else if (node->op == "or") {
                         thn->value = std::make_shared<BooleanNode>(true);
+                        if (last_binding != nullptr) {
+                            ifnode->else_block.push_back(last_binding);
+                        }
                         els->value = node->rhs;
                     }
 
-                    bindings.push_back(ifnode);
+
+                    ifnode->then_block.push_back(thn);
+                    ifnode->else_block.push_back(els);
+
+                    last_binding = ifnode;
 
                     std::shared_ptr<VariableReferenceNode> ref = std::make_shared<VariableReferenceNode>(unique_name);
                     ref->type = "Boolean";
@@ -92,8 +100,9 @@ void short_circuitify(ProgramNode* program) {
     for (long i = 0; i < program->nodes.size(); i++) {
         MarkShortCircuit c;
         c.walk(program);
-        for (std::shared_ptr<IfNode> node : c.bindings) {
-            program->nodes.insert(program->nodes.begin() + i, node);
+        if (c.last_binding != nullptr) {
+            program->nodes.insert(program->nodes.begin() + i, c.last_binding);
+            c.last_binding = nullptr;
             i += 1;
         }
     }

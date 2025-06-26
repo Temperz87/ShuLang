@@ -37,9 +37,9 @@ def print_ast(node : ASTNode, indentation = 0):
             print_indentation(indentation)
             print("THEN")
             for x in node.then_block:
-                print_ast(node.x, indentation + 1)
-            print("ELSE")
+                print_ast(x, indentation + 1)
             print_indentation(indentation)
+            print("ELSE")
             for x in node.else_block:
                 print_ast(x, indentation + 1)
 
@@ -276,7 +276,7 @@ def run_case(file_name):
     print("---SHORT CIRCUIT-IFICATION")
     short_circuitify(ast)
     # print_ast(ast)
-    graph_ast(ast)
+    # graph_ast(ast)
     print("Type checking...")
     type_check(ast)
     print("Running")
