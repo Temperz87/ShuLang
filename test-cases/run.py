@@ -89,13 +89,20 @@ def graph_ast(node, parent=''):
         case IfNode():
             my_node = graph_this_stuff("if", parent)
             graph_ast(node.condition, my_node)
-            last = graph_this_stuff("then", my_node)
+
+            count = 1
+            thn = graph_this_stuff("then", my_node)
             for child in node.then_block:
-                graph_ast(child, last)
-            
-            last = graph_this_stuff("else", my_node)
+                parent = graph_this_stuff("then" + str(count), thn)
+                count += 1
+                graph_ast(child, parent)
+
+            count = 1
+            els = graph_this_stuff("else", my_node)
             for child in node.else_block:
-                graph_ast(child, last)
+                parent = graph_this_stuff("else" + str(count), els)
+                count += 1
+                graph_ast(child, parent)
             return my_node
 
 def get_value(node, env):
@@ -107,37 +114,59 @@ def get_value(node, env):
         case VariableReferenceNode():
             if node.identifier not in env:
                 print(node.identifier, "was not found!")
-                print(env)
+                print("\tIn env:", env)
                 exit(1)
             
             return env[node.identifier]
         case OperatorApplicationNode():
-            lhs = get_value(node.lhs, env)
-            rhs = get_value(node.rhs, env)
             match node.op:
                 case '+':
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                     return lhs + rhs
                 case '-':
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                     return lhs - rhs
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                 case '*':
                     return lhs * rhs
                 case '=':
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                     return lhs == rhs
                 case '!=':
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                     return lhs != rhs
                 case 'or':
-                    return lhs or rhs
+                    if get_value(node.lhs, env):
+                        return True
+                    return get_value(node.rhs, env)
                 case 'and':
-                    return lhs and rhs
+                    if get_value(node.lhs, env):
+                        return get_value(node.rhs, env)
+                    return False
                 case 'xor':
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                     return lhs ^ rhs
                 case '>':
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                     return lhs > rhs
                 case '>=':
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                     return lhs >= rhs
                 case '<':
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                     return lhs < rhs
                 case '<=':
+                    lhs = get_value(node.lhs, env)
+                    rhs = get_value(node.rhs, env)
                     return lhs <= rhs
                 case _:
                     print("Unrecognized operator", node.op)
@@ -269,19 +298,19 @@ def run_case(file_name):
     graph_ast(ast)
     print("Type checking...")
     type_check(ast)
-    print("Running")
+    print("Running...")
     uniquify_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
 
-    print("---SHORT CIRCUIT-IFICATION")
-    short_circuitify(ast)
+    # print("---SHORT CIRCUIT-IFICATION")
+    # short_circuitify(ast)
     # print_ast(ast)
     # graph_ast(ast)
-    print("Type checking...")
-    type_check(ast)
-    print("Running")
-    short_stdout = run_ast(ast, {}, [])
-    compare_stdout(expected_stdout, short_stdout, file_name, "uniquify")
+    # print("Type checking...")
+    # type_check(ast)
+    # print("Running...")
+    # short_stdout = run_ast(ast, {}, [])
+    # compare_stdout(expected_stdout, short_stdout, file_name, "uniquify")
 
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
@@ -290,7 +319,6 @@ def run_case(file_name):
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
-
     return
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)

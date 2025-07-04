@@ -146,7 +146,7 @@ PYBIND11_MODULE(shulang, m) {
     m.def("parse_file", &parse_file, "Given a file returns an AST");
     m.def("type_check", &type_check, "Given a program type check it");
     m.def("uniquify", &uniquify, "Runs the uniquification pass");
-    m.def("short_circuitify", &short_circuitify, "Runs the funny short circuit pass");
+    // m.def("short_circuitify", &short_circuitify, "Runs the funny short circuit pass");
     m.def("remove_complex_operands", &remove_complex_operands, "Runs the remove complex operands pass");
     m.def("select_instructions", &select_SIR_instructions, "Translated from ShuLang to SIR");
     m.def("select_llvm", &select_llvm_instructions, "Perform the final lowering!!!");

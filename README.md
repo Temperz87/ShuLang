@@ -36,6 +36,8 @@ In the Racket programming langauge, the expression `(and lhs rhs)` if just a mac
 
 If the `rhs` is an atomic value (variable reference, true, or false) then short circuiting because useless, as the `rhs` is already evalutated as ShuLang is call-by value. Hence instead of inserting a new block, we'll leave it as is and use the SIR `cmp` instructions.
 
+This pass is strictly an optimization pass so I'll be saving it until after I had if's compiled. Trying to implement this pass early on demonstrated serious flaws with my visitor class, and how I'll need to reimplement it.
+
 ### Remove complex operands
 We have to make sure that the condition of the if is not complex.
 
