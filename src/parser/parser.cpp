@@ -275,15 +275,18 @@ std::shared_ptr<ValueNode> parse_complex_value() {
     return parse_integer_or_op(tokens, 0, tokens.size());
 }
 
-void parse_body(std::vector<std::shared_ptr<StatementNode>>& buf) {
+std::shared_ptr<BodyNode> parse_body() {
+    std::shared_ptr<BodyNode> ret = std::make_shared<BodyNode>();
     if (currenttoken.value == "{") {
         advance();
         while (currenttoken.value != "}")
-            buf.push_back(parse_statement());
+            ret->nodes.push_back(parse_statement());
         advance();
     }
     else
-        buf.push_back(parse_statement());
+        ret->nodes.push_back(parse_statement());
+
+    return ret;
 }
 
 std::shared_ptr<StatementNode> parse_statement() {
@@ -316,11 +319,14 @@ std::shared_ptr<StatementNode> parse_statement() {
         std::shared_ptr<IfNode> ret = std::make_shared<IfNode>();
         std::shared_ptr<ValueNode> cond = parse_complex_value();
         ret->condition = cond;
-        parse_body(ret->then_block);
+        ret->then_block = parse_body();
 
         if (currenttoken.value == "else") {
             advance();
-            parse_body(ret->else_block);
+            ret->else_block = parse_body();
+        }
+        else {
+            ret->else_block = nullptr;
         }
         
         return ret;

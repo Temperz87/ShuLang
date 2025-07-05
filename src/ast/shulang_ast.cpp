@@ -98,8 +98,11 @@ ShuLangNode* OperatorApplicationNode::egressVisitor(ShuLangVisitor* visitor) {
 std::vector<std::shared_ptr<ShuLangNode>> IfNode::children() {
   std::vector<std::shared_ptr<ShuLangNode>> childs;
   childs.push_back(condition);
-  childs.insert(childs.end(), then_block.begin(), then_block.end());
-  childs.insert(childs.end(), else_block.begin(), else_block.end());
+  childs.push_back(then_block);
+
+  if (else_block != nullptr)
+    childs.push_back(else_block);
+  
   return childs;
 }
 childholder<ShuLangNode> IfNode::ingressVisitor(ShuLangVisitor* visitor) {
@@ -109,11 +112,18 @@ ShuLangNode* IfNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressIfNode(this);
 }
 
-std::vector<std::shared_ptr<ShuLangNode>> ProgramNode::children() {
+std::vector<std::shared_ptr<ShuLangNode>> BodyNode::children() {
   std::vector<std::shared_ptr<ShuLangNode>> childs;
   childs.insert(childs.end(), nodes.begin(), nodes.end());
   return childs;
 }
+childholder<ShuLangNode> BodyNode::ingressVisitor(ShuLangVisitor* visitor) {
+  return visitor->ingressBodyNode(this, nodes.size());
+}
+ShuLangNode* BodyNode::egressVisitor(ShuLangVisitor* visitor) {
+  return visitor->egressBodyNode(this);
+}
+
 childholder<ShuLangNode> ProgramNode::ingressVisitor(ShuLangVisitor* visitor) {
   return visitor->ingressProgramNode(this, nodes.size());
 }

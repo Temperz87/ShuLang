@@ -51,6 +51,10 @@ llvm::Value* MultNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
 }
 
+llvm::Value* CmpNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->codegen(this);
+}
+
 std::vector<std::string> PrintNode::get_usages() {
     return to_print->get_usages();
 }

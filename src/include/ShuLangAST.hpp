@@ -96,20 +96,27 @@ namespace shulang {
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
-  class IfNode : public StatementNode {
+  class BodyNode : public ShuLangNode {
     public:
-      std::vector<std::shared_ptr<StatementNode>> then_block;
-      std::vector<std::shared_ptr<StatementNode>> else_block;
-      std::shared_ptr<ValueNode> condition;
+      std::vector<std::shared_ptr<ShuLangNode>> nodes;
       std::vector<std::shared_ptr<ShuLangNode>> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
-  class ProgramNode : public ShuLangNode {
+  class IfNode : public StatementNode {
     public:
-      std::vector<std::shared_ptr<ShuLangNode>> nodes;
+      std::shared_ptr<ValueNode> condition;
+      std::shared_ptr<BodyNode> then_block;
+      std::shared_ptr<BodyNode> else_block;
       std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
+  };
+
+
+  class ProgramNode : public BodyNode {
+    public:
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };

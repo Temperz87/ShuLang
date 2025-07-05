@@ -71,6 +71,9 @@ int main(int argc, char** argv) {
     // ShuLangPrinter().walk(program.get());
 
     // std::cout << "-----TYPE CHECKING-----" << std::endl;
+    // We only type check one time
+    // Because if all the compiler tests pass
+    // There won't be any type issues at runtime
     TypeChecker tyc;
     tyc.walk(program.get());
 

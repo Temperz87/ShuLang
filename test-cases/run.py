@@ -128,9 +128,9 @@ def get_value(node, env):
                     lhs = get_value(node.lhs, env)
                     rhs = get_value(node.rhs, env)
                     return lhs - rhs
+                case '*':
                     lhs = get_value(node.lhs, env)
                     rhs = get_value(node.rhs, env)
-                case '*':
                     return lhs * rhs
                 case '=':
                     lhs = get_value(node.lhs, env)
@@ -191,10 +191,10 @@ def run_ast(node, env = {}, stdout = []):
         case IfNode():
             path = get_value(node.condition, env)
             if path:
-                for x in node.then_block:
+                for x in node.then_block.nodes:
                     run_ast(x, env, stdout)
-            else:
-                for x in node.else_block:
+            elif node.else_block != None:
+                for x in node.else_block.nodes:
                     run_ast(x, env, stdout)
 
 def stringify_value(node):
@@ -209,6 +209,8 @@ def stringify_value(node):
             return stringify_value(node.lhs) + " - " + stringify_value(node.rhs)
         case MultNode():
             return stringify_value(node.lhs) + " * " + stringify_value(node.rhs)
+        case CmpNode():
+            return stringify_value(node.lhs) + " " + node.op + " " + stringify_value(node.rhs)
         case _:
             print("Unknown value", node)
             exit(1)
@@ -233,17 +235,34 @@ def print_sir_ast(node, indentation = 0):
             exit(1)
 
 def get_sir_value(node, env):
+    lhs = get_sir_value(node.lhs, env)
+    rhs = get_sir_value(node.rhs, env)
     match node:
         case ImmediateNode():
             return node.number
         case ReferenceNode():
             return env[node.identifier]
         case AddNode():
-            return get_sir_value(node.lhs, env) + get_sir_value(node.rhs, env)
+            return lhs + rhs
         case SubNode():
-            return get_sir_value(node.lhs, env) - get_sir_value(node.rhs, env)
+            return lhs - rhs
         case MultNode():
-            return get_sir_value(node.lhs, env) * get_sir_value(node.rhs, env)
+            return lhs * rhs
+        case CmpNode():
+            match node.op:
+                case "<":
+                    return lhs < rhs
+                case "<=":
+                    return lhs <= rhs
+                case "=":
+                    return lhs == rhs
+                case "!=":
+                    return lhs != rhs
+                case ">":
+                    return lhs > rhs
+                case ">=":
+                    return lhs >= rhs
+
 
 def run_sir_ast(node, env, stdout):
     match node:
@@ -285,7 +304,7 @@ def run_case(file_name):
     ast = parse_file(file_name)
     print("---INITIAL AST---")
     # print_ast(ast)
-    graph_ast(ast)
+    # graph_ast(ast)
     print("Type checking...")
     type_check(ast)
     print("Running...")
@@ -295,7 +314,7 @@ def run_case(file_name):
     print("---UNIQUIFICATION---")
     uniquify(ast)
     # print_ast(ast)
-    graph_ast(ast)
+    # graph_ast(ast)
     print("Type checking...")
     type_check(ast)
     print("Running...")
@@ -303,6 +322,7 @@ def run_case(file_name):
     compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
 
     # print("---SHORT CIRCUIT-IFICATION")
+    # TODO: Finish this pass!!!
     # short_circuitify(ast)
     # print_ast(ast)
     # graph_ast(ast)
@@ -315,16 +335,17 @@ def run_case(file_name):
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
     # print_ast(ast)
-    graph_ast(ast)
+    # graph_ast(ast)
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
-    return
+
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
     print_sir_ast(sir_program)
     select_stdout = run_sir_ast(sir_program, {}, [])
     compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
+    return
 
     print("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
