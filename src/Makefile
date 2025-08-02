@@ -1,6 +1,6 @@
 CC = clang++
 CPPFLAGS = -Iinclude -MMD -g -Wall -pedantic $(shell llvm-config --libs) -std=c++20
-PYTHONFLAGS = -O3 -Wall -shared -fPIC $(shell python3 -m pybind11 --include) -Iinclude
+PYTHONFLAGS = -O3 -Wall -shared -fPIC $(shell python3 -m pybind11 --includes) -Iinclude
 RM = rm
 
 OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
@@ -25,11 +25,11 @@ DEPS := $(OBJECTS:.o=.d) ./driver/driver.d ./python_binding/pybind11_stuff.d
 
 ./output/ShuC.out: ./driver/driver.o
 	touch ./output/ShuC.out
-	$(CC) $(CPPFLAGS) $(OBJECTS)  ./driver/driver.o -o ./output/ShuC.out
+	$(CC) $(CPPFLAGS) $(OBJECTS) ./driver/driver.o -o ./output/ShuC.out
 
 ./output/shulang$(shell python3-config --extension-suffix): $(OBJECTS)
 	touch ./shulang$(shell python3-config --extension-suffix)
-	$(CC) $(PYTHONFLAGS) $(shell llvm-config --libs) $(OBJECTS)  ./python_bindings/pybind11_stuff.cpp -shared -o $(PYTHONFILEPATH)
+	$(CC) $(PYTHONFLAGS) $(shell llvm-config --libs) $(OBJECTS) ./python_bindings/pybind11_stuff.cpp -shared -o $(PYTHONFILEPATH)
 	cp $(PYTHONFILEPATH) ../test-cases/shulang$(shell python3-config --extension-suffix)
 
 build: ./output/ShuC.out $(PYTHONFILEPATH)
