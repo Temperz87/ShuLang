@@ -5,7 +5,7 @@ import subprocess
 
 def print_indentation(indentation):
     if indentation > 0:
-        print("\t" * indentation, end='')
+        print(" " * indentation * 2, end='')
 
 def print_ast(node : ASTNode, indentation = 0):
     print_indentation(indentation)
@@ -36,25 +36,30 @@ def print_ast(node : ASTNode, indentation = 0):
             print_ast(node.condition, indentation + 1)
             print_indentation(indentation)
             print("THEN")
-            for x in node.then_block:
+            for x in node.then_block.nodes:
                 print_ast(x, indentation + 1)
             print_indentation(indentation)
             print("ELSE")
-            for x in node.else_block:
+            for x in node.else_block.nodes:
                 print_ast(x, indentation + 1)
 
 node_counter = 0
-def graph_this_stuff(label, parent):
+def graph_this_stuff(label, indentation, parent=None, name=None):
     global node_counter
     
-    unique = "node" + str(node_counter)
-    node_counter += 1
-    label_str = unique + '[label="' + str(label) + '"]'
-    print_indentation(1)
+    if name is None:
+        name = "node" + str(node_counter)
+        node_counter += 1
+        
+    label_str = name + '[label="' + str(label) + '"]'
+    print_indentation(indentation)
     print(label_str)
-    print_indentation(1)
-    print(parent, "->", unique)
-    return unique
+
+    if parent != None:
+        print_indentation(indentation)
+        print(parent, "->", name)
+
+    return name
 
 
 def graph_ast(node, parent=''):
@@ -65,44 +70,45 @@ def graph_ast(node, parent=''):
                 graph_ast(node, "program")
             print("}")
         case OperatorApplicationNode():
-            my_node = graph_this_stuff(node.op, parent)
+            my_node = graph_this_stuff(node.op, 1, parent)
             graph_ast(node.lhs, my_node)
             graph_ast(node.rhs, my_node)
             return my_node
         case BindingNode():
-            my_node = graph_this_stuff("bind " + node.name + " : " + node.ty, parent)
+            my_node = graph_this_stuff("bind " + node.name + " : " + node.ty, 1, parent)
             graph_ast(node.value, my_node)
             return my_node
         case PrintNode():
-            my_node = graph_this_stuff("print", parent)
+            my_node = graph_this_stuff("print", 1, parent)
             graph_ast(node.to_print, my_node)
             return my_node
         case IntegerNode():
-            my_node = graph_this_stuff(node.value, parent)
+            my_node = graph_this_stuff(node.value, 1, parent)
             return my_node
         case BooleanNode():
-            my_node = graph_this_stuff(node.value, parent)
+            my_node = graph_this_stuff(node.value, 1, parent)
             return my_node
         case VariableReferenceNode():
-            my_node = graph_this_stuff(node.identifier, parent)
+            my_node = graph_this_stuff(node.identifier, 1, parent)
             return my_node
         case IfNode():
-            my_node = graph_this_stuff("if", parent)
+            my_node = graph_this_stuff("if", 1, parent)
             graph_ast(node.condition, my_node)
 
             count = 1
-            thn = graph_this_stuff("then", my_node)
-            for child in node.then_block:
-                parent = graph_this_stuff("then" + str(count), thn)
+            parent = graph_this_stuff("then", 1, my_node)
+            for child in node.then_block.nodes:
                 count += 1
                 graph_ast(child, parent)
 
             count = 1
-            els = graph_this_stuff("else", my_node)
-            for child in node.else_block:
-                parent = graph_this_stuff("else" + str(count), els)
-                count += 1
-                graph_ast(child, parent)
+            parent = graph_this_stuff("else", 1, my_node)
+
+            if node.else_block != None:
+                for child in node.else_block.nodes:
+                    count += 1
+                    graph_ast(child, parent)
+                    
             return my_node
 
 def get_value(node, env):
@@ -218,67 +224,154 @@ def stringify_value(node):
 def print_sir_ast(node, indentation = 0):
     if indentation > 0:
         print("  " * indentation, end='')
+    # print("Discovered node", node)
     match node:
         case SIRProgramNode():
             print("SIRProgram")
             indentation += 1
             for block in node.blocks:
-                print("  " * indentation, block.name + ":")
+                print("  " * indentation, block.name + "(" + str(len(block.instructions)) + "):")
                 for node in block.instructions:
                     print_sir_ast(node, indentation + 1)
         case SIRPrintNode():
             print("PRINT", stringify_value(node.to_print))
         case DefinitionNode():
             print(node.identifier, "<-", stringify_value(node.binding))
+        case JumpIfNode():
+            print("jump to " + node.destination.name + " if " + stringify_value(node.condition))
+        case JumpNode():
+            print("jump to " + node.destination.name)
         case _:
             print("Unknown definition", node)
             exit(1)
 
 def get_sir_value(node, env):
-    lhs = get_sir_value(node.lhs, env)
-    rhs = get_sir_value(node.rhs, env)
     match node:
         case ImmediateNode():
             return node.number
         case ReferenceNode():
             return env[node.identifier]
         case AddNode():
+            lhs = get_sir_value(node.lhs, env)
+            rhs = get_sir_value(node.rhs, env)
             return lhs + rhs
         case SubNode():
+            lhs = get_sir_value(node.lhs, env)
+            rhs = get_sir_value(node.rhs, env)
             return lhs - rhs
         case MultNode():
+            lhs = get_sir_value(node.lhs, env)
+            rhs = get_sir_value(node.rhs, env)
             return lhs * rhs
         case CmpNode():
+            lhs = get_sir_value(node.lhs, env)
+            rhs = get_sir_value(node.rhs, env)
             match node.op:
                 case "<":
-                    return lhs < rhs
+                    ret = lhs < rhs
                 case "<=":
-                    return lhs <= rhs
+                    ret = lhs <= rhs
                 case "=":
-                    return lhs == rhs
+                    ret = lhs == rhs
                 case "!=":
-                    return lhs != rhs
+                    ret = lhs != rhs
                 case ">":
-                    return lhs > rhs
+                    ret = lhs > rhs
                 case ">=":
-                    return lhs >= rhs
-
-
-def run_sir_ast(node, env, stdout):
-    match node:
-        case SIRProgramNode():
-            for block in node.blocks:
-                for node in block.instructions:
-                    run_sir_ast(node, env, stdout)
-        case SIRPrintNode():
-            val = get_sir_value(node.to_print, env)
-            print(val)
-            stdout.append(val)
-        case DefinitionNode():
-            val = get_sir_value(node.binding, env)
-            env[node.identifier] = val
-    return stdout
+                    ret = lhs >= rhs
+                case "and":
+                    ret = lhs and rhs
+                case "or":
+                    ret = lhs or rhs
+                case "xor":
+                    ret = lhs ^ rhs
             
+            if ret:
+                return 1
+            return 0
+
+def run_sir_block(block, blocks, env, stdout):
+    for instruction in block.instructions:
+        match instruction:
+            case SIRPrintNode():
+                val = get_sir_value(instruction.to_print, env)
+                match instruction.print_type:
+                    case 'Integer':
+                        print(val)
+                        stdout.append(str(val).lower())
+                    case 'Boolean':
+                        if val == 1:
+                            print('true')
+                            stdout.append('true')
+                        elif val == 0:
+                            print('false')
+                            stdout.append('false')
+                        else:
+                            print('Val was', 0, 'which is not a boolean?')
+                
+            case DefinitionNode():
+                val = get_sir_value(instruction.binding, env)
+                env[instruction.identifier] = val
+            case JumpIfNode():
+                val = get_sir_value(instruction.condition, env)
+                if val:
+                    return run_sir_block(instruction.destination, blocks, env, stdout)
+            case JumpNode():
+                return run_sir_block(instruction.destination, blocks, env, stdout)
+    return stdout
+
+def run_sir_program(program_node):
+    for block in program_node.blocks:
+        if block.name == 'main':
+            return run_sir_block(block, program_node.blocks, {}, [])
+
+def get_sir_graph_string(instruction):
+    match instruction:
+        case SIRPrintNode():
+            return 'print ' + stringify_value(instruction.to_print)
+        case DefinitionNode():
+            return '%' + instruction.identifier + ' <- ' + stringify_value(instruction.binding)
+        case JumpIfNode():
+            return 'jump to ' + instruction.destination.name + ' if ' + stringify_value(instruction.condition)
+        case JumpNode():
+            return 'jump to ' + instruction.destination.name
+
+def graph_sir_program(program_node):
+    print("digraph SIRProgram {")
+
+    jumpnodes = []
+    for block in program_node.blocks:
+        print_indentation(1)
+        print("subgraph cluster_" + block.name + " {")
+
+        print_indentation(2)
+        print('label = "' + block.name + '";')
+
+        if len(block.instructions) == 0:
+            print_indentation(1)
+            print('}')
+            continue
+
+        current = None
+        for instruction in block.instructions:
+            # For our first instruction
+            if current == None:
+                current = graph_this_stuff(get_sir_graph_string(instruction), 2, current, name='first_' + block.name)
+            else:
+                current = graph_this_stuff(get_sir_graph_string(instruction), 2, current)
+            match instruction:
+                case JumpNode():
+                    jumpnodes.append((current, instruction.destination.name))
+
+        print_indentation(1)
+        print('}')
+
+    for source, destination in jumpnodes:
+        print_indentation(1)
+        print(source + ' -> first_' + destination)
+
+    print("}")
+
 def compare_stdout(out1, out2, filename, pass_name):
     if len(out1) != len(out2):
         print("Hmm, the lengths of these standard outs look different")
@@ -287,6 +380,7 @@ def compare_stdout(out1, out2, filename, pass_name):
         exit(-1)
     
     for (f, s) in zip(out1, out2):
+        # TODO: When strings are added something not this dumb
         if str(f) != str(s):
             print(f, "was expected but instead got", s)
             print("Error during compilation of", filename)
@@ -342,8 +436,10 @@ def run_case(file_name):
 
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
-    print_sir_ast(sir_program)
-    select_stdout = run_sir_ast(sir_program, {}, [])
+    # print_sir_ast(sir_program)
+    graph_sir_program(sir_program)
+    print("Running")
+    select_stdout = run_sir_program(sir_program)
     compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
     return
 
