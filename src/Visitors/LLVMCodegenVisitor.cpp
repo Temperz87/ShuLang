@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <ShuIRAST.hpp>
 #include "llvm/IR/IRBuilder.h"
@@ -9,6 +10,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/GlobalVariable.h>
+#include <llvm/IR/InstrTypes.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Verifier.h>
@@ -39,26 +41,58 @@ llvm::Value* LLVMCodegenVisitor::codegen(MultNode* node) {
     return builder->CreateMul(node->lhs->accept(this), node->rhs->accept(this));
 }
 
+llvm::CmpInst::Predicate get_predicate(std::string op) {
+    if (op == "<") 
+        return llvm::CmpInst::Predicate::ICMP_SLT;
+    else if (op == "<=")
+        return llvm::CmpInst::Predicate::ICMP_SLE;
+    else if (op == ">")
+        return llvm::CmpInst::Predicate::ICMP_SGT;
+    else if (op == ">=")
+        return llvm::CmpInst::Predicate::ICMP_SGE;
+    else if (op == "=")
+        return llvm::CmpInst::Predicate::ICMP_EQ;
+
+    // TOOD: exception
+    return llvm::CmpInst::Predicate::BAD_ICMP_PREDICATE;
+}
+
 llvm::Value* LLVMCodegenVisitor::codegen(CmpNode* node) {
     // TODO: Make icmp nodes
-    return nullptr;
+    if (node->op == "and")
+        return builder->CreateLogicalAnd(node->lhs->accept(this), node->rhs->accept(this));
+    else if (node->op == "or")
+        return builder->CreateLogicalOr(node->lhs->accept(this), node->rhs->accept(this));
+    
+    return builder->CreateICmp(get_predicate(node->op), node->lhs->accept(this), node->rhs->accept(this));
 }
 
 llvm::Value* LLVMCodegenVisitor::codegen(JumpNode* node) {
     // TODO: Make Jump nodes
-    return nullptr;
+    llvm::BasicBlock* dest_bb = llvm::BasicBlock::Create(context, node->destination->name, builder->GetInsertBlock()->getParent());
+    return builder->CreateBr(dest_bb);
 }
 
 llvm::Value* LLVMCodegenVisitor::codegen(JumpIfElseNode* node) {
     // TODO: Make JumpIf nodes
-    return nullptr;
+    llvm::BasicBlock* then_bb = llvm::BasicBlock::Create(context, node->destination->name, builder->GetInsertBlock()->getParent());
+    llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context, node->else_destination->name, builder->GetInsertBlock()->getParent());
+
+    llvm::Value* condition = node->condition->accept(this);
+    return builder->CreateCondBr(condition, then_bb, else_bb);
 }
 
 llvm::Value* LLVMCodegenVisitor::codegen(DefinitionNode* node) {
     llvm::Value* bind_to = node->binding->accept(this);
-    llvm::AllocaInst* fresh_binding = builder->CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, node->identifier);
-    this->bindings.insert({node->identifier, fresh_binding});
-    return builder->CreateStore(bind_to, fresh_binding);
+    llvm::AllocaInst* binding;
+    if (!this->bindings.contains(node->identifier)) {
+        binding = builder->CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, node->identifier);
+    }
+    else {
+        binding = this->bindings.at(node->identifier);
+    }
+    this->bindings.insert({node->identifier, binding});
+    return builder->CreateStore(bind_to, binding);
 }
 
 llvm::Value* LLVMCodegenVisitor::codegen(PrintNode* node) {
