@@ -1,6 +1,7 @@
 #include <ASTNode.hpp>
 #include <ShuLangVisitor.hpp>
 #include <ShuLangAST.hpp>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -100,13 +101,18 @@ std::vector<std::shared_ptr<ShuLangNode>> IfNode::children() {
   childs.push_back(condition);
   childs.push_back(then_block);
 
-  if (else_block != nullptr)
+  if (else_block != nullptr) {
     childs.push_back(else_block);
-  
+  }
+
   return childs;
 }
 childholder<ShuLangNode> IfNode::ingressVisitor(ShuLangVisitor* visitor) {
-  return visitor->ingressIfNode(this, 2);
+  // We only have the condition as the child
+  // Because we can treat the then and else blocks
+  // As their own separate entities
+  int childcount = 1;
+  return visitor->ingressIfNode(this, childcount);
 }
 ShuLangNode* IfNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressIfNode(this);
