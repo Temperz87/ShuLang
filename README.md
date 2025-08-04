@@ -46,6 +46,8 @@ The first pass that's different in a meaningful way.
 
 When I encounter an if statement I must create a block for the condition portion of the if statement, the "then" portion, another for an "else" portion if it exists, and also a block for the continuation if it exists. The newly created blocks should then jump to the continuation or an "exit" block, which means I have to create an exit block
 
+I also translate `true` to `1` and `false` to `0`. The type checker assures that this is okay.
+
 ### Select LLVM instructions
 Basically I have to levarage IR builder correctly :D
 
