@@ -308,6 +308,8 @@ def run_sir_block(block, blocks, env, stdout):
                             stdout.append('false')
                         else:
                             print('Val was', 0, 'which is not a boolean?')
+                    case _:
+                        print("Unsupported print type found in a SIRPrintNode:", instruction.print_type)
                 
             case DefinitionNode():
                 val = get_sir_value(instruction.binding, env)
@@ -408,9 +410,7 @@ def run_case(file_name):
     print("---UNIQUIFICATION---")
     uniquify(ast)
     # print_ast(ast)
-    # graph_ast(ast)
-    print("Type checking...")
-    type_check(ast)
+    # graph_ast(ast)k
     print("Running...")
     uniquify_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
@@ -430,6 +430,8 @@ def run_case(file_name):
     remove_complex_operands(ast)
     # print_ast(ast)
     # graph_ast(ast)
+    print("Type checking...")
+    type_check(ast)
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")

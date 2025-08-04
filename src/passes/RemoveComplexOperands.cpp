@@ -31,7 +31,9 @@ class target_complex : public ShuLangVisitor {
                 inserted += 1;
             }
 
-            return std::make_unique<VariableReferenceNode>(name);
+            std::shared_ptr<VariableReferenceNode> ref = std::make_shared<VariableReferenceNode>(name);
+            ref->type = complex_value->type;
+            return ref;
         }
 
     public:
