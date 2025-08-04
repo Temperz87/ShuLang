@@ -19,7 +19,6 @@
 #include <llvm/Support/raw_ostream.h>
 #include <system_error>
 
-
 using namespace shuir;
 
 void select_llvm_instructions(ProgramNode* node, std::string source_filename, std::string output) {
@@ -44,8 +43,8 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
     BasicBlock* entry_main = BasicBlock::Create(context, "entry", main_function);
     builder->SetInsertPoint(entry_main);
     std::unique_ptr<LLVMCodegenVisitor> visitor = std::make_unique<LLVMCodegenVisitor>(context, builder.get(), &module);
-    for (SIRBlock block : node->blocks) {
-        visitor->walk(block);
+    for (std::shared_ptr<SIRBlock> block : node->blocks) {
+        visitor->walk(*block);
     }
     builder->CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
     verifyFunction(*main_function);

@@ -63,14 +63,30 @@ llvm::Value* PrintNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
 }
 
+std::vector<std::string> JumpNode::get_usages() {
+    return std::vector<std::string>();
+}
+
+llvm::Value* JumpNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->codegen(this);
+}
+
+std::vector<std::string> JumpIfNode::get_usages() {
+    return condition->get_usages();
+}
+
+llvm::Value* JumpIfNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->codegen(this);
+}
+
 SIRBlock::SIRBlock(std::string name) {
     this->name = name;
 }
 
 std::vector<std::string> ProgramNode::get_usages() {
     std::vector<std::string> ret;
-    for (SIRBlock block : blocks) {
-        for (std::shared_ptr<InstructionNode> node : block.instructions) {
+    for (std::shared_ptr<SIRBlock> block : blocks) {
+        for (std::shared_ptr<InstructionNode> node : block->instructions) {
             std::vector<std::string> usages = node->get_usages();
             ret.insert(ret.end(), usages.begin(), usages.end());
         }

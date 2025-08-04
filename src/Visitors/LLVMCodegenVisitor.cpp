@@ -39,6 +39,21 @@ llvm::Value* LLVMCodegenVisitor::codegen(MultNode* node) {
     return builder->CreateMul(node->lhs->accept(this), node->rhs->accept(this));
 }
 
+llvm::Value* LLVMCodegenVisitor::codegen(CmpNode* node) {
+    // TODO: Make icmp nodes
+    return nullptr;
+}
+
+llvm::Value* LLVMCodegenVisitor::codegen(JumpNode* node) {
+    // TODO: Make Jump nodes
+    return nullptr;
+}
+
+llvm::Value* LLVMCodegenVisitor::codegen(JumpIfNode* node) {
+    // TODO: Make JumpIf nodes
+    return nullptr;
+}
+
 llvm::Value* LLVMCodegenVisitor::codegen(DefinitionNode* node) {
     llvm::Value* bind_to = node->binding->accept(this);
     llvm::AllocaInst* fresh_binding = builder->CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, node->identifier);

@@ -1,8 +1,8 @@
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <ShuLangPasses.hpp>
 #include <ShuIRAST.hpp>
 #include <memory>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 #include <ASTNode.hpp>
 #include <SelectInstructions.hpp>
 #include <LLVMSelection.hpp>
@@ -88,8 +88,13 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("else_block", &shulang::IfNode::else_block)
     .def_readwrite("condition", &shulang::IfNode::condition);
 
+    // BodyNode
+    py::class_<shulang::BodyNode, shulang::ShuLangNode, std::shared_ptr<shulang::BodyNode>>(m, "BodyNode")
+    .def("children", &shulang::BodyNode::children)
+    .def_readwrite("nodes", &shulang::BodyNode::nodes);
+
     // ProgramNode
-    py::class_<shulang::ProgramNode, shulang::ShuLangNode, std::shared_ptr<shulang::ProgramNode>>(m, "ProgramNode")
+    py::class_<shulang::ProgramNode, shulang::BodyNode, std::shared_ptr<shulang::ProgramNode>>(m, "ProgramNode")
     .def("children", &shulang::ProgramNode::children)
     .def_readwrite("nodes", &shulang::ProgramNode::nodes);
 
@@ -108,20 +113,31 @@ PYBIND11_MODULE(shulang, m) {
     .def(py::init<std::string>())
     .def_readwrite("identifier", &shuir::ReferenceNode::identifier);
 
-    py::class_<shuir::AddNode, shuir::ValueNode, std::shared_ptr<shuir::AddNode>>(m, "AddNode")
+    py::class_<shuir::BinOpNode, shuir::ValueNode, std::shared_ptr<shuir::BinOpNode>>(m, "BinOpNode")
+    .def("get_usages", &shuir::BinOpNode::get_usages)
+    .def_readwrite("lhs", &shuir::BinOpNode::lhs)
+    .def_readwrite("rhs", &shuir::BinOpNode::rhs);
+
+    py::class_<shuir::AddNode, shuir::BinOpNode, std::shared_ptr<shuir::AddNode>>(m, "AddNode")
     .def("get_usages", &shuir::AddNode::get_usages)
     .def_readwrite("lhs", &shuir::AddNode::lhs)
     .def_readwrite("rhs", &shuir::AddNode::rhs);
 
-    py::class_<shuir::SubNode, shuir::ValueNode, std::shared_ptr<shuir::SubNode>>(m, "SubNode")
+    py::class_<shuir::SubNode, shuir::BinOpNode, std::shared_ptr<shuir::SubNode>>(m, "SubNode")
     .def("get_usages", &shuir::SubNode::get_usages)
     .def_readwrite("lhs", &shuir::SubNode::lhs)
     .def_readwrite("rhs", &shuir::SubNode::rhs);
 
-    py::class_<shuir::MultNode, shuir::ValueNode, std::shared_ptr<shuir::MultNode>>(m, "MultNode")
+    py::class_<shuir::MultNode, shuir::BinOpNode, std::shared_ptr<shuir::MultNode>>(m, "MultNode")
     .def("get_usages", &shuir::MultNode::get_usages)
     .def_readwrite("lhs", &shuir::MultNode::lhs)
     .def_readwrite("rhs", &shuir::MultNode::rhs);
+
+    py::class_<shuir::CmpNode, shuir::BinOpNode, std::shared_ptr<shuir::CmpNode>>(m, "CmpNode")
+    .def("get_usages", &shuir::CmpNode::get_usages)
+    .def_readwrite("op", &shuir::CmpNode::op)
+    .def_readwrite("lhs", &shuir::CmpNode::lhs)
+    .def_readwrite("rhs", &shuir::CmpNode::rhs);
 
     py::class_<shuir::DefinitionNode, shuir::InstructionNode, std::shared_ptr<shuir::DefinitionNode>>(m, "DefinitionNode")
     .def(py::init<std::string, std::shared_ptr<shuir::ValueNode>>())
@@ -130,11 +146,24 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("binding", &shuir::DefinitionNode::binding);
 
     py::class_<shuir::PrintNode, shuir::InstructionNode, std::shared_ptr<shuir::PrintNode>>(m, "SIRPrintNode")
-    .def(py::init<std::shared_ptr<shuir::ValueNode>>())
+    .def(py::init<std::shared_ptr<shuir::ValueNode>, std::string>())
     .def("get_usages", &shuir::PrintNode::get_usages)
-    .def_readwrite("to_print", &shuir::PrintNode::to_print);
+    .def_readwrite("to_print", &shuir::PrintNode::to_print)
+    .def_readwrite("print_type", &shuir::PrintNode::print_type);
 
-    py::class_<shuir::SIRBlock>(m, "SIRBlock")
+    py::class_<shuir::JumpNode, shuir::InstructionNode, std::shared_ptr<shuir::JumpNode>>(m, "JumpNode")
+    .def(py::init<std::shared_ptr<shuir::SIRBlock>>())
+    .def("get_usages", &shuir::JumpNode::get_usages)
+    .def_readwrite("destination", &shuir::JumpNode::destination);
+
+    py::class_<shuir::JumpIfNode, shuir::JumpNode, std::shared_ptr<shuir::JumpIfNode>>(m, "JumpIfNode")
+    .def(py::init<std::shared_ptr<shuir::SIRBlock>, std::shared_ptr<shuir::ValueNode>>())
+    .def("get_usages", &shuir::JumpIfNode::get_usages)
+    .def_readwrite("destination", &shuir::JumpIfNode::destination)
+    .def_readwrite("condition", &shuir::JumpIfNode::condition);
+
+
+    py::class_<shuir::SIRBlock, std::shared_ptr<shuir::SIRBlock>>(m, "SIRBlock")
     .def(py::init<std::string>())
     .def_readwrite("instructions", &shuir::SIRBlock::instructions)
     .def_readwrite("name", &shuir::SIRBlock::name);

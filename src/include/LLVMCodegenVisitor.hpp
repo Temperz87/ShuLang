@@ -1,6 +1,5 @@
 #pragma once
 
-// #include <ShuIRAST.hpp>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -13,8 +12,11 @@ namespace shuir {
     class AddNode;
     class SubNode;
     class MultNode;
+    class CmpNode;
     class DefinitionNode;
     class PrintNode;
+    class JumpNode;
+    class JumpIfNode;
     class ProgramNode;
     class SIRBlock;
 
@@ -36,8 +38,11 @@ namespace shuir {
             llvm::Value* codegen(AddNode* node);
             llvm::Value* codegen(SubNode* node);
             llvm::Value* codegen(MultNode* node);
+            llvm::Value* codegen(CmpNode* node);
             llvm::Value* codegen(DefinitionNode* node);
             llvm::Value* codegen(PrintNode* node);
+            llvm::Value* codegen(JumpNode* node);
+            llvm::Value* codegen(JumpIfNode* node);
             llvm::Value* codegen(ProgramNode* node);
 
             void walk(SIRBlock block);
