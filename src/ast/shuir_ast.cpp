@@ -71,11 +71,11 @@ llvm::Value* JumpNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
 }
 
-std::vector<std::string> JumpIfNode::get_usages() {
+std::vector<std::string> JumpIfElseNode::get_usages() {
     return condition->get_usages();
 }
 
-llvm::Value* JumpIfNode::accept(LLVMCodegenVisitor* visitor) {
+llvm::Value* JumpIfElseNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
 }
 

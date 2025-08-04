@@ -16,7 +16,7 @@ namespace shuir {
     class DefinitionNode;
     class PrintNode;
     class JumpNode;
-    class JumpIfNode;
+    class JumpIfElseNode;
     class ProgramNode;
     class SIRBlock;
 
@@ -42,7 +42,7 @@ namespace shuir {
             llvm::Value* codegen(DefinitionNode* node);
             llvm::Value* codegen(PrintNode* node);
             llvm::Value* codegen(JumpNode* node);
-            llvm::Value* codegen(JumpIfNode* node);
+            llvm::Value* codegen(JumpIfElseNode* node);
             llvm::Value* codegen(ProgramNode* node);
 
             void walk(SIRBlock block);

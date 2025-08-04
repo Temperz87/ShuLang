@@ -156,11 +156,12 @@ PYBIND11_MODULE(shulang, m) {
     .def("get_usages", &shuir::JumpNode::get_usages)
     .def_readwrite("destination", &shuir::JumpNode::destination);
 
-    py::class_<shuir::JumpIfNode, shuir::JumpNode, std::shared_ptr<shuir::JumpIfNode>>(m, "JumpIfNode")
-    .def(py::init<std::shared_ptr<shuir::SIRBlock>, std::shared_ptr<shuir::ValueNode>>())
-    .def("get_usages", &shuir::JumpIfNode::get_usages)
-    .def_readwrite("destination", &shuir::JumpIfNode::destination)
-    .def_readwrite("condition", &shuir::JumpIfNode::condition);
+    py::class_<shuir::JumpIfElseNode, shuir::JumpNode, std::shared_ptr<shuir::JumpIfElseNode>>(m, "JumpIfElseNode")
+    .def(py::init<std::shared_ptr<shuir::SIRBlock>, std::shared_ptr<shuir::SIRBlock>, std::shared_ptr<shuir::ValueNode>>())
+    .def("get_usages", &shuir::JumpIfElseNode::get_usages)
+    .def_readwrite("destination", &shuir::JumpIfElseNode::destination)
+    .def_readwrite("else_destination", &shuir::JumpIfElseNode::else_destination)
+    .def_readwrite("condition", &shuir::JumpIfElseNode::condition);
 
 
     py::class_<shuir::SIRBlock, std::shared_ptr<shuir::SIRBlock>>(m, "SIRBlock")

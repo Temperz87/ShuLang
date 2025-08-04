@@ -237,8 +237,8 @@ def print_sir_ast(node, indentation = 0):
             print("PRINT", stringify_value(node.to_print))
         case DefinitionNode():
             print(node.identifier, "<-", stringify_value(node.binding))
-        case JumpIfNode():
-            print("jump to " + node.destination.name + " if " + stringify_value(node.condition))
+        case JumpIfElseNode():
+            print("jump to " + node.destination.name + " if " + stringify_value(node.condition) + " else jump to " + node.else_destination.name)
         case JumpNode():
             print("jump to " + node.destination.name)
         case _:
@@ -314,10 +314,12 @@ def run_sir_block(block, blocks, env, stdout):
             case DefinitionNode():
                 val = get_sir_value(instruction.binding, env)
                 env[instruction.identifier] = val
-            case JumpIfNode():
+            case JumpIfElseNode():
                 val = get_sir_value(instruction.condition, env)
                 if val:
                     return run_sir_block(instruction.destination, blocks, env, stdout)
+                else:
+                    return run_sir_block(instruction.else_destination, blocks, env, stdout)
             case JumpNode():
                 return run_sir_block(instruction.destination, blocks, env, stdout)
     return stdout
@@ -333,8 +335,8 @@ def get_sir_graph_string(instruction):
             return 'print ' + stringify_value(instruction.to_print)
         case DefinitionNode():
             return '%' + instruction.identifier + ' <- ' + stringify_value(instruction.binding)
-        case JumpIfNode():
-            return 'jump to ' + instruction.destination.name + ' if ' + stringify_value(instruction.condition)
+        case JumpIfElseNode():
+            return 'jump to ' + instruction.destination.name + ' if ' + stringify_value(instruction.condition) + ' else jump to ' + instruction.else_destination.name
         case JumpNode():
             return 'jump to ' + instruction.destination.name
 
@@ -362,6 +364,9 @@ def graph_sir_program(program_node):
             else:
                 current = graph_this_stuff(get_sir_graph_string(instruction), 2, current)
             match instruction:
+                case JumpIfElseNode():
+                    jumpnodes.append((current, instruction.destination.name))
+                    jumpnodes.append((current, instruction.else_destination.name))
                 case JumpNode():
                     jumpnodes.append((current, instruction.destination.name))
 
@@ -439,7 +444,7 @@ def run_case(file_name):
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
     # print_sir_ast(sir_program)
-    graph_sir_program(sir_program)
+    # graph_sir_program(sir_program)
     print("Running")
     select_stdout = run_sir_program(sir_program)
     compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")

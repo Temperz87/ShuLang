@@ -157,19 +157,17 @@ class SLTranslator : public ShuLangVisitor {
 
             std::shared_ptr<shuir::SIRBlock> then_block = std::make_shared<shuir::SIRBlock>(gen_block_name("then"));
             blocks.push_back(then_block);
-            std::shared_ptr<shuir::JumpIfNode> then_jump = std::make_shared<shuir::JumpIfNode>(then_block, completed.top());
-            current_block->instructions.push_back(then_jump);
+            std::shared_ptr<shuir::SIRBlock> else_destination = continuation;
 
-            if (node->else_block == nullptr) {
-                current_block->instructions.push_back(std::make_shared<shuir::JumpNode>(continuation));
-            } 
-            else {
+            if (node->else_block != nullptr) {
                 std::shared_ptr<shuir::SIRBlock> else_block = std::make_shared<shuir::SIRBlock>(gen_block_name("else"));
                 blocks.push_back(else_block);
-                std::shared_ptr<shuir::JumpNode> else_jump = std::make_shared<shuir::JumpNode>(else_block);
-                current_block->instructions.push_back(else_jump);
                 next_block_stack.push({else_block, continuation, node->else_block.get()});
+                else_destination = else_block;
             }
+
+            std::shared_ptr<shuir::JumpIfElseNode> if_else = std::make_shared<shuir::JumpIfElseNode>(then_block, else_destination, completed.top());
+            current_block->instructions.push_back(if_else);
         
             // The visitor well next visit the then_block
             // So we set current block to be the then_block

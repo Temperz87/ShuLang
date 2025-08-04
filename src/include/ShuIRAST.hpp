@@ -94,10 +94,11 @@ namespace shuir {
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
     };
 
-    class JumpIfNode : public JumpNode {
+    class JumpIfElseNode : public JumpNode {
         public:
+            std::shared_ptr<SIRBlock> else_destination;
             std::shared_ptr<ValueNode> condition;
-            JumpIfNode(std::shared_ptr<SIRBlock> destination, std::shared_ptr<ValueNode> condition):JumpNode(destination), condition(condition) { }
+            JumpIfElseNode(std::shared_ptr<SIRBlock> destination, std::shared_ptr<SIRBlock> else_destination, std::shared_ptr<ValueNode> condition):JumpNode(destination), else_destination(else_destination), condition(condition) { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
     };

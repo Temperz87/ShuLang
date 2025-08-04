@@ -49,7 +49,7 @@ llvm::Value* LLVMCodegenVisitor::codegen(JumpNode* node) {
     return nullptr;
 }
 
-llvm::Value* LLVMCodegenVisitor::codegen(JumpIfNode* node) {
+llvm::Value* LLVMCodegenVisitor::codegen(JumpIfElseNode* node) {
     // TODO: Make JumpIf nodes
     return nullptr;
 }
