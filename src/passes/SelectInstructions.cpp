@@ -6,6 +6,7 @@
 #include <memory>
 #include <stack>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 class SLTranslator : public ShuLangVisitor {
@@ -18,6 +19,8 @@ class SLTranslator : public ShuLangVisitor {
     private:
         // Stores completed values, right now only integers
         std::stack<std::shared_ptr<shuir::ValueNode>> completed;
+        // What blocks have been added to reachable_blocks
+        std::unordered_set<std::string> have_reached;
 
         // Stores the next blocks and where to go afterwards
         std::stack<block_cont_node_t> next_block_stack;
@@ -34,16 +37,25 @@ class SLTranslator : public ShuLangVisitor {
             return name + std::to_string(counter++);
         }
 
+        void block_marked_reached(std::shared_ptr<shuir::SIRBlock> block) {
+            if (!have_reached.contains(block->name)) {
+                reachable_blocks.push_back(block);
+                have_reached.insert(block->name);
+            }
+        }
+
     public:
-        std::vector<std::shared_ptr<shuir::SIRBlock>> blocks;
+        // List of blocks that are reachable 
+        std::vector<std::shared_ptr<shuir::SIRBlock>> reachable_blocks;
 
         SLTranslator(std::string initial_block_name) { 
             current_block = std::make_unique<shuir::SIRBlock>(initial_block_name);
-            blocks.push_back(current_block);
+            reachable_blocks.push_back(current_block);
+            have_reached.insert(initial_block_name);
         };
     
         shulang::ShuLangNode* egressIntegerNode(shulang::IntegerNode* node) override {
-            std::shared_ptr<shuir::ImmediateNode> imm = std::make_shared<shuir::ImmediateNode>(node->value);
+            std::shared_ptr<shuir::ImmediateNode> imm = std::make_shared<shuir::ImmediateNode>(node->value, 4);
             completed.push(imm);
             return ShuLangVisitor::egressIntegerNode(node);
         }
@@ -53,10 +65,10 @@ class SLTranslator : public ShuLangVisitor {
             // So in our langauge we treat 0 as false and 1 as true
             // when we're at such a low level
             if (node->value) {
-                ret = std::make_shared<shuir::ImmediateNode>(1);
+                ret = std::make_shared<shuir::ImmediateNode>(1, 1);
             }
             else {
-                ret = std::make_shared<shuir::ImmediateNode>(0);
+                ret = std::make_shared<shuir::ImmediateNode>(0, 1);
             }
             completed.push(ret);
             return ShuLangVisitor::egressBooleanNode(node);
@@ -128,6 +140,7 @@ class SLTranslator : public ShuLangVisitor {
             // std::cout << "Popping block " << current_block->name << std::endl;
             if (continuation != nullptr) {
                 current_block->instructions.push_back(std::make_shared<shuir::JumpNode>(continuation));
+                block_marked_reached(continuation);
             }
             else {
                 // std::cout << "\tBlock " << current_block->name << " has no continuation!" << std::endl;
@@ -151,17 +164,17 @@ class SLTranslator : public ShuLangVisitor {
             if (continuation == nullptr) {
                 // No need to remake the continuation if it already exists
                 continuation = std::make_shared<shuir::SIRBlock>(gen_block_name("continuation"));
-                blocks.push_back(continuation);
+                // blocks.push_back(continuation);
                 next_block_stack.push({continuation, nullptr, nullptr});
             }
 
             std::shared_ptr<shuir::SIRBlock> then_block = std::make_shared<shuir::SIRBlock>(gen_block_name("then"));
-            blocks.push_back(then_block);
+            block_marked_reached(then_block);
             std::shared_ptr<shuir::SIRBlock> else_destination = continuation;
 
             if (node->else_block != nullptr) {
                 std::shared_ptr<shuir::SIRBlock> else_block = std::make_shared<shuir::SIRBlock>(gen_block_name("else"));
-                blocks.push_back(else_block);
+                block_marked_reached(else_block);
                 next_block_stack.push({else_block, continuation, node->else_block.get()});
                 else_destination = else_block;
             }
@@ -193,6 +206,6 @@ shuir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
     // Is this a O(n) operation?
     // Should I pass a reference to a buffer instead
     // when initializing the translator?
-    node.blocks = translator.blocks;
+    node.blocks = translator.reachable_blocks;
     return node;
 }

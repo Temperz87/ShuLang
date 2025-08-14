@@ -24,7 +24,8 @@ namespace shuir {
     class ImmediateNode : public ValueNode {
         public:
             int number;
-            ImmediateNode(int number):number(number) { };
+            int width;
+            ImmediateNode(int number, int width):number(number), width(width) { };
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
     };
 
