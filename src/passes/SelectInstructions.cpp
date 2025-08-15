@@ -2,7 +2,7 @@
 #include <ShuLangVisitor.hpp>
 #include <ShuIRAST.hpp>
 #include <ShuLangVisitor.hpp>
-#include <iostream>
+#include <llvm/IR/Metadata.h>
 #include <memory>
 #include <stack>
 #include <string>
@@ -17,22 +17,22 @@ class SLTranslator : public ShuLangVisitor {
     } block_cont_node_t;
 
     private:
-        // Stores completed values, right now only integers
+        // Completed values, e.g. Immediate and operator values
+        // There will be at most 2 values in here currently
         std::stack<std::shared_ptr<shuir::ValueNode>> completed;
-        // What blocks have been added to reachable_blocks
+        // What blocks are the destination of a jump
         std::unordered_set<std::string> have_reached;
 
         // Stores the next blocks and where to go afterwards
         std::stack<block_cont_node_t> next_block_stack;
 
-        std::shared_ptr<shuir::SIRBlock> current_block;
         std::shared_ptr<shuir::SIRBlock> continuation = nullptr;
         // Node tells us which body node the current block corresponds to
         // So we don't accidentally egress too soon
         // (e.g. an if statement that only contains a nested if statement)
         shulang::BodyNode* node = nullptr;
 
-        std::string gen_block_name(std::string name) {
+        std::string gen_name(std::string name) {
             static int counter = 0;
             return name + std::to_string(counter++);
         }
@@ -44,9 +44,19 @@ class SLTranslator : public ShuLangVisitor {
             }
         }
 
+        int type_to_width(std::string type) {
+            if (type == "Integer")
+                return 32;
+            else if (type == "Boolean")
+                return 1;
+            return -1;
+        }
+
     public:
         // List of blocks that are reachable 
+        std::shared_ptr<shuir::SIRBlock> current_block;
         std::vector<std::shared_ptr<shuir::SIRBlock>> reachable_blocks;
+        bool need_to_write_exit = true;
 
         SLTranslator(std::string initial_block_name) { 
             current_block = std::make_unique<shuir::SIRBlock>(initial_block_name);
@@ -55,7 +65,7 @@ class SLTranslator : public ShuLangVisitor {
         };
     
         shulang::ShuLangNode* egressIntegerNode(shulang::IntegerNode* node) override {
-            std::shared_ptr<shuir::ImmediateNode> imm = std::make_shared<shuir::ImmediateNode>(node->value, 4);
+            std::shared_ptr<shuir::ImmediateNode> imm = std::make_shared<shuir::ImmediateNode>(node->value, 32);
             completed.push(imm);
             return ShuLangVisitor::egressIntegerNode(node);
         }
@@ -75,7 +85,26 @@ class SLTranslator : public ShuLangVisitor {
         }
 
         shulang::ShuLangNode* egressVariableReferenceNode(shulang::VariableReferenceNode* node) override {
-            std::shared_ptr<shuir::ReferenceNode> ref = std::make_shared<shuir::ReferenceNode>(node->identifier);
+            std::string identifier = node->identifier;
+            int width = type_to_width(node->type);
+            if (!current_block->variable_to_ref.contains(identifier)) {
+                std::vector<std::pair<std::string, shuir::ValueNode*>> candidates;
+                for (std::shared_ptr<shuir::SIRBlock> block : current_block->predecesors) {
+                    if (block->variable_to_ref.contains(identifier)) {
+                        std::shared_ptr<shuir::ReferenceNode> ref = block->variable_to_ref.at(identifier);
+                        // std::cout << "Discovered phi candidate " << ref->identifier << std::endl;
+                        candidates.push_back({block->name, dynamic_cast<shuir::ValueNode*>(ref.get())});
+                    }
+                }
+                std::shared_ptr<shuir::PhiNode> phi = std::make_shared<shuir::PhiNode>(candidates, width);
+                std::shared_ptr<shuir::DefinitionNode> def = std::make_shared<shuir::DefinitionNode>(gen_name(identifier), phi);
+                current_block->instructions.insert(current_block->instructions.begin(), def);
+
+                std::shared_ptr<shuir::ReferenceNode> new_ref = std::make_shared<shuir::ReferenceNode>(def->identifier, def->width);
+                current_block->variable_to_ref.insert({identifier, new_ref});
+            }
+
+            std::shared_ptr<shuir::ReferenceNode> ref = current_block->variable_to_ref.at(node->identifier);
             completed.push(ref);
             return ShuLangVisitor::egressVariableReferenceNode(node);
         }
@@ -108,7 +137,9 @@ class SLTranslator : public ShuLangVisitor {
         // Because I don't wanna do s-expressions
         shulang::ShuLangNode* egressBindingNode(shulang::BindingNode* node) override {
             // std::cout << "Creating binding node!" << std::endl;
-            std::shared_ptr<shuir::DefinitionNode> def = std::make_shared<shuir::DefinitionNode>(node->name, completed.top());
+            std::shared_ptr<shuir::DefinitionNode> def = std::make_shared<shuir::DefinitionNode>(gen_name(node->name), completed.top());
+            std::shared_ptr<shuir::ReferenceNode> ref = std::make_shared<shuir::ReferenceNode>(def->identifier, def->width);
+            current_block->variable_to_ref.insert({node->name, ref});
             completed.pop();
             // Becauase the value isn't complex
             // We can ALWAYS use the completed vector
@@ -139,19 +170,24 @@ class SLTranslator : public ShuLangVisitor {
 
             // std::cout << "Popping block " << current_block->name << std::endl;
             if (continuation != nullptr) {
+                continuation->predecesors.push_back(current_block);
                 current_block->instructions.push_back(std::make_shared<shuir::JumpNode>(continuation));
                 block_marked_reached(continuation);
             }
             else {
+                current_block->instructions.push_back(std::make_shared<shuir::ExitNode>());
                 // std::cout << "\tBlock " << current_block->name << " has no continuation!" << std::endl;
             }
 
             current_block = next_block_stack.top().block;
             continuation = next_block_stack.top().continuation;
+            // this->node = next_block_stack.top().node;
             this->node = next_block_stack.top().node;
             // std::cout << "\tNow on block " << current_block->name << std::endl;
             next_block_stack.pop();
+            // std::cout << "Egressed body node" << std::endl;
 
+            need_to_write_exit = true;
             return ShuLangVisitor::egressBodyNode(node);
         }
 
@@ -163,17 +199,17 @@ class SLTranslator : public ShuLangVisitor {
             // In order to avoid code duplication and exponential file size
             if (continuation == nullptr) {
                 // No need to remake the continuation if it already exists
-                continuation = std::make_shared<shuir::SIRBlock>(gen_block_name("continuation"));
+                continuation = std::make_shared<shuir::SIRBlock>(gen_name("continuation"));
                 // blocks.push_back(continuation);
                 next_block_stack.push({continuation, nullptr, nullptr});
             }
 
-            std::shared_ptr<shuir::SIRBlock> then_block = std::make_shared<shuir::SIRBlock>(gen_block_name("then"));
+            std::shared_ptr<shuir::SIRBlock> then_block = std::make_shared<shuir::SIRBlock>(gen_name("then"));
             block_marked_reached(then_block);
             std::shared_ptr<shuir::SIRBlock> else_destination = continuation;
 
             if (node->else_block != nullptr) {
-                std::shared_ptr<shuir::SIRBlock> else_block = std::make_shared<shuir::SIRBlock>(gen_block_name("else"));
+                std::shared_ptr<shuir::SIRBlock> else_block = std::make_shared<shuir::SIRBlock>(gen_name("else"));
                 block_marked_reached(else_block);
                 next_block_stack.push({else_block, continuation, node->else_block.get()});
                 else_destination = else_block;
@@ -190,9 +226,13 @@ class SLTranslator : public ShuLangVisitor {
             this->node = node->then_block.get();
             // The contiuation for the then_block got set a couple lines up
             // std::cout << "\tCurrent then block: " << current_block->name << std::endl;
-
+            need_to_write_exit = true;
             return ShuLangVisitor::egressIfNode(node);
         };
+
+        shulang::ShuLangNode* egressProgramNode(shulang::ProgramNode* node) override {
+            return ShuLangVisitor::egressProgramNode(node);
+        }
 };
 
 shuir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
@@ -200,6 +240,9 @@ shuir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
     SLTranslator translator = SLTranslator("main");
 
     translator.walk(sl_program);
+    if (translator.need_to_write_exit) {
+        translator.current_block->instructions.push_back(std::make_shared<shuir::ExitNode>());
+    }
 
     shuir::ProgramNode node = shuir::ProgramNode();
     // TODO:

@@ -1,3 +1,4 @@
+#include "LLVMCodegenVisitor.hpp"
 #include <ASTNode.hpp>
 #include <ShuIRAST.hpp>
 #include <llvm/IR/Value.h>
@@ -22,10 +23,6 @@ llvm::Value* DefinitionNode::accept(LLVMCodegenVisitor* visitor) {
 
 llvm::Value* ImmediateNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
-}
-
-ReferenceNode::ReferenceNode(std::string identifier) {
-    this->identifier = identifier;
 }
 
 llvm::Value* ReferenceNode::accept(LLVMCodegenVisitor* visitor) {
@@ -55,6 +52,18 @@ llvm::Value* CmpNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->codegen(this);
 }
 
+std::vector<std::string> PhiNode::get_usages() {
+    std::vector<std::string> usages;
+    for (std::pair<std::string, ValueNode*> candidates: this->candidates) {
+        // TODO: FIGURE OUT HOW TO ADD THIS IF IT'S A VARREF NODE
+    }
+    return usages;
+}
+
+llvm::Value* PhiNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->codegen(this);
+}
+
 std::vector<std::string> PrintNode::get_usages() {
     return to_print->get_usages();
 }
@@ -81,6 +90,14 @@ llvm::Value* JumpIfElseNode::accept(LLVMCodegenVisitor* visitor) {
 
 SIRBlock::SIRBlock(std::string name) {
     this->name = name;
+}
+
+std::vector<std::string> ExitNode::get_usages() {
+    return std::vector<std::string>();
+}
+
+llvm::Value* ExitNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->codegen(this);
 }
 
 std::vector<std::string> ProgramNode::get_usages() {

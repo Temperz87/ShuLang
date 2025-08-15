@@ -1,9 +1,11 @@
 #pragma once
 
+#include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/NoFolder.h>
 #include <llvm/IR/Value.h>
 #include <unordered_map>
 
@@ -15,22 +17,26 @@ namespace shuir {
     class MultNode;
     class CmpNode;
     class DefinitionNode;
+    class PhiNode;
     class PrintNode;
     class JumpNode;
     class JumpIfElseNode;
+    class ExitNode;
     class ProgramNode;
     class SIRBlock;
 
     class LLVMCodegenVisitor {
         private:
             llvm::LLVMContext& context;
-            llvm::IRBuilder<>* builder;
+            llvm::IRBuilder<llvm::NoFolder>* builder;
             llvm::Module* module;
-            std::unordered_map<std::string, llvm::AllocaInst*> bindings;
+            std::unordered_map<std::string, llvm::Value*> bindings;
 
         public:
+            std::unordered_map<std::string, llvm::BasicBlock*> blocks;
+            
             LLVMCodegenVisitor(llvm::LLVMContext& ctx,
-                               llvm::IRBuilder<>* builder,
+                               llvm::IRBuilder<llvm::NoFolder>* builder,
                                llvm::Module* module)
                                :context(ctx), builder(builder), module(module) { }
 
@@ -41,9 +47,11 @@ namespace shuir {
             llvm::Value* codegen(MultNode* node);
             llvm::Value* codegen(CmpNode* node);
             llvm::Value* codegen(DefinitionNode* node);
+            llvm::Value* codegen(PhiNode* node);
             llvm::Value* codegen(PrintNode* node);
             llvm::Value* codegen(JumpNode* node);
             llvm::Value* codegen(JumpIfElseNode* node);
+            llvm::Value* codegen(ExitNode* node);
             llvm::Value* codegen(ProgramNode* node);
 
             void walk(SIRBlock block);
