@@ -38,6 +38,10 @@ ShuLangNode* TypeChecker::egressBindingNode(BindingNode* node) {
 }
         
 ShuLangNode* TypeChecker::egressVariableReferenceNode(VariableReferenceNode* node) {
+    if (!variable_types.contains(node->identifier)) {
+        std::cout << node->identifier << " was used before it was declared!" << std::endl;
+        exit(1);
+    }
     node->type = variable_types.at(node->identifier);
     return ShuLangVisitor::egressVariableReferenceNode(node);
 }
