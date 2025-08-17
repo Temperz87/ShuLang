@@ -9,7 +9,7 @@ using namespace shuir;
 
 class PhiPromotor : SIRVisitor {
     private:
-        std::shared_ptr<PhiNode> promoted_phi = nullptr;
+        std::shared_ptr<ValueNode> promoted_phi = nullptr;
         SIRBlock* block;
 
         // TODO: MOVE THIS TO A UTILITIES FILE
@@ -52,8 +52,12 @@ class PhiPromotor : SIRVisitor {
                     candidates.push_back({block->name, ref});
                 }
             }
+            std::shared_ptr<ValueNode> phi;
 
-            std::shared_ptr<PhiNode> phi = std::make_shared<PhiNode>(candidates, node->width);
+            if (candidates.size() > 1)
+                phi = std::make_shared<PhiNode>(candidates, node->width);
+            else
+                phi = candidates.at(0).second;
             promoted_phi = phi;
         }
 
