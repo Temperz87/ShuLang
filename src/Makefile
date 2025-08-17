@@ -7,7 +7,7 @@ OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
 		  ast/shulang_ast.o ast/shuir_ast.o \
 		  Visitors/ComplexDetector.o Visitors/LLVMCodegenVisitor.o Visitors/ShuLangPrinter.o \
 		  passes/Uniquification.o passes/ShortCircuitify.o passes/RemoveComplexOperands.o  \
-		  passes/SelectInstructions.o passes/LLVMSelection.o
+		  passes/SelectInstructions.o passes/PromotePseudoPhi.o passes/LLVMSelection.o
 
 PYTHONFILEPATH = ./output/shulang$(shell python3-config --extension-suffix)
 
@@ -45,6 +45,6 @@ clean:
 	$(RM) -f ./driver/driver.o
 
 test: python
-	python3 ../test-cases/run.py ../test-cases/phase_1_programs
+	python3 ../test-cases/run.py ../test-cases/phase_1_programs ../test-cases/phase_2_programs
 
 -include $(DEPS)
