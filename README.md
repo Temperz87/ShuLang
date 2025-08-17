@@ -13,7 +13,6 @@ This language is using a recursive descent parser and tokenization is pretty muc
 
 If you want a timeline of whats going on, one can be find in [timeline.md](timeline.md). Here's what I'm currently working on.
 
-
 ## Act 2: Conditionals
 Here I'll introduce the `if` and `true` and `false` stuff, as well as the funny boolean operators (e.g. `and`).
 
@@ -48,7 +47,25 @@ When I encounter an if statement I must create a block for the condition portion
 
 I also translate `true` to `1` and `false` to `0`. The type checker assures that this is okay.
 
-### Select LLVM instructions
-Basically I have to levarage IR builder correctly :D
+One other thing I took the liberty of doing is making SIR actually SSA, which means that I had to insert phi nodes (see [here](https://en.wikipedia.org/wiki/Static_single-assignment_form) for more information) in a bunch of places. However, we can't know what predecesor blocks could contain the variable we're looking for yet, so instead we insert a "pseudo phi node" and make it a real phi node (or instead just make it a reference) in the next pass.
 
-This is where I'll be creating the exit block as well as figuring out how to compile booleans and jumps. 
+### Promote Pseudo Phi
+This pass required me to create a [CFG](https://en.wikipedia.org/wiki/Control-flow_graph) (CFG is slang for control flow graph btw), so I did that. 
+
+The this pass works is:
+1. Push all terminal blocks onto a queue
+2. Pop some block from the queue
+3. If a Pseudo phi is found, then check all predecessor blocks
+    - If a predecessor contains the binding we're looking for, add it to a real phi node
+    - If it doesn't, then create a pseudo phi node as the first instruction of the predecessor block
+4. Push all predecessor blocks onto the queue
+5. Continue until the queue is empty
+
+More simply check the "previous" blocks for a particular binding. If the binding doesn't exist, add a pseudo phi node as the binding. We'll revisit the block later and promote said pseudo phi node. The pass starts at the "end", then goes backwards in a BFS fashion.
+
+Of course if there's only one predecesor block we instead insert new binding that's just a reference to the previous binding.
+
+### Select LLVM instructions
+Yeah so I just call the right IR builder stuff and it works!!!!!!!!
+
+I found out that I can disable constant folding, so instead of creating alloca's I juset reference a dictionary I create. Hence me having to use the CFG again! This time the pass go forwards in a BFS fashion, and only visits blocks if their predecessors have been visited. Maybe there's a more memory effecient way to do this, but I'll worry about that later.
