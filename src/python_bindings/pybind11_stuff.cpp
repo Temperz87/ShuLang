@@ -4,6 +4,7 @@
 #include <ShuIRAST.hpp>
 #include <memory>
 #include <ASTNode.hpp>
+#include <PromotePseudoPhi.hpp>
 #include <SelectInstructions.hpp>
 #include <LLVMSelection.hpp>
 #include <ShuLangAST.hpp>
@@ -106,11 +107,13 @@ PYBIND11_MODULE(shulang, m) {
     py::class_<shuir::ValueNode, shuir::SIRNode, std::shared_ptr<shuir::ValueNode>>(m, "SIRValueNode");
 
     py::class_<shuir::ImmediateNode, shuir::ValueNode, std::shared_ptr<shuir::ImmediateNode>>(m, "ImmediateNode")
-    .def(py::init<int>())
-    .def_readwrite("number", &shuir::ImmediateNode::number);
+    .def(py::init<int, int>())
+    .def_readwrite("number", &shuir::ImmediateNode::number)
+    .def_readwrite("width", &shuir::ImmediateNode::width);
 
     py::class_<shuir::ReferenceNode, shuir::ValueNode, std::shared_ptr<shuir::ReferenceNode>>(m, "ReferenceNode")
-    .def(py::init<std::string>())
+    .def(py::init<std::string, int>())
+    .def_readwrite("width", &shuir::ReferenceNode::width)
     .def_readwrite("identifier", &shuir::ReferenceNode::identifier);
 
     py::class_<shuir::BinOpNode, shuir::ValueNode, std::shared_ptr<shuir::BinOpNode>>(m, "BinOpNode")
@@ -139,10 +142,21 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("lhs", &shuir::CmpNode::lhs)
     .def_readwrite("rhs", &shuir::CmpNode::rhs);
 
+    py::class_<shuir::PseudoPhiNode, shuir::ValueNode, std::shared_ptr<shuir::PseudoPhiNode>>(m, "PseudoPhiNode")
+    .def(py::init<std::string, int>())
+    .def("get_usages", &shuir::PseudoPhiNode::get_usages)
+    .def_readwrite("requested_previous", &shuir::PseudoPhiNode::requested_previous);
+
+    py::class_<shuir::PhiNode, shuir::ValueNode, std::shared_ptr<shuir::PhiNode>>(m, "PhiNode")
+    .def(py::init<std::vector<std::pair<std::string, std::shared_ptr<shuir::ValueNode>>>, int>())
+    .def("get_usages", &shuir::PhiNode::get_usages)
+    .def_readwrite("candidates", &shuir::PhiNode::candidates);
+
     py::class_<shuir::DefinitionNode, shuir::InstructionNode, std::shared_ptr<shuir::DefinitionNode>>(m, "DefinitionNode")
     .def(py::init<std::string, std::shared_ptr<shuir::ValueNode>>())
     .def("get_usages", &shuir::DefinitionNode::get_usages)
     .def_readwrite("identifier", &shuir::DefinitionNode::identifier)
+    .def_readwrite("width", &shuir::DefinitionNode::width)
     .def_readwrite("binding", &shuir::DefinitionNode::binding);
 
     py::class_<shuir::PrintNode, shuir::InstructionNode, std::shared_ptr<shuir::PrintNode>>(m, "SIRPrintNode")
@@ -169,6 +183,9 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("instructions", &shuir::SIRBlock::instructions)
     .def_readwrite("name", &shuir::SIRBlock::name);
 
+    py::class_<shuir::ExitNode, shuir::InstructionNode, std::shared_ptr<shuir::ExitNode>>(m, "ExitNode")
+    .def("get_usages", &shuir::ExitNode::get_usages);
+
     py::class_<shuir::ProgramNode, shuir::SIRNode, std::shared_ptr<shuir::ProgramNode>>(m, "SIRProgramNode")
     .def("get_usages", &shuir::ProgramNode::get_usages)
     .def_readwrite("blocks", &shuir::ProgramNode::blocks);
@@ -179,5 +196,6 @@ PYBIND11_MODULE(shulang, m) {
     // m.def("short_circuitify", &short_circuitify, "Runs the funny short circuit pass");
     m.def("remove_complex_operands", &remove_complex_operands, "Runs the remove complex operands pass");
     m.def("select_instructions", &select_SIR_instructions, "Translated from ShuLang to SIR");
+    m.def("promote_pseudo_phi", &promote_pseudo_phi, "Making PseudoPhiNode's just PhiNode's");
     m.def("select_llvm", &select_llvm_instructions, "Perform the final lowering!!!");
 }

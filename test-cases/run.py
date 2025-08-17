@@ -217,6 +217,13 @@ def stringify_value(node):
             return stringify_value(node.lhs) + " * " + stringify_value(node.rhs)
         case CmpNode():
             return stringify_value(node.lhs) + " " + node.op + " " + stringify_value(node.rhs)
+        case PseudoPhiNode():
+            return "pseudoΦ " + node.requested_previous
+        case PhiNode():
+            ret = "Φ "
+            for block_name, val in node.candidates:
+                ret += "[" + block_name + ", " + stringify_value(val) + "] "
+            return ret
         case _:
             print("Unknown value", node)
             exit(1)
@@ -245,27 +252,34 @@ def print_sir_ast(node, indentation = 0):
             print("Unknown definition", node)
             exit(1)
 
-def get_sir_value(node, env):
+def get_sir_value(node, last_block, env):
     match node:
         case ImmediateNode():
             return node.number
         case ReferenceNode():
             return env[node.identifier]
+        case PseudoPhiNode():
+            return env[node.requested_previous]
+        case PhiNode():
+            # TODO: Use the dictionary!!!!
+            for block_name, val in node.candidates:
+                if block_name == last_block.name:
+                    return get_sir_value(val, last_block, env)
         case AddNode():
-            lhs = get_sir_value(node.lhs, env)
-            rhs = get_sir_value(node.rhs, env)
+            lhs = get_sir_value(node.lhs, last_block, env)
+            rhs = get_sir_value(node.rhs, last_block, env)
             return lhs + rhs
         case SubNode():
-            lhs = get_sir_value(node.lhs, env)
-            rhs = get_sir_value(node.rhs, env)
+            lhs = get_sir_value(node.lhs, last_block, env)
+            rhs = get_sir_value(node.rhs, last_block, env)
             return lhs - rhs
         case MultNode():
-            lhs = get_sir_value(node.lhs, env)
-            rhs = get_sir_value(node.rhs, env)
+            lhs = get_sir_value(node.lhs, last_block, env)
+            rhs = get_sir_value(node.rhs, last_block, env)
             return lhs * rhs
         case CmpNode():
-            lhs = get_sir_value(node.lhs, env)
-            rhs = get_sir_value(node.rhs, env)
+            lhs = get_sir_value(node.lhs, last_block, env)
+            rhs = get_sir_value(node.rhs, last_block, env)
             match node.op:
                 case "<":
                     ret = lhs < rhs
@@ -289,12 +303,18 @@ def get_sir_value(node, env):
             if ret:
                 return 1
             return 0
+        case _:
+            print("Unsupported sir value:", node)
+            exit(2)
 
-def run_sir_block(block, blocks, env, stdout):
+def run_sir_block(block, blocks, last_block, env, stdout):
+    print("running", block.name)
     for instruction in block.instructions:
         match instruction:
+            case ExitNode():
+                break
             case SIRPrintNode():
-                val = get_sir_value(instruction.to_print, env)
+                val = get_sir_value(instruction.to_print, last_block, env)
                 match instruction.print_type:
                     case 'Integer':
                         print(val)
@@ -312,22 +332,22 @@ def run_sir_block(block, blocks, env, stdout):
                         print("Unsupported print type found in a SIRPrintNode:", instruction.print_type)
                 
             case DefinitionNode():
-                val = get_sir_value(instruction.binding, env)
+                val = get_sir_value(instruction.binding, last_block, env)
                 env[instruction.identifier] = val
             case JumpIfElseNode():
-                val = get_sir_value(instruction.condition, env)
+                val = get_sir_value(instruction.condition, last_block, env)
                 if val:
-                    return run_sir_block(instruction.destination, blocks, env, stdout)
+                    return run_sir_block(instruction.destination, blocks, block, env, stdout)
                 else:
-                    return run_sir_block(instruction.else_destination, blocks, env, stdout)
+                    return run_sir_block(instruction.else_destination, blocks, block, env, stdout)
             case JumpNode():
-                return run_sir_block(instruction.destination, blocks, env, stdout)
+                return run_sir_block(instruction.destination, blocks, block, env, stdout)
     return stdout
 
 def run_sir_program(program_node):
     for block in program_node.blocks:
         if block.name == 'main':
-            return run_sir_block(block, program_node.blocks, {}, [])
+            return run_sir_block(block, program_node.blocks, "", {}, [])
 
 def get_sir_graph_string(instruction):
     match instruction:
@@ -339,6 +359,8 @@ def get_sir_graph_string(instruction):
             return 'jump to ' + instruction.destination.name + ' if ' + stringify_value(instruction.condition) + ' else jump to ' + instruction.else_destination.name
         case JumpNode():
             return 'jump to ' + instruction.destination.name
+        case ExitNode():
+            return 'exit'
 
 def graph_sir_program(program_node):
     print("digraph SIRProgram {")
@@ -390,7 +412,7 @@ def compare_stdout(out1, out2, filename, pass_name):
         # TODO: When strings are added something not this dumb
         if str(f) != str(s):
             print(f, "was expected but instead got", s)
-            print("Error during compilation of", filename)
+            print("Error during compilation of", filename, "during pass", pass_name)
             exit(1)
 
 def run_case(file_name):
@@ -445,17 +467,31 @@ def run_case(file_name):
     sir_program = select_instructions(ast)
     # print_sir_ast(sir_program)
     # graph_sir_program(sir_program)
+
+    # TODO: WRITE A WAY TO TEST PSEUDOPHINODES
+    # print("Running")
+    # select_stdout = run_sir_program(sir_program)
+    # compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
+
+    print("---PROMOTE PSEUDO PHI---")
+    promote_pseudo_phi(sir_program)
+    # print_sir_ast(sir_program)
+    # graph_sir_program(sir_program)
     print("Running")
-    select_stdout = run_sir_program(sir_program)
-    compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
-    return
+
+    promote_pseudo_phi_stdout = run_sir_program(sir_program)
+    compare_stdout(expected_stdout, promote_pseudo_phi_stdout, file_name, "select SIR instructions")
+
 
     print("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
-    subprocess.run("clang a.ll -o a.out", shell=True)
+    subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
     output = subprocess.run("./a.out", shell=True, capture_output=True)
+    if output.returncode == -11:
+        print("SIGSEGV\n\tAt ", file_name,"\nSpecifically error code 139 (-11 in Python)")
+        exit(1)
     output_stdout = output.stdout.decode("utf-8")[0:-1].split("\n")
-    os.system("rm -f a.ll a.out")
+    # os.system("rm -f a.ll a.out")
 
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
 

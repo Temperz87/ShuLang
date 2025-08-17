@@ -7,6 +7,7 @@
 #include <iostream>
 #include <ostream>
 #include <parser.hpp>
+#include <PromotePseudoPhi.hpp>
 #include <vector>
 #include <ShuLangPasses.hpp>
 #include <SelectInstructions.hpp>
@@ -101,8 +102,13 @@ int main(int argc, char** argv) {
     // ShuLangPrinter().walk(program.get());
 
     // std::cout << "-----SELECT SIR INSTRUCTIONS-----" << std::endl;
-    // Lowering to SSA
+    // Lowering to SSA and creating pseudo phi nodes
     shuir::ProgramNode sir_program = select_SIR_instructions(program.get());
+
+    // std::cout << "-----PROMOTE PHI-----" << std::endl;
+    // Making the pseudo phi nodes PhiNodes
+    promote_pseudo_phi(&sir_program);
+
 
     // std::cout << "-----SELECT LLVM INSUTRCTIONS-----" << std::endl;
     // Emitting LLVM

@@ -1,11 +1,12 @@
 #pragma once
 
+#include "SIRVisitor.hpp"
 #include <ASTNode.hpp>
 #include <LLVMCodegenVisitor.hpp>
 #include <llvm/IR/Value.h>
 #include <memory>
 #include <string>
-#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace shuir {
@@ -16,6 +17,7 @@ namespace shuir {
             // Thanks unnamed company :3
             virtual std::vector<std::string> get_usages();
             virtual llvm::Value* accept(LLVMCodegenVisitor* visitor) = 0;
+            virtual void accept(SIRVisitor* visitor) = 0;
     };
 
     class InstructionNode : public SIRNode { };
@@ -34,6 +36,7 @@ namespace shuir {
             int number;
             ImmediateNode(int number, int width):ValueNode(width), number(number) { };
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class ReferenceNode : public ValueNode {
@@ -41,6 +44,7 @@ namespace shuir {
             std::string identifier;
             ReferenceNode(std::string identifier, int width):ValueNode(width), identifier(identifier) { };
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class BinOpNode : public ValueNode {
@@ -55,18 +59,21 @@ namespace shuir {
         public:
             AddNode():BinOpNode(32) { };
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class SubNode : public BinOpNode {
         public:
             SubNode():BinOpNode(32) { };
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class MultNode : public BinOpNode {
         public:
             MultNode():BinOpNode(32) { };
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class CmpNode : public BinOpNode {
@@ -74,6 +81,7 @@ namespace shuir {
             std::string op;
             CmpNode(std::string op):BinOpNode(1), op(op) { }
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class DefinitionNode : public InstructionNode {
@@ -86,6 +94,7 @@ namespace shuir {
 
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class PrintNode : public InstructionNode {
@@ -97,6 +106,7 @@ namespace shuir {
                 
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class JumpNode : public InstructionNode {
@@ -105,6 +115,7 @@ namespace shuir {
             JumpNode(std::shared_ptr<SIRBlock> destination):destination(destination) { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class JumpIfElseNode : public JumpNode {
@@ -114,14 +125,25 @@ namespace shuir {
             JumpIfElseNode(std::shared_ptr<SIRBlock> destination, std::shared_ptr<SIRBlock> else_destination, std::shared_ptr<ValueNode> condition):JumpNode(destination), else_destination(else_destination), condition(condition) { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
+    };
+
+    class PseudoPhiNode : public ValueNode {
+        public:
+            std::string requested_previous;
+            PseudoPhiNode(std::string previous, int width):ValueNode(width), requested_previous(previous) { }
+            std::vector<std::string> get_usages() override;
+            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class PhiNode : public ValueNode {
         public:
-            std::vector<std::pair<std::string, ValueNode*>> candidates;
-            PhiNode(std::vector<std::pair<std::string, ValueNode*>> candidates, int width):ValueNode(width), candidates(candidates) { }
+            std::vector<std::pair<std::string, std::shared_ptr<ValueNode>>> candidates;
+            PhiNode(std::vector<std::pair<std::string, std::shared_ptr<ValueNode>>> candidates, int width):ValueNode(width), candidates(candidates) { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class ExitNode : public InstructionNode {
@@ -129,14 +151,19 @@ namespace shuir {
             ExitNode() { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
+    // TODO: There's potentially undefined behavior here
     class SIRBlock {
         public:
-            std::vector<std::shared_ptr<SIRBlock>> predecesors;
-            std::unordered_map<std::string, std::shared_ptr<ReferenceNode>> variable_to_ref;
+            std::unordered_set<std::shared_ptr<SIRBlock>> predecesors;
+            // Maintain a shared_ptr because the map "owns" this
+            // TODO: Make this an unique_ptr
+            std::unordered_map<std::string, std::string> variable_to_ref;
             std::vector<std::shared_ptr<InstructionNode>> instructions;
             std::string name;
+            bool is_terminal = false;
             SIRBlock(std::string name);
     };
 
@@ -145,5 +172,6 @@ namespace shuir {
             std::vector<std::shared_ptr<SIRBlock>> blocks;
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 }

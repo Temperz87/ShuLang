@@ -40,20 +40,20 @@ namespace shuir {
                                llvm::Module* module)
                                :context(ctx), builder(builder), module(module) { }
 
-            llvm::Value* codegen(ImmediateNode* node);
-            llvm::Value* codegen(ReferenceNode* node);
-            llvm::Value* codegen(AddNode* node);
-            llvm::Value* codegen(SubNode* node);
-            llvm::Value* codegen(MultNode* node);
-            llvm::Value* codegen(CmpNode* node);
-            llvm::Value* codegen(DefinitionNode* node);
-            llvm::Value* codegen(PhiNode* node);
-            llvm::Value* codegen(PrintNode* node);
-            llvm::Value* codegen(JumpNode* node);
-            llvm::Value* codegen(JumpIfElseNode* node);
-            llvm::Value* codegen(ExitNode* node);
-            llvm::Value* codegen(ProgramNode* node);
+            llvm::Value* visit(ImmediateNode* node);
+            llvm::Value* visit(ReferenceNode* node);
+            llvm::Value* visit(AddNode* node);
+            llvm::Value* visit(SubNode* node);
+            llvm::Value* visit(MultNode* node);
+            llvm::Value* visit(CmpNode* node);
+            llvm::Value* visit(DefinitionNode* node);
+            llvm::Value* visit(PhiNode* node);
+            llvm::Value* visit(PrintNode* node);
+            llvm::Value* visit(JumpNode* node);
+            llvm::Value* visit(JumpIfElseNode* node);
+            llvm::Value* visit(ExitNode* node);
+            llvm::Value* visit(ProgramNode* node);
 
-            void walk(SIRBlock block);
+            void walk(SIRBlock* block);
     };
 }

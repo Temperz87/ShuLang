@@ -1,7 +1,6 @@
-#include "LLVMCodegenVisitor.hpp"
+#include <SIRVisitor.hpp>
 #include <ASTNode.hpp>
 #include <ShuIRAST.hpp>
-#include <llvm/IR/Value.h>
 #include <string>
 #include <vector>
 
@@ -18,15 +17,15 @@ std::vector<std::string> DefinitionNode::get_usages() {
 }
 
 llvm::Value* DefinitionNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 llvm::Value* ImmediateNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 llvm::Value* ReferenceNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 std::vector<std::string> BinOpNode::get_usages() {
@@ -37,31 +36,42 @@ std::vector<std::string> BinOpNode::get_usages() {
 }
 
 llvm::Value* AddNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 llvm::Value* SubNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 llvm::Value* MultNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 llvm::Value* CmpNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
+}
+
+std::vector<std::string> PseudoPhiNode::get_usages() {
+    return std::vector<std::string>();
+}
+
+// Obviously we cannot codegen a pseudonode
+// However we gotta please the compiler!
+llvm::Value* PseudoPhiNode::accept(LLVMCodegenVisitor* visitor) {
+    return nullptr;
 }
 
 std::vector<std::string> PhiNode::get_usages() {
     std::vector<std::string> usages;
-    for (std::pair<std::string, ValueNode*> candidates: this->candidates) {
-        // TODO: FIGURE OUT HOW TO ADD THIS IF IT'S A VARREF NODE
+    for (std::pair<std::string, std::shared_ptr<ValueNode>> candidate: this->candidates) {
+        std::vector<std::string> child_usages = candidate.second->get_usages();
+        usages.insert(usages.end(), child_usages.begin(), child_usages.end());
     }
     return usages;
 }
 
 llvm::Value* PhiNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 std::vector<std::string> PrintNode::get_usages() {
@@ -69,7 +79,7 @@ std::vector<std::string> PrintNode::get_usages() {
 }
 
 llvm::Value* PrintNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 std::vector<std::string> JumpNode::get_usages() {
@@ -77,7 +87,7 @@ std::vector<std::string> JumpNode::get_usages() {
 }
 
 llvm::Value* JumpNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 std::vector<std::string> JumpIfElseNode::get_usages() {
@@ -85,7 +95,7 @@ std::vector<std::string> JumpIfElseNode::get_usages() {
 }
 
 llvm::Value* JumpIfElseNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 SIRBlock::SIRBlock(std::string name) {
@@ -97,7 +107,7 @@ std::vector<std::string> ExitNode::get_usages() {
 }
 
 llvm::Value* ExitNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
 
 std::vector<std::string> ProgramNode::get_usages() {
@@ -112,5 +122,5 @@ std::vector<std::string> ProgramNode::get_usages() {
 }
 
 llvm::Value* ProgramNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->codegen(this);
+    return visitor->visit(this);
 }
