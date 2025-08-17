@@ -308,7 +308,6 @@ def get_sir_value(node, last_block, env):
             exit(2)
 
 def run_sir_block(block, blocks, last_block, env, stdout):
-    print("running", block.name)
     for instruction in block.instructions:
         match instruction:
             case ExitNode():
