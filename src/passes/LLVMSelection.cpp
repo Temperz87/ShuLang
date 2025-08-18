@@ -6,6 +6,7 @@
 #include <iostream>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/IR/Attributes.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -48,7 +49,8 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
     // Add main function
     FunctionType* main_ty = FunctionType::get(Type::getInt32Ty(context), false);
     Function* main_function = Function::Create(main_ty, Function::ExternalLinkage, "main", module);
-
+    main_function->addFnAttr(llvm::Attribute::NoUnwind);
+    
     std::unique_ptr<LLVMCodegenVisitor> visitor = std::make_unique<LLVMCodegenVisitor>(context, builder.get(), &module);
 
     SIRBlock* main;
