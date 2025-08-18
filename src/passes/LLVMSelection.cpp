@@ -33,6 +33,7 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
     LLVMContext context;
     std::unique_ptr<IRBuilder<llvm::NoFolder>> builder = std::make_unique<IRBuilder<NoFolder>>(context);
     Module module("Module", context);
+    module.setTargetTriple("x86_64-pc-linux-gnu");
     module.setSourceFileName(StringRef(source_filename));
     // Extern printf function
     FunctionType* printf_ty = FunctionType::get(Type::getInt32Ty(context), PointerType::get(Type::getInt8Ty(context), 0), true);
