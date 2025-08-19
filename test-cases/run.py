@@ -285,7 +285,9 @@ def get_sir_value(node, last_block, env):
         case PseudoPhiNode():
             return env[node.requested_previous]
         case PhiNode():
-            return get_sir_value(node.candidates[last_block], last_block, env)
+            for block_name, val in node.candidates:
+                if block_name == last_block.name:
+                    return get_sir_value(val, last_block, env)
         case SelectNode():
             if get_sir_value(node.condition, last_block, env):
                 return get_sir_value(node.true_value, last_block, env)
