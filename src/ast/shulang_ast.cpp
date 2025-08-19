@@ -100,18 +100,17 @@ std::vector<std::shared_ptr<ShuLangNode>> NotNode::children() {
   return { value };
 }
 childholder<ShuLangNode> NotNode::ingressVisitor(ShuLangVisitor* visitor) {
-  return visitor->ingressNotNode(this, 3);
+  return visitor->ingressNotNode(this, 1);
 }
 ShuLangNode* NotNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressNotNode(this);
 }
 
-
 std::vector<std::shared_ptr<ShuLangNode>> SelectOperatorNode::children() {
-  return { condition, true_value, false_value };
+  return { condition, true_value, false_value};
 }
 childholder<ShuLangNode> SelectOperatorNode::ingressVisitor(ShuLangVisitor* visitor) {
-  return visitor->ingressSelectOperatorNode(this, 1);
+  return visitor->ingressSelectOperatorNode(this, 3);
 }
 ShuLangNode* SelectOperatorNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressSelectOperatorNode(this);
