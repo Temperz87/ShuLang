@@ -16,3 +16,13 @@ ShuLangNode* ComplexDetector::egressOperatorApplicationNode(OperatorApplicationN
     is_complex = true;
     return ShuLangVisitor::egressOperatorApplicationNode(node);
 }
+
+ShuLangNode* ComplexDetector::egressNotNode(NotNode* node) {
+    is_complex = true;
+    return ShuLangVisitor::egressNotNode(node);
+}
+
+ShuLangNode* ComplexDetector::egressSelectOperatorNode(SelectOperatorNode* node) {
+    is_complex = true;
+    return ShuLangVisitor::egressSelectOperatorNode(node);
+}

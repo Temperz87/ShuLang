@@ -67,10 +67,28 @@ class target_complex : public ShuLangVisitor {
                 node->condition = generate_binding(node->condition);
             }
 
-            // TODO
-            // Test cases for complex operands inside of if bodies 
-            // as well as the condition :3
             return ShuLangVisitor::egressIfNode(node);
+        }
+
+        ShuLangNode* egressNotNode(NotNode* node) override {
+            // Value must be atomic
+            if (ComplexDetector::IsComplex(node->value.get())) {
+                node->value = generate_binding(node->value);
+            }
+
+            return ShuLangVisitor::egressNotNode(node);
+        }
+
+        ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) override {
+            // Condition must be atomic
+            if (ComplexDetector::IsComplex(node->condition.get())) {
+                node->condition = generate_binding(node->condition);
+            }
+
+            // However for the other 2 values we leave them as complex
+            // As we'll do some funky jump stuff later
+
+            return ShuLangVisitor::egressSelectOperatorNode(node);
         }
 
         ASTHolder ingressBodyNode(BodyNode* node, int childcount) override {

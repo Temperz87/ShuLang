@@ -13,4 +13,6 @@ class ComplexDetector : public ShuLangVisitor {
     public:
         static bool IsComplex(ShuLangNode* node);
         ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override;
+        ShuLangNode* egressNotNode(NotNode* node) override;
+        ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) override;
 };
