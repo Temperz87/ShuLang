@@ -245,6 +245,9 @@ def stringify_value(node):
             for block_name, val in node.candidates:
                 ret += "[" + block_name + ", " + stringify_value(val) + "] "
             return ret
+        case SelectNode():
+            return "Select " + stringify_value(node.condition) +  " " + stringify_value(node.true_value) + \
+                             " " + stringify_value(node.false_value)
         case _:
             print("Unknown value", node)
             exit(1)
@@ -282,10 +285,11 @@ def get_sir_value(node, last_block, env):
         case PseudoPhiNode():
             return env[node.requested_previous]
         case PhiNode():
-            # TODO: Use the dictionary!!!!
-            for block_name, val in node.candidates:
-                if block_name == last_block.name:
-                    return get_sir_value(val, last_block, env)
+            return get_sir_value(node.candidates[last_block], last_block, env)
+        case SelectNode():
+            if get_sir_value(node.condition, last_block, env):
+                return get_sir_value(node.true_value, last_block, env)
+            return get_sir_value(node.false_value, last_block, env)
         case AddNode():
             lhs = get_sir_value(node.lhs, last_block, env)
             rhs = get_sir_value(node.rhs, last_block, env)
@@ -347,13 +351,16 @@ def run_sir_block(block, blocks, last_block, env, stdout):
                             print('false')
                             stdout.append('false')
                         else:
-                            print('Val was', 0, 'which is not a boolean?')
+                            print('Val was', val, 'which is not a boolean?')
                     case _:
                         print("Unsupported print type found in a SIRPrintNode:", instruction.print_type)
                 
             case DefinitionNode():
                 val = get_sir_value(instruction.binding, last_block, env)
                 env[instruction.identifier] = val
+                for k, v in block.variable_to_ref.items():
+                    if v in env:
+                        env[k] = env[v]
             case JumpIfElseNode():
                 val = get_sir_value(instruction.condition, last_block, env)
                 if val:
@@ -482,17 +489,17 @@ def run_case(file_name):
     print("Running")
     rco_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
-    return
 
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
     # print_sir_ast(sir_program)
-    # graph_sir_program(sir_program)
+    graph_sir_program(sir_program)
 
     # TODO: WRITE A WAY TO TEST PSEUDOPHINODES
-    # print("Running")
-    # select_stdout = run_sir_program(sir_program)
-    # compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
+    print("Running")
+    select_stdout = run_sir_program(sir_program)
+    compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
+    return
 
     print("---PROMOTE PSEUDO PHI---")
     promote_pseudo_phi(sir_program)
