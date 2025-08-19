@@ -1,169 +1,100 @@
-// Hello "big serious person" looking at this heap of stuff
-// This pass is HARD
-// and as such I've deferred it until later 
-// :3
-
 #include <ComplexDetector.hpp>
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
+#include <cstddef>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-// std::string gen_tmp_name() {
-//     static int tmp_counter = 0;
-//     std::cout << "Called gen tmp name" << std::endl;
-//     return "short_circ" + std::to_string(tmp_counter++);
-// }
+class TransformToShortCircuit : public ShuLangVisitor {
+    private:
 
-// class TransformToShortCircuit : public ShuLangVisitor {
-//     private:
-//         std::vector<std::shared_ptr<StatementNode>>& adding_left;
-//         std::vector<std::shared_ptr<StatementNode>>& adding_right;
+        std::unordered_map<ValueNode*, std::shared_ptr<ValueNode>> marks;
+        std::unordered_map<ValueNode*, std::shared_ptr<ValueNode>> not_nodes;
 
-//         std::unordered_map<ValueNode*, StatementNode*> replacements;
+        inline void replace_with_mark(std::shared_ptr<ValueNode>& node) {
+            if (marks.contains(node.get())) {
+                node = marks.at(node.get());
+            };
+        }
 
-//     public:
-//         std::shared_ptr<IfNode> to_add = nullptr;
+    public:
+        ShuLangNode* egressBindingNode(BindingNode* node) override {
+            replace_with_mark(node->value);
+            return ShuLangVisitor::egressBindingNode(node);
+        }
 
-//         ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) {
-//             if (to_add == nullptr) {
-//                 to_add = std::make_shared<IfNode>();
-//                 adding_left = to_add->then_block;
-//                 adding_right = to_add->else_block;
-//             }
-
-
-//             if (node->op == "and") {
-                
-//             };
-//         }
-// }
-
-// class MarkShortCircuit : public ShuLangVisitor {
-//     private:
-//         OperatorApplicationNode* has_lock = nullptr;
-//         std::string tmp_binding;
-//         std::unordered_map<ValueNode*, std::shared_ptr<IfNode>> associations;
-
-//         std::unordered_set<ValueNode*> marks;
-
-//         inline void replace_with_mark(std::shared_ptr<ValueNode>& node) {
-//             if (marks.contains(node.get())) {
-//                 std::shared_ptr<VariableReferenceNode> ref = std::make_shared<VariableReferenceNode>(tmp_binding);
-//                 ref->type = "Boolean";
-//                 node = ref;
-//             };
-//         }
-
-//     public:
-//         std::vector<std::shared_ptr<IfNode>> to_add;
-    
-//         ShuLangNode* egressBindingNode(BindingNode* node) override {
-//             replace_with_mark(node->value);
-//             return ShuLangVisitor::egressBindingNode(node);
-//         }
-
-//         ShuLangNode* egressPrintNode(PrintNode* node) override {
-//             replace_with_mark(node->to_print);
-//             return ShuLangVisitor::egressPrintNode(node);
-//         }
+        ShuLangNode* egressPrintNode(PrintNode* node) override {
+            replace_with_mark(node->to_print);
+            return ShuLangVisitor::egressPrintNode(node);
+        }
         
-//         ShuLangNode* egressIfNode(IfNode* node) override { 
-//             replace_with_mark(node->condition);
-//             return ShuLangVisitor::egressNode(node); 
-//         }
+        ShuLangNode* egressIfNode(IfNode* node) override { 
+            if (not_nodes.contains(node->condition.get()) && node->else_block != nullptr) {
+                node->condition = not_nodes.at(node->condition.get());
+                auto tmp = node->then_block;
+                node->then_block = node->else_block;
+                node->else_block = tmp;
+            }
+            replace_with_mark(node->condition);
+            return ShuLangVisitor::egressNode(node); 
+        }
 
-//         // ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) override {
-//         //     if (has_lock == nullptr) {
-//         //         has_lock = node;
-//         //         tmp_binding = gen_tmp_name();
-//         //     }
+        ShuLangNode* egressNotNode(NotNode* node) override {
+            replace_with_mark(node->value);
+            std::shared_ptr<ValueNode> my_val = node->value;
+            if (not_nodes.contains(node->value.get())) {
+                marks.insert({node, not_nodes.at(node->value.get())});
+            }
+            else {
+                not_nodes.insert({node, my_val});
+            }
+            return ShuLangVisitor::egressNotNode(node);
+        }
 
-//         //     return ShuLangVisitor::ingressOperatorApplicationNode(node, childcount);
-//         // }
+        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
+            replace_with_mark(node->lhs);
+            replace_with_mark(node->rhs);
 
-//         ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
-//             if (node->op == "and") {
-//                 std::shared_ptr<IfNode> ifnode = std::make_shared<IfNode>();
+            // If the rhs isn't complex then there's no point of short circuiting
+            // As the rhs will already be evaluated (eager moment)
+            if (ComplexDetector::IsComplex(node->rhs.get())) {
+                if (node->op == "and") {
+                    // Holy tab
+                    std::shared_ptr<SelectOperatorNode> sel = std::make_shared<SelectOperatorNode>(node->lhs,
+                                                                                                   node->rhs,
+                                                                                                   std::make_shared<BooleanNode>(false)
+                    );
+                    marks.insert({node, sel});
+                }
+                else if (node->op == "or") {
+                    std::shared_ptr<SelectOperatorNode> sel = std::make_shared<SelectOperatorNode>(node->lhs,
+                                                                                                   std::make_shared<BooleanNode>(true),
+                                                                                                   node->rhs
+                    );
+                    marks.insert({node, sel});
+                }
+            }
+            return ShuLangVisitor::egressOperatorApplicationNode(node);
+        }
 
-//                 std::shared_ptr<BindingNode> false_binding = std::make_shared<BindingNode>();
-//                 false_binding->name = tmp_binding;
-//                 false_binding->ty = "Boolean";
-//                 false_binding->value = std::make_shared<BooleanNode>(false);
-//                 ifnode->else_block.push_back(false_binding);
+        ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) override {
+            replace_with_mark(node->condition);
+            replace_with_mark(node->true_value);
+            replace_with_mark(node->false_value);
 
-//                 if (associations.contains(node->lhs.get())) {
-//                     ifnode->condition = std::make_shared<VariableReferenceNode>(tmp_binding); 
-//                 }
-//                 else {
-//                     ifnode->condition = node->lhs;
-//                 }
+            if (not_nodes.contains(node->condition.get())) {
+                node->condition = not_nodes.at(node->condition.get());
+                auto tmp = node->true_value;
+                node->true_value = node->false_value;
+                node->false_value = tmp;
+            }
 
-//                 if (associations.contains(node->rhs.get())) {
-//                     ifnode->then_block.push_back(associations.at(node->rhs.get()));
-//                     to_add.erase(to_add.begin() + to_add.size() - 1);
-//                 }
-//                 else {
-//                     std::shared_ptr<BindingNode> then_binding = std::make_shared<BindingNode>();
-//                     then_binding->name = tmp_binding;
-//                     then_binding->ty = "Boolean";
-//                     then_binding->value = node->rhs;
-//                     ifnode->then_block.push_back(then_binding);
-//                 }
-
-//                 to_add.push_back(ifnode);
-//                 marks.insert(node);
-//                 associations.insert({node, ifnode});
-//             }
-//             else if (node->op == "or") {
-//                 std::shared_ptr<IfNode> ifnode = std::make_shared<IfNode>();
-
-//                 std::shared_ptr<BindingNode> true_binding = std::make_shared<BindingNode>();
-//                 true_binding->name = tmp_binding;
-//                 true_binding->ty = "Boolean";
-//                 true_binding->value = std::make_shared<BooleanNode>(true);
-//                 ifnode->then_block.push_back(true_binding);
-
-//                 if (associations.contains(node->lhs.get())) {
-//                     ifnode->condition = std::make_shared<VariableReferenceNode>(tmp_binding); 
-//                 }
-//                 else {
-//                     ifnode->condition = node->lhs;
-//                 }
-
-//                 if (associations.contains(node->rhs.get())) {
-//                     ifnode->else_block.push_back(associations.at(node->rhs.get()));
-//                     to_add.erase(to_add.begin() + to_add.size() - 1);
-//                 }
-//                 else {
-//                     std::shared_ptr<BindingNode> else_binding = std::make_shared<BindingNode>();
-//                     else_binding->name = tmp_binding;
-//                     else_binding->ty = "Boolean";
-//                     else_binding->value = node->rhs;
-//                     ifnode->else_block.push_back(else_binding);
-//                 }
-
-//                 to_add.push_back(ifnode);
-//                 marks.insert(node);
-//                 associations.insert({node, ifnode});
-//             }
-
-//             // if (has_lock == node) {
-//             //     has_lock = nullptr;
-//             // }
-
-//             return ShuLangVisitor::egressOperatorApplicationNode(node);
-//         }
-// };
+            return ShuLangVisitor::egressSelectOperatorNode(node);
+        }
+};
 
 void short_circuitify(ProgramNode* program) {
-    // for (long i = 0; i < program->nodes.size(); i++) {
-    //     MarkShortCircuit c;
-    //     c.walk(program->nodes.at(i).get());
-    //     program->nodes.insert(program->nodes.begin() + i, c.to_add.begin(), c.to_add.end());
-    //     i += c.to_add.size();
-    // }
+    TransformToShortCircuit c;
+    c.walk(program);
 }
