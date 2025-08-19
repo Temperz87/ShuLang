@@ -43,6 +43,21 @@ namespace shuir {
         public:
             std::string identifier;
             ReferenceNode(std::string identifier, int width):ValueNode(width), identifier(identifier) { };
+            std::vector<std::string> get_usages() override;
+            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
+    };
+
+    class SelectNode : public ValueNode {
+        public:
+            std::shared_ptr<ValueNode> condition;
+            std::shared_ptr<ValueNode> true_value;
+            std::shared_ptr<ValueNode> false_value;
+            SelectNode(int width, std::shared_ptr<ValueNode> condition,
+                                  std::shared_ptr<ValueNode> true_value,
+                                  std::shared_ptr<ValueNode> false_value)
+                        :ValueNode(width), condition(condition), true_value(true_value), false_value(false_value) { };
+            std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };

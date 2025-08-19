@@ -12,6 +12,7 @@
 namespace shuir {
     class ImmediateNode;
     class ReferenceNode;
+    class SelectNode;
     class AddNode;
     class SubNode;
     class MultNode;
@@ -42,6 +43,7 @@ namespace shuir {
 
             llvm::Value* visit(ImmediateNode* node);
             llvm::Value* visit(ReferenceNode* node);
+            llvm::Value* visit(SelectNode* node);
             llvm::Value* visit(AddNode* node);
             llvm::Value* visit(SubNode* node);
             llvm::Value* visit(MultNode* node);

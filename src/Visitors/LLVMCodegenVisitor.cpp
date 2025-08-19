@@ -31,6 +31,10 @@ llvm::Value* LLVMCodegenVisitor::visit(ReferenceNode* node) {
     // return builder->CreateLoad(llvm::Type::getIntNTy(context, node->width), bindings.at(node->identifier), node->identifier);
 }
 
+llvm::Value* LLVMCodegenVisitor::visit(SelectNode* node) {
+    return builder->CreateSelect(node->condition->accept(this), node->true_value->accept(this), node->false_value->accept(this));
+}
+
 llvm::Value* LLVMCodegenVisitor::visit(AddNode* node) {
     return builder->CreateAdd(node->lhs->accept(this), node->rhs->accept(this));
 }

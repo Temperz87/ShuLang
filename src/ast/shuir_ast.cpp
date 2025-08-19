@@ -28,6 +28,22 @@ llvm::Value* ReferenceNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->visit(this);
 }
 
+std::vector<std::string>ReferenceNode::get_usages() {
+    return { identifier };
+}
+
+std::vector<std::string> SelectNode::get_usages() {
+    std::vector<std::string> cond_usage = condition->get_usages();
+    std::vector<std::string> true_usage = condition->get_usages();
+    std::vector<std::string> false_usage = condition->get_usages();
+    cond_usage.insert(cond_usage.end(), true_usage.begin(), true_usage.end());
+    cond_usage.insert(cond_usage.end(), false_usage.begin(), false_usage.end());
+    return cond_usage;
+}
+
+llvm::Value* SelectNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->visit(this);
+}
 std::vector<std::string> BinOpNode::get_usages() {
     std::vector<std::string> lhs_usage = lhs->get_usages();
     std::vector<std::string> rhs_usage = rhs->get_usages();

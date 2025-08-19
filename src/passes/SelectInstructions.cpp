@@ -1,7 +1,9 @@
+#include <ComplexDetector.hpp>
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
 #include <ShuIRAST.hpp>
 #include <ShuLangVisitor.hpp>
+#include <iostream>
 #include <llvm/IR/Metadata.h>
 #include <memory>
 #include <stack>
@@ -121,7 +123,7 @@ class SLTranslator : public ShuLangVisitor {
                 ret = std::make_shared<shuir::MultNode>();
             }
             else {
-                // TODO: Validate operator is < or <= or = or != or > or >= or and or or
+                // TODO: Validate operator is < or <= or = or != or > or >= or and or or or xor
                 ret = std::make_shared<shuir::CmpNode>(node->op);
             }
             ret->rhs = completed.top();
@@ -195,9 +197,33 @@ class SLTranslator : public ShuLangVisitor {
             return ShuLangVisitor::egressBodyNode(node);
         }
 
+        shulang::ShuLangNode* egressNotNode(shulang::NotNode* node) override {
+            // Neat trick I found on stack overflow
+            std::shared_ptr<shuir::CmpNode> op = std::make_shared<shuir::CmpNode>("=");
+            op->lhs = completed.top();
+            completed.pop();
+            op->rhs = std::make_shared<shuir::ImmediateNode>(0, 1);
+            completed.push(op);
+            return ShuLangVisitor::egressNotNode(node);
+        }
+
+        shulang::ShuLangNode* egressSelectOperatorNode(shulang::SelectOperatorNode* node) override {
+            // Write primitive select
+            // Then we'll optimize later
+            std::shared_ptr<shuir::ValueNode> false_value = completed.top();
+            completed.pop();
+            std::shared_ptr<shuir::ValueNode> true_value = completed.top();
+            completed.pop();
+            std::shared_ptr<shuir::ValueNode> cond_value = completed.top();
+            completed.pop();
+            // std::cout << false_value << " " << true_value << " " << cond_value << std::endl;
+            std::shared_ptr<shuir::SelectNode> select = std::make_shared<shuir::SelectNode>(true_value->width, cond_value, true_value, false_value);
+            completed.push(select);
+            return ShuLangVisitor::egressSelectOperatorNode(node);
+        }
+
         shulang::ShuLangNode* egressIfNode(shulang::IfNode* node) override {
             // std::cout << "Egress if node!!!" << std::endl;
-            // TODO: Make the continuation block iff there's more instructions
 
             // We store what happens after the if in a new block
             // In order to avoid code duplication and exponential file size

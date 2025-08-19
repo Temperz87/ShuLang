@@ -125,8 +125,15 @@ PYBIND11_MODULE(shulang, m) {
 
     py::class_<shuir::ReferenceNode, shuir::ValueNode, std::shared_ptr<shuir::ReferenceNode>>(m, "ReferenceNode")
     .def(py::init<std::string, int>())
+    .def("get_usages", &shuir::ReferenceNode::get_usages)
     .def_readwrite("width", &shuir::ReferenceNode::width)
     .def_readwrite("identifier", &shuir::ReferenceNode::identifier);
+
+    py::class_<shuir::SelectNode, shuir::ValueNode, std::shared_ptr<shuir::SelectNode>>(m, "SelectNode")
+    .def("get_usages", &shuir::SelectNode::get_usages)
+    .def_readwrite("condition", &shuir::SelectNode::condition)
+    .def_readwrite("true_value", &shuir::SelectNode::true_value)
+    .def_readwrite("false_value", &shuir::SelectNode::false_value);
 
     py::class_<shuir::BinOpNode, shuir::ValueNode, std::shared_ptr<shuir::BinOpNode>>(m, "BinOpNode")
     .def("get_usages", &shuir::BinOpNode::get_usages)
@@ -193,6 +200,7 @@ PYBIND11_MODULE(shulang, m) {
     py::class_<shuir::SIRBlock, std::shared_ptr<shuir::SIRBlock>>(m, "SIRBlock")
     .def(py::init<std::string>())
     .def_readwrite("instructions", &shuir::SIRBlock::instructions)
+    .def_readwrite("variable_to_ref", &shuir::SIRBlock::variable_to_ref)
     .def_readwrite("name", &shuir::SIRBlock::name);
 
     py::class_<shuir::ExitNode, shuir::InstructionNode, std::shared_ptr<shuir::ExitNode>>(m, "ExitNode")

@@ -8,6 +8,7 @@ namespace shuir {
     class SIRNode;
     class ImmediateNode;
     class ReferenceNode;
+    class SelectNode;
     class AddNode;
     class SubNode;
     class MultNode;
@@ -29,6 +30,7 @@ namespace shuir {
         public:
             virtual void visit(ImmediateNode* node) {}
             virtual void visit(ReferenceNode* node) {}
+            virtual void visit(SelectNode* node) {}
             virtual void visit(AddNode* node) {}
             virtual void visit(SubNode* node) {}
             virtual void visit(MultNode* node) {}

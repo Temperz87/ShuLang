@@ -80,10 +80,10 @@ class target_complex : public ShuLangVisitor {
         }
 
         ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) override {
-            // Condition must be atomic
-            if (ComplexDetector::IsComplex(node->condition.get())) {
-                node->condition = generate_binding(node->condition);
-            }
+            // // Condition must be atomic
+            // if (ComplexDetector::IsComplex(node->condition.get())) {
+            //     node->condition = generate_binding(node->condition);
+            // }
 
             // However for the other 2 values we leave them as complex
             // As we'll do some funky jump stuff later
