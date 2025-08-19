@@ -114,7 +114,7 @@ token_type determine_type(std::string tok) {
     }
     else if (string_in_array(tok, types, ARR_SIZE(types)))
         return TYPE;
-        else if (string_in_array(tok, values, ARR_SIZE(values)))
+    else if (string_in_array(tok, values, ARR_SIZE(values)))
             return VALUE;
     else if (string_in_array(tok, whitespace, ARR_SIZE(whitespace)))
         return WHITESPACE;
@@ -153,10 +153,11 @@ void token_type_to_string(std::string& str, token_type ty) {
         case TYPE:
             str = "TYPE";
             break;
+        case VALUE: // Shouldn't be possible
         case UNKNOWN:
             str = "UNKNOWN";
             break;
-    }
+        }
 }
 
 token get_token(std::string str, int start, int end, int line) {

@@ -76,6 +76,11 @@ std::string operator_low[] = {
         "-"
 };
 
+std::string prefix_ops[] {
+    "not",
+    "if"
+};
+
 int operator_len[] = {
     sizeof(operator_low) / sizeof(std::string),
     sizeof(operator_medium) / sizeof(std::string),
@@ -238,7 +243,31 @@ std::shared_ptr<ValueNode> parse_integer_or_op(std::vector<token>& tokens, int s
         return parse_ops(tokens, start, end);
 }
 
+std::shared_ptr<ValueNode> parse_prefix_operator() {
+    if (currenttoken.value == "if") {
+        advance();
+        std::shared_ptr<ValueNode> condition = parse_complex_value();
+        std::shared_ptr<ValueNode> then_value = parse_complex_value();
+        std::shared_ptr<ValueNode> else_value = parse_complex_value();
+        return std::make_shared<SelectOperatorNode>(condition, then_value, else_value);
+    }
+    else if (currenttoken.value == "not") {
+        advance();
+        std::shared_ptr<ValueNode> value = parse_complex_value();
+        return std::make_shared<NotNode>(value);
+    }
+    else {
+        parse_error("ShuC: You should not be able to see this. Please report \"precedence bug\".");
+    }
+}
+
 std::shared_ptr<ValueNode> parse_complex_value() {
+    for (std::string op : prefix_ops) {
+        if (op == currenttoken.value) {
+            return parse_prefix_operator();
+        }
+    }
+
     std::vector<token> tokens;
     token last_inserted;
     int scope = 1;
@@ -249,7 +278,7 @@ std::shared_ptr<ValueNode> parse_complex_value() {
         last_inserted = currenttoken;
         tokens.push_back(last_inserted);
         if (!advance()) {
-            parse_error("ShuC: Unexpected end of file. I think you recommend inserting a statement here");
+            parse_error("ShuC: Unexpected end of file. I think recommend inserting a statement here");
         }
         if (currenttoken.type == PUNCTUATOR) {
             // Spahgetti code
@@ -266,8 +295,8 @@ std::shared_ptr<ValueNode> parse_complex_value() {
         }
         else if (last_inserted.type == OPERATOR && currenttoken.type == STATEMENT)
             parse_error("Expected an integer or value but instead got a statement");
-        else if (last_inserted.type == (INTEGER | VALUE) && currenttoken.type == (INTEGER | VALUE))
-            parse_error("There appears to be two values next to each other, I don't know what to do with this code");
+        else if (last_inserted.type & (INTEGER | VALUE) && currenttoken.type & (INTEGER | VALUE))
+            break; // Assume ternary operator case, otherwise we'll parse error
     } while ((currenttoken.type & (OPERATOR | VALUE | INTEGER | IDENTIFIER | PUNCTUATOR)) != 0);
     
     if (scope > 1)

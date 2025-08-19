@@ -78,7 +78,17 @@ ShuLangNode* TypeChecker::egressOperatorApplicationNode(OperatorApplicationNode*
     return ShuLangVisitor::egressOperatorApplicationNode(node);
 }
 
+ShuLangNode* TypeChecker::egressNotNode(NotNode* node) { 
+    assert_same("Boolean", node->value->type, "\'not\' had the wrong type!");
+    return ShuLangVisitor::egressNotNode(node);
+}
+ShuLangNode* TypeChecker::egressSelectOperatorNode(SelectOperatorNode* node) {
+    assert_same("Boolean", node->condition->type, "Unexpected type for condition of if ternary");
+    assert_same(node->true_value->type, node->false_value->type, "The type of the \"else\" of an if ternary must match the \"then\" type");    
+    return ShuLangVisitor::egressSelectOperatorNode(node);
+}
+
 ShuLangNode* TypeChecker::egressIfNode(IfNode* node) { 
-    assert_same("Boolean", node->condition->type, "Condition for if was not of boolean type");
+    assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
     return ShuLangVisitor::egressIfNode(node);
 }

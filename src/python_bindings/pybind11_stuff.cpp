@@ -82,6 +82,18 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("lhs", &shulang::OperatorApplicationNode::lhs)
     .def_readwrite("rhs", &shulang::OperatorApplicationNode::rhs);
 
+    // Not Node
+    py::class_<shulang::NotNode, shulang::ValueNode, std::shared_ptr<shulang::NotNode>>(m, "NotNode")
+    .def("children", &shulang::NotNode::children)
+    .def_readwrite("value", &shulang::NotNode::value);
+
+    // Select Operator Node
+    py::class_<shulang::SelectOperatorNode, shulang::ValueNode, std::shared_ptr<shulang::SelectOperatorNode>>(m, "SelectOperatorNode")
+    .def("children", &shulang::SelectOperatorNode::children)
+    .def_readwrite("condition", &shulang::SelectOperatorNode::condition)
+    .def_readwrite("true_value", &shulang::SelectOperatorNode::true_value)
+    .def_readwrite("false_value", &shulang::SelectOperatorNode::false_value);
+
     // IfNode
     py::class_<shulang::IfNode, shulang::ShuLangNode, std::shared_ptr<shulang::IfNode>>(m, "IfNode")
     .def("children", &shulang::IfNode::children)
@@ -193,7 +205,7 @@ PYBIND11_MODULE(shulang, m) {
     m.def("parse_file", &parse_file, "Given a file returns an AST");
     m.def("type_check", &type_check, "Given a program type check it");
     m.def("uniquify", &uniquify, "Runs the uniquification pass");
-    // m.def("short_circuitify", &short_circuitify, "Runs the funny short circuit pass");
+    m.def("short_circuitify", &short_circuitify, "Runs the funny short circuit pass");
     m.def("remove_complex_operands", &remove_complex_operands, "Runs the remove complex operands pass");
     m.def("select_instructions", &select_SIR_instructions, "Translated from ShuLang to SIR");
     m.def("promote_pseudo_phi", &promote_pseudo_phi, "Making PseudoPhiNode's just PhiNode's");

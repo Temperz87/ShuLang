@@ -70,6 +70,12 @@ class ShuLangVisitor {
         virtual ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) { return this->ingressNode(node, childcount); }
         virtual ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) { return this->egressNode(node); }
 
+        virtual ASTHolder ingressNotNode(NotNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        virtual ShuLangNode* egressNotNode(NotNode* node) { return this->egressNode(node); }
+
+        virtual ASTHolder ingressSelectOperatorNode(SelectOperatorNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        virtual ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) { return this->egressNode(node); }
+
         virtual ASTHolder ingressBodyNode(BodyNode* node, int childcount) { return this->ingressNode(node, childcount); }
         virtual ShuLangNode* egressBodyNode(BodyNode* node) { return this->egressNode(node); }
 

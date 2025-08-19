@@ -96,6 +96,35 @@ namespace shulang {
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
+  class NotNode : public ValueNode {
+    public:
+      std::shared_ptr<ValueNode> value;
+
+      NotNode(std::shared_ptr<ValueNode> value):value(value) { 
+        type = "Boolean";
+      }
+
+      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
+  };
+
+  class SelectOperatorNode : public ValueNode {
+    public:
+      std::shared_ptr<ValueNode> condition;
+      std::shared_ptr<ValueNode> true_value;
+      std::shared_ptr<ValueNode> false_value;
+      
+      SelectOperatorNode(std::shared_ptr<ValueNode> condition, std::shared_ptr<ValueNode> true_value, std::shared_ptr<ValueNode> false_value):
+        condition(condition), true_value(true_value), false_value(false_value) { 
+          type = true_value->type;
+        } 
+
+      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
+  };
+
   class BodyNode : public ShuLangNode {
     public:
       std::vector<std::shared_ptr<ShuLangNode>> nodes;
