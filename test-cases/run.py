@@ -39,9 +39,10 @@ def print_ast(node : ASTNode, indentation = 0):
             for x in node.then_block.nodes:
                 print_ast(x, indentation + 1)
             print_indentation(indentation)
-            print("ELSE")
-            for x in node.else_block.nodes:
-                print_ast(x, indentation + 1)
+            if node.else_block != None:
+                print("ELSE")
+                for x in node.else_block.nodes:
+                    print_ast(x, indentation + 1)
 
 node_counter = 0
 def graph_this_stuff(label, indentation, parent=None, name=None):
@@ -73,6 +74,16 @@ def graph_ast(node, parent=''):
             my_node = graph_this_stuff(node.op, 1, parent)
             graph_ast(node.lhs, my_node)
             graph_ast(node.rhs, my_node)
+            return my_node
+        case NotNode():
+            my_node = graph_this_stuff("not", 1, parent)
+            graph_ast(node.value, my_node)
+            return my_node
+        case SelectOperatorNode():
+            my_node = graph_this_stuff("if", 1, parent)
+            graph_ast(node.condition, my_node)
+            graph_ast(node.true_value, my_node)
+            graph_ast(node.false_value, my_node)
             return my_node
         case BindingNode():
             my_node = graph_this_stuff("bind " + node.name + " : " + node.ty, 1, parent)
@@ -174,9 +185,19 @@ def get_value(node, env):
                     lhs = get_value(node.lhs, env)
                     rhs = get_value(node.rhs, env)
                     return lhs <= rhs
+                case '?':
+                    if get_value(node.lhs, env):
+                        return get_value(node.rhs, env)
+                    return False
                 case _:
                     print("Unrecognized operator", node.op)
                     exit(1)
+        case NotNode():
+            return not get_value(node.value, env)
+        case SelectOperatorNode():
+            if get_value(node.condition, env):
+                return get_value(node.true_value, env)
+            return get_value(node.false_value, env)
 
 def run_ast(node, env = {}, stdout = []):
     match node:
@@ -433,6 +454,7 @@ def run_case(file_name):
     parse_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
 
+
     print("---UNIQUIFICATION---")
     uniquify(ast)
     # print_ast(ast)
@@ -441,16 +463,16 @@ def run_case(file_name):
     uniquify_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
 
-    # print("---SHORT CIRCUIT-IFICATION")
-    # TODO: Finish this pass!!!
-    # short_circuitify(ast)
+    print("---SHORT CIRCUIT-IFICATION")
+    short_circuitify(ast)
     # print_ast(ast)
-    # graph_ast(ast)
-    # print("Type checking...")
-    # type_check(ast)
-    # print("Running...")
-    # short_stdout = run_ast(ast, {}, [])
-    # compare_stdout(expected_stdout, short_stdout, file_name, "uniquify")
+    graph_ast(ast)
+    print("Type checking...")
+    type_check(ast)
+    print("Running...")
+    short_stdout = run_ast(ast, {}, [])
+    compare_stdout(expected_stdout, short_stdout, file_name, "short circuitification")
+    return
 
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
