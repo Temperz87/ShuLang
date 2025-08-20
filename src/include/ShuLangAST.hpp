@@ -18,7 +18,7 @@ namespace shulang {
   class ShuLangNode : public ASTNode, public std::enable_shared_from_this<ShuLangNode> {
   public:
     // Gets DIRECT children
-    virtual std::vector<std::shared_ptr<ShuLangNode>> children() = 0;
+    virtual std::vector<ShuLangNode*> children() = 0;
     virtual childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) = 0;
     virtual ShuLangNode* egressVisitor(ShuLangVisitor *visitor) = 0;
   };
@@ -33,7 +33,7 @@ namespace shulang {
   class ValueNode : public StatementNode {
     public:
       std::string type;
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -42,7 +42,7 @@ namespace shulang {
     public:
       std::shared_ptr<ValueNode> to_print;
       PrintNode(std::shared_ptr<ValueNode> printable):to_print(printable) { };
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor* visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -79,7 +79,7 @@ namespace shulang {
       BindingNode(std::string identifier, std::string type, std::shared_ptr<ValueNode> value):
         identifier(identifier), type(type), value(value) { };
 
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -91,7 +91,7 @@ namespace shulang {
       std::shared_ptr<ValueNode> rhs;
       OperatorApplicationNode(std::string op, std::shared_ptr<ValueNode> lhs, std::shared_ptr<ValueNode> rhs)
         :op(op), lhs(lhs), rhs(rhs) { }
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -104,7 +104,7 @@ namespace shulang {
         type = "Boolean";
       }
 
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -116,7 +116,7 @@ namespace shulang {
       std::vector<std::shared_ptr<StatementNode>> statements;
       std::shared_ptr<ValueNode> end_value;
       BeginNode(ValueNode* parent):parent(parent) { }
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -136,7 +136,7 @@ namespace shulang {
           this->false_value->end_value = false_value;
         } 
 
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -144,7 +144,7 @@ namespace shulang {
   class BodyNode : public ShuLangNode {
     public:
       std::vector<std::shared_ptr<ShuLangNode>> nodes;
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -154,7 +154,7 @@ namespace shulang {
       std::shared_ptr<ValueNode> condition;
       std::shared_ptr<BodyNode> then_block = nullptr;
       std::shared_ptr<BodyNode> else_block = nullptr;
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };

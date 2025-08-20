@@ -147,9 +147,9 @@ class ShuLangVisitor {
                 // It ends up with {Program, bind}
                 // Then descends into the Program before the bind
                 // Which is bad!!!
-                std::vector<std::shared_ptr<ShuLangNode>> children = current->children();
+                std::vector<ShuLangNode*> children = current->children();
                 for (int i = children.size() - 1; i >= 0; i--) {
-                    ingress.push(children.at(i).get());
+                    ingress.push(children.at(i));
                 }
 
                 if (holder.waitingfor == 0) {

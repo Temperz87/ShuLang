@@ -15,8 +15,8 @@ ShuLangNode* StatementNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressStatementNode(this);
 }
 
-std::vector<std::shared_ptr<ShuLangNode>> PrintNode::children() {
-  return { to_print };
+std::vector<ShuLangNode*> PrintNode::children() {
+  return { to_print.get() };
 }
 childholder<ShuLangNode> PrintNode::ingressVisitor(ShuLangVisitor* visitor) {
   visitor->onIngressPrintNode(this);
@@ -28,7 +28,7 @@ ShuLangNode* PrintNode::egressVisitor(ShuLangVisitor* visitor) {
 }
 
 
-std::vector<std::shared_ptr<ShuLangNode>> ValueNode::children() {
+std::vector<ShuLangNode*> ValueNode::children() {
   return { };  
 }
 childholder<ShuLangNode> ValueNode::ingressVisitor(ShuLangVisitor* visitor) {
@@ -68,8 +68,8 @@ ShuLangNode* VariableReferenceNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressVariableReferenceNode(this);
 }
 
-std::vector<std::shared_ptr<ShuLangNode>> BindingNode::children()  {
-  return { value };
+std::vector<ShuLangNode*> BindingNode::children()  {
+  return { value.get() };
 }
 childholder<ShuLangNode> BindingNode::ingressVisitor(ShuLangVisitor* visitor)  {
   visitor->onIngressBindingNode(this);
@@ -80,8 +80,8 @@ ShuLangNode* BindingNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressBindingNode(this);
 }
 
-std::vector<std::shared_ptr<ShuLangNode>> OperatorApplicationNode::children() {
-  return { lhs, rhs };
+std::vector<ShuLangNode*> OperatorApplicationNode::children() {
+  return { lhs.get(), rhs.get() };
 }
 childholder<ShuLangNode> OperatorApplicationNode::ingressVisitor(ShuLangVisitor* visitor) {
   visitor->onIngressOperatorApplicationNode(this);
@@ -92,8 +92,8 @@ ShuLangNode* OperatorApplicationNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressOperatorApplicationNode(this);
 }
 
-std::vector<std::shared_ptr<ShuLangNode>> NotNode::children() {
-  return { value };
+std::vector<ShuLangNode*> NotNode::children() {
+  return { value.get() };
 }
 childholder<ShuLangNode> NotNode::ingressVisitor(ShuLangVisitor* visitor) {
   visitor->onIngressNotNode(this);
@@ -104,10 +104,11 @@ ShuLangNode* NotNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressNotNode(this);
 }
 
-std::vector<std::shared_ptr<ShuLangNode>> BeginNode::children() {
-  std::vector<std::shared_ptr<ShuLangNode>> ret;
-  ret.insert(ret.end(), statements.begin(), statements.end());
-  ret.push_back(end_value);
+std::vector<ShuLangNode*> BeginNode::children() {
+  std::vector<ShuLangNode*> ret;
+  for (int i = 0; i < statements.size(); i++)
+    ret.push_back(statements.at(i).get());
+  ret.push_back(end_value.get());
   return ret;
 }
 childholder<ShuLangNode> BeginNode::ingressVisitor(ShuLangVisitor* visitor) {
@@ -120,8 +121,8 @@ ShuLangNode* BeginNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressBeginNode(this);
 }
 
-std::vector<std::shared_ptr<ShuLangNode>> SelectOperatorNode::children() {
-  return { condition, true_value, false_value};
+std::vector<ShuLangNode*> SelectOperatorNode::children() {
+  return { condition.get(), true_value.get(), false_value.get()};
 }
 childholder<ShuLangNode> SelectOperatorNode::ingressVisitor(ShuLangVisitor* visitor) {
   visitor->onIngressSelectOperatorNode(this);
@@ -133,13 +134,13 @@ ShuLangNode* SelectOperatorNode::egressVisitor(ShuLangVisitor* visitor) {
 }
 
 
-std::vector<std::shared_ptr<ShuLangNode>> IfNode::children() {
-  std::vector<std::shared_ptr<ShuLangNode>> childs;
-  childs.push_back(condition);
-  childs.push_back(then_block);
+std::vector<ShuLangNode*> IfNode::children() {
+  std::vector<ShuLangNode*> childs;
+  childs.push_back(condition.get());
+  childs.push_back(then_block.get());
 
   if (else_block != nullptr) {
-    childs.push_back(else_block);
+    childs.push_back(else_block.get());
   }
 
   return childs;
@@ -157,9 +158,10 @@ ShuLangNode* IfNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressIfNode(this);
 }
 
-std::vector<std::shared_ptr<ShuLangNode>> BodyNode::children() {
-  std::vector<std::shared_ptr<ShuLangNode>> childs;
-  childs.insert(childs.end(), nodes.begin(), nodes.end());
+std::vector<ShuLangNode*> BodyNode::children() {
+  std::vector<ShuLangNode*> childs;
+  for (int i = 0; i < nodes.size(); i++)
+    childs.push_back(nodes.at(i).get());
   return childs;
 }
 childholder<ShuLangNode> BodyNode::ingressVisitor(ShuLangVisitor* visitor) {
