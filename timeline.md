@@ -2,9 +2,6 @@
 
 This is subject to change.
 
-## Act 3: Loops
-The `while` and `for` stuff :D.
-
 ## Act 4: Optimizations
 Constant folding, constant propagation, and dead code elimination. I'm also introducing user input here.
 
@@ -15,6 +12,16 @@ You know what a function is, I know what a function is, it's time to have some f
 Me when I need a VTable.
 
 ## Previous Acts
+
+## INTERMISSION: Cleanup AST and Tester
+
+My ShuLang visitor AND AST is a mess and I must clean it up. Here's why I want to do:
+- [x] ASTNodes ingress/egress should call a virtual "ingress step" or "egress step" when being ingressed/egressed, THEN call `visitor->ingressNode` or `visitor->egressNode` so I'm not seemingly returning a random value
+- [x] ASTNodes's need more constructors. `ValueNode`'s not taking in a type is fine in ShuLang, but some things are weird
+- [x] Change some smart pointers to raw pointers (pybind11 hates unique pointers so I'm still going to use shared pointers)
+- [x] Rename `namespace shuir` to `namespace sir`.
+- [x] Update ShuLang/SIR specs
+- [x] Split the tester into multiple files, e.g. ShuLang, SIR, and a driver file
 
 ### Act 2: Conditionals
 Here I'll introduce the `if` and `true` and `false` stuff, as well as the funny boolean operators (e.g. `and`).

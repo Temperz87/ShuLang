@@ -15,12 +15,23 @@ If you want to mess around with writing some ShuLang programs then clone the rep
 
 If you want a timeline of what I've done and what's next, one can be find in [timeline.md](timeline.md). Here's what I'm currently working on:
 
-## INTERMISSION
+## Act 4: Loops
+It's time to compile while while loops!
 
-My ShuLang visitor AND AST is a mess and I must clean it up. Here's why I want to do:
-- [x] ASTNodes ingress/egress should call a virtual "ingress step" or "egress step" when being ingressed/egressed, THEN call `visitor->ingressNode` or `visitor->egressNode` so I'm not seemingly returning a random value
-- [x] ASTNodes's need more constructors. `ValueNode`'s not taking in a type is fine in ShuLang, but some things are weird
-- [x] Change some smart pointers to raw pointers (pybind11 hates unique pointers so I'm still going to use shared pointers)
-- [x] Rename `namespace shuir` to `namespace sir`.
-- [x] Update ShuLang/SIR specs
-- [x] Split the tester into multiple files, e.g. ShuLang, SIR, and a driver file
+### Parser changes
+Shouldn't be that hard. The grammar for loop construct is as follows:
+
+while ::= "while" value body
+- I'll do a for loop if someone can give me good notation
+- No I'm not doing `;;` 
+
+### Type checking
+Making sure that the condition of the while loop is a boolean, everything else is the same
+
+### Remove complex operands
+The condition of the while loop has to be atomic!
+
+### Select SIR instructions
+I am jumping around at the speed of sound
+
+And that's it! You'll notice that the changes don't seem that numerous. That's probably because I'm forgetting something, but also is because I'm only adding a single construct to my language. Said construct also doesn't change the IR which is nice.
