@@ -142,12 +142,12 @@ class SLTranslator : public ShuLangVisitor {
         // Because I don't wanna do s-expressions
         void onEgressBindingNode(shulang::BindingNode* node) override {
             // std::cout << "Creating binding node!" << std::endl;
-            std::shared_ptr<shuir::DefinitionNode> def = std::make_shared<shuir::DefinitionNode>(gen_name(node->name), completed.top());
+            std::shared_ptr<shuir::DefinitionNode> def = std::make_shared<shuir::DefinitionNode>(gen_name(node->identifier), completed.top());
 
-            if (current_block->variable_to_ref.contains(node->name))
-                current_block->variable_to_ref[node->name] = def->identifier;
+            if (current_block->variable_to_ref.contains(node->identifier))
+                current_block->variable_to_ref[node->identifier] = def->identifier;
             else 
-                current_block->variable_to_ref.insert({node->name, def->identifier});
+                current_block->variable_to_ref.insert({node->identifier, def->identifier});
 
             completed.pop();
             // Becauase the value isn't complex

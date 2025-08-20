@@ -11,15 +11,15 @@ Uniquification::~Uniquification() { };
 void Uniquification::onEgressBindingNode(BindingNode* node) {
 
     // Check if we've already assigned a name
-    if (map.find(node->name) == map.end()) {
-        std::string unique_name = node->name + "." + std::to_string(unique_id++);
-        map.insert({node->name, unique_name});
+    if (map.find(node->identifier) == map.end()) {
+        std::string unique_name = node->identifier + "." + std::to_string(unique_id++);
+        map.insert({node->identifier, unique_name});
     }
     
     // No need to reupdate when we can use alloca's later
     // At some point I'll need to phi 
     // But we'll get there when we get there
-    node->name = map.at(node->name);
+    node->identifier = map.at(node->identifier);
 }
 
 void Uniquification::onIngressVariableReferenceNode(VariableReferenceNode* node) {

@@ -130,6 +130,7 @@ void parse_type_annot(std::string& buf) {
 }
 
 std::shared_ptr<ValueNode> parse_value(token tok) {
+    std::string ident;
     switch (tok.type){
         case INTEGER:
             return std::make_shared<IntegerNode>(stoi(tok.value));
@@ -139,8 +140,16 @@ std::shared_ptr<ValueNode> parse_value(token tok) {
             else if (tok.value == "false")
                 return std::make_shared<BooleanNode>(false);
         case IDENTIFIER:
-            std::string ident = tok.value;
+            ident = tok.value;
             return std::make_shared<VariableReferenceNode>(ident);
+        case KEYWORD:
+        case OPERATOR:
+        case PUNCTUATOR:
+        case STATEMENT:
+        case TYPE:
+        case WHITESPACE:
+        case UNKNOWN:
+          break;
     }
     parse_error("Expected a value (e.g. variable reference or integer)");
     return nullptr;
@@ -217,11 +226,10 @@ std::shared_ptr<ValueNode> parse_ops(std::vector<token>& tokens, int start, int 
         return parse_value(tokens.at(start));
     }
 
-    std::shared_ptr<OperatorApplicationNode> ret = std::make_shared<OperatorApplicationNode>();
-    ret->op = tokens.at(selected).value;
-    ret->lhs = parse_integer_or_op(tokens, start, selected);
-    ret->rhs = parse_integer_or_op(tokens, selected + 1, end);
-    return ret;
+    std::string op = tokens.at(selected).value;
+    std::shared_ptr<ValueNode> lhs = parse_integer_or_op(tokens, start, selected);
+    std::shared_ptr<ValueNode> rhs = parse_integer_or_op(tokens, selected + 1, end);
+    return std::make_shared<OperatorApplicationNode>(op, lhs, rhs);
 }
 
 std::shared_ptr<ValueNode> parse_integer_or_op(std::vector<token>& tokens, int start, int end) {
@@ -249,6 +257,7 @@ std::shared_ptr<ValueNode> parse_prefix_operator() {
     }
     else {
         parse_error("ShuC: You should not be able to see this. Please report \"precedence bug\".");
+        return nullptr;
     }
 }
 
@@ -312,18 +321,21 @@ std::shared_ptr<BodyNode> parse_body() {
 std::shared_ptr<StatementNode> parse_statement() {
     if (currenttoken.value == "bind") {
         advance();
-        std::shared_ptr<BindingNode> b = std::make_shared<BindingNode>();
-        parse_identifier(b->name);
+        std::string identifier;
+        parse_identifier(identifier);
         
+        std::string type;
         if (currenttoken.value == ":")
-            parse_type_annot(b->ty);
+            parse_type_annot(type);
         else
-            b->ty = "Inferred";
+            type = "Inferred";
 
         assert_strings_equal(currenttoken.value, "to");
         advance();
-        b->value = parse_complex_value();
-        return b;
+        std::shared_ptr<ValueNode> value = parse_complex_value();
+
+        std::shared_ptr<BindingNode> bind = std::make_shared<BindingNode>(identifier, type, value);
+        return bind;
     }
     else if (currenttoken.value == "print") {
         advance();

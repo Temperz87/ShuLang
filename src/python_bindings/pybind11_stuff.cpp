@@ -71,8 +71,8 @@ PYBIND11_MODULE(shulang, m) {
     // Binding Node
     py::class_<shulang::BindingNode, shulang::StatementNode, std::shared_ptr<shulang::BindingNode>>(m, "BindingNode")
     .def("children", &shulang::BindingNode::children)
-    .def_readwrite("name", &shulang::BindingNode::name)
-    .def_readwrite("ty", &shulang::BindingNode::ty)
+    .def_readwrite("name", &shulang::BindingNode::identifier)
+    .def_readwrite("ty", &shulang::BindingNode::type)
     .def_readwrite("value", &shulang::BindingNode::value);
 
     // Operator Application Node

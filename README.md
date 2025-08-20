@@ -17,7 +17,7 @@ If you want a timeline of what I've done and what's next, one can be find in [ti
 
 My ShuLang visitor AND AST is a mess and I must clean it up. Here's why I want to do:
 - [x] ASTNodes ingress/egress should call a virtual "ingress step" or "egress step" when being ingressed/egressed, THEN call `visitor->ingressNode` or `visitor->egressNode` so I'm not seemingly returning a random value
-- [ ] ASTNodes's need more constructors. `ValueNode`'s not taking in a type is fine in ShuLang, but some things are weird
+- [x] ASTNodes's need more constructors. `ValueNode`'s not taking in a type is fine in ShuLang, but some things are weird
 - [ ] I am abusing `shared_pointer`'s, and should probably pass raw pointers OR be using `unique_pointer`
 - [ ] Rename `namespace shuir` to `namespace sir`.
 - [ ] Update ShuLang/SIR specs

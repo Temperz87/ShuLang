@@ -19,18 +19,18 @@ void TypeChecker::assert_same(std::string expected, std::string actual, std::str
 }
 
 void TypeChecker::onIngressBindingNode(BindingNode* node) { 
-    if (node->ty != "Inferred") {
-        variable_types.insert({node->name, node->ty});
+    if (node->type != "Inferred") {
+        variable_types.insert({node->identifier, node->type});
     }
 }
 
 void TypeChecker::onEgressBindingNode(BindingNode* node) { 
-    if (node->ty == "Inferred") {
-        node->ty = node->value->type;
-        variable_types.insert({node->name, node->ty});
+    if (node->type == "Inferred") {
+        node->type = node->value->type;
+        variable_types.insert({node->identifier, node->type});
     }
     else 
-        assert_same(node->ty, node->value->type, "Variable " + node->name + " was bound to a value of the wrong type");
+        assert_same(node->type, node->value->type, "Variable " + node->identifier + " was bound to a value of the wrong type");
 }
         
 void TypeChecker::onEgressVariableReferenceNode(VariableReferenceNode* node) {

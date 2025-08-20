@@ -22,11 +22,7 @@ class target_complex : public ShuLangVisitor {
             static int tmp_counter = 0;
             std::string name = "rco_output." + std::to_string(tmp_counter++);
 
-            std::shared_ptr<BindingNode> fresh = std::make_unique<BindingNode>();
-            fresh->name = name;
-            fresh->ty = complex_value->type;
-            fresh->value = complex_value;
-
+            std::shared_ptr<BindingNode> fresh = std::make_unique<BindingNode>(name, complex_value->type, complex_value);
             if (writing_to.empty()) {
                 program_nodes->insert(program_nodes->begin() + insert_position, fresh);
 

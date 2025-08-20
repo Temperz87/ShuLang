@@ -23,7 +23,6 @@ namespace shulang {
     virtual ShuLangNode* egressVisitor(ShuLangVisitor *visitor) = 0;
   };
 
-
   class StatementNode : public ShuLangNode {
     public:
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor* visitor) override;
@@ -74,9 +73,12 @@ namespace shulang {
 
   class BindingNode : public StatementNode {
     public:
-      std::string name;
-      std::string ty;
+      std::string identifier;
+      std::string type;
       std::shared_ptr<ValueNode> value;
+      BindingNode(std::string identifier, std::string type, std::shared_ptr<ValueNode> value):
+        identifier(identifier), type(type), value(value) { };
+
       std::vector<std::shared_ptr<ShuLangNode>> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
@@ -87,6 +89,8 @@ namespace shulang {
       std::string op;
       std::shared_ptr<ValueNode> lhs;
       std::shared_ptr<ValueNode> rhs;
+      OperatorApplicationNode(std::string op, std::shared_ptr<ValueNode> lhs, std::shared_ptr<ValueNode> rhs)
+        :op(op), lhs(lhs), rhs(rhs) { }
       std::vector<std::shared_ptr<ShuLangNode>> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
@@ -108,7 +112,6 @@ namespace shulang {
   // Returns last value
   class BeginNode : public ValueNode {
     public:
-
       ValueNode* parent;
       std::vector<std::shared_ptr<StatementNode>> statements;
       std::shared_ptr<ValueNode> end_value;
@@ -149,8 +152,8 @@ namespace shulang {
   class IfNode : public StatementNode {
     public:
       std::shared_ptr<ValueNode> condition;
-      std::shared_ptr<BodyNode> then_block;
-      std::shared_ptr<BodyNode> else_block;
+      std::shared_ptr<BodyNode> then_block = nullptr;
+      std::shared_ptr<BodyNode> else_block = nullptr;
       std::vector<std::shared_ptr<ShuLangNode>> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
