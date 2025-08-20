@@ -1,7 +1,7 @@
 #include <ComplexDetector.hpp>
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
-#include <ShuIRAST.hpp>
+#include <SIRAST.hpp>
 #include <ShuLangVisitor.hpp>
 #include <iostream>
 #include <llvm/IR/Metadata.h>

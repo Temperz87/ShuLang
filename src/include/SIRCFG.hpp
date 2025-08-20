@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <ShuIRAST.hpp>
+#include <SIRAST.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>

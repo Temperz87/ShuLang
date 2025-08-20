@@ -1,6 +1,6 @@
 #include <SIRVisitor.hpp>
 #include <ASTNode.hpp>
-#include <ShuIRAST.hpp>
+#include <SIRAST.hpp>
 #include <string>
 #include <vector>
 

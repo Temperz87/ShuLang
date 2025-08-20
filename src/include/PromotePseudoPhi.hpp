@@ -1,5 +1,5 @@
 #pragma once
 
-#include <ShuIRAST.hpp>
+#include <SIRAST.hpp>
 
 void promote_pseudo_phi(sir::ProgramNode* blocks);

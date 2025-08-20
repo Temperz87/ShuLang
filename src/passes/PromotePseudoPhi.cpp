@@ -1,6 +1,6 @@
 #include <SIRVisitor.hpp>
 #include <SIRCFG.hpp>
-#include <ShuIRAST.hpp>
+#include <SIRAST.hpp>
 #include <memory>
 #include <vector>
 

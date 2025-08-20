@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <ShuLangPasses.hpp>
-#include <ShuIRAST.hpp>
+#include <SIRAST.hpp>
 #include <memory>
 #include <ASTNode.hpp>
 #include <PromotePseudoPhi.hpp>
