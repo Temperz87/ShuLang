@@ -16,7 +16,7 @@ Me when I need a VTable.
 
 ## Previous Acts
 
-## Act 2: Conditionals
+### Act 2: Conditionals
 Here I'll introduce the `if` and `true` and `false` stuff, as well as the funny boolean operators (e.g. `and`).
 
 ### Parser changes
@@ -72,7 +72,15 @@ Of course if there's only one predecesor block we instead insert new binding tha
 ### Select LLVM instructions
 Yeah so I just call the right IR builder stuff and it works!!!!!!!!
 
-I found out that I can disable constant folding, so instead of creating alloca's I juset reference a dictionary I create. Hence me having to use the CFG again! This time the pass go forwards in a BFS fashion, and only visits blocks if their predecessors have been visited. Maybe there's a more memory effecient way to do this, but I'll worry about that later.
+I found out that I can disable constant folding, so instead of creating alloca's I juset reference a dictionary I create. Hence me having to use the CFG again! This time the pass go forwards in a BFS fashion, and only visits blocks if their predecessors have been visited. Maybe there's a more memory effecient way to do this, but I'll 
+worry about that later.
+
+### INTERMISSION: General cleanup and making pointers smart
+Here I separated some class definitions and declarations and used `shared_ptr`'s inside of ASTNodes instead of raw pointers. pybind11 doesn't play nice with unique pointers, hence me using shared ones instead; however if I ever decide to reorder instructions I'm sure it'll be easier to do with shared pointers instead of having to call move millions of times.
+
+I also realized that the way I was parsing nodes was doing right to left associativity instead of left to right, hence I had to fix that. I also added the `*` and binary `-` operator (which means if you want to declare a negative number you need to do `0 - number` as there's no unary version).
+
+This took a LONG time because I had to fix the parser and I spent a long time thinking about how associativity should work.
 
 
 ###  Act 1: Arithmetic, Integers, and Variables
@@ -88,10 +96,3 @@ Here are the passes used:
     - In this pass we lower to SSA. No optimizations are done currently, however constant folding is planned for when I get to loops.
 4. LLVM Instruction Selection
     - SIR gets lowered to LLVM. We also declare `printf` and insert `"%d\n` format specifier in this pass.
-
-## INTERMISSION: General cleanup and making pointers smart
-Here I separated some class definitions and declarations and used `shared_ptr`'s inside of ASTNodes instead of raw pointers. pybind11 doesn't play nice with unique pointers, hence me using shared ones instead; however if I ever decide to reorder instructions I'm sure it'll be easier to do with shared pointers instead of having to call move millions of times.
-
-I also realized that the way I was parsing nodes was doing right to left associativity instead of left to right, hence I had to fix that. I also added the `*` and binary `-` operator (which means if you want to declare a negative number you need to do `0 - number` as there's no unary version).
-
-This took a LONG time because I had to fix the parser and I spent a long time thinking about how associativity should work.
