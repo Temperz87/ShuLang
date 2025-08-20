@@ -114,6 +114,7 @@ def get_sir_value(node, last_block, env):
         case ReferenceNode():
             return env[node.identifier]
         case PseudoPhiNode():
+            print(env, node.requested_previous)
             return env[node.requested_previous]
         case PhiNode():
             for block_name, val in node.candidates:

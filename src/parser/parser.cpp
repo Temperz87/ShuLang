@@ -350,7 +350,7 @@ std::shared_ptr<StatementNode> parse_statement() {
         advance();
         std::shared_ptr<IfNode> ret = std::make_shared<IfNode>();
         std::shared_ptr<ValueNode> cond = parse_complex_value();
-        ret->condition = cond;
+        ret->condition = std::make_shared<BeginNode>(cond);
         ret->then_block = parse_body();
 
         if (currenttoken.value == "else") {
@@ -361,6 +361,14 @@ std::shared_ptr<StatementNode> parse_statement() {
             ret->else_block = nullptr;
         }
         
+        return ret;
+    }
+    else if (currenttoken.value == "while") {
+        advance();
+        std::shared_ptr<WhileNode> ret = std::make_shared<WhileNode>();
+        std::shared_ptr<ValueNode> cond = parse_complex_value();
+        ret->condition = std::make_shared<BeginNode>(cond);
+        ret->body = parse_body();
         return ret;
     }
     else {

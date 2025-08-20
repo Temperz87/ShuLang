@@ -65,13 +65,6 @@ class target_complex : public ShuLangVisitor {
             }
         }
 
-        void onEgressIfNode(IfNode* node) override {
-            // Condition must be atomic
-            if (ComplexDetector::IsComplex(node->condition.get())) {
-                node->condition = generate_binding(node->condition);
-            }
-        }
-
         void onEgressNotNode(NotNode* node) override {
             // Value must be atomic
             if (ComplexDetector::IsComplex(node->value.get())) {

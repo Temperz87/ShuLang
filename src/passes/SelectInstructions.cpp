@@ -210,10 +210,9 @@ class SLTranslator : public ShuLangVisitor {
         }
 
         void onEgressBeginNode(shulang::BeginNode* node) override {
-            std::shared_ptr<sir::ValueNode> val = completed.top();
-            completed.pop();
-
             if (select_val_to_block.contains(node)) {
+                std::shared_ptr<sir::ValueNode> val = completed.top();
+                completed.pop();
                 // Here we choose to go to either the true or false block
                 // Which allows for lazy evaluation
                 std::shared_ptr<sir::SIRBlock> true_block = select_val_to_block.at(node).first;
@@ -231,7 +230,9 @@ class SLTranslator : public ShuLangVisitor {
                 continuation = next_block_stack.top().continuation;
                 next_block_stack.pop();
             }
-            else if (jumpable.contains(node)){
+            else if (jumpable.contains(node)){    
+                std::shared_ptr<sir::ValueNode> val = completed.top();
+                completed.pop();
                 // Otherwise push create a def here so we get lazy evaluation
                 std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name("select_intermdiate"), val);
                 current_block->instructions.push_back(def);
@@ -317,7 +318,24 @@ class SLTranslator : public ShuLangVisitor {
             // The contiuation for the then_block got set a couple lines up
             // std::cout << "\tCurrent then block: " << current_block->name << std::endl;
             need_to_write_exit = true;
-        };
+        }
+
+        void onIngressWhileNode(WhileNode* node) override {
+            std::shared_ptr<sir::SIRBlock> loop_condition = std::make_shared<sir::SIRBlock>(gen_name("loop_condition"));
+            std::shared_ptr<sir::SIRBlock> loop_block = std::make_shared<sir::SIRBlock>(gen_name("loop_body"));
+            std::shared_ptr<sir::SIRBlock> loop_continuation = std::make_shared<sir::SIRBlock>(gen_name("loop_continuation"));
+            
+            loop_condition->predecesors.insert(current_block);
+            next_block_stack.push({loop_continuation, continuation});
+            next_block_stack.push({loop_block, loop_condition});
+
+            std::shared_ptr<sir::JumpNode> jump = std::make_shared<sir::JumpNode>(loop_condition);
+            current_block->instructions.push_back(jump);
+            mark_block_reachable(loop_condition);   
+            current_block = loop_condition;
+
+            select_val_to_block.insert({node->condition.get(), {loop_block, loop_continuation}});
+        }
 };
 
 // TODO: There's potentially undefined behavior here

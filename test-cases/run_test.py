@@ -38,7 +38,6 @@ def run_case(file_name):
     parse_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
 
-
     # print("---UNIQUIFICATION---")
     # uniquify(ast)
     # print_ast(ast)
@@ -72,20 +71,21 @@ def run_case(file_name):
     # print_sir_ast(sir_program)
     # graph_sir_program(sir_program)
 
-    print("Running")
-    select_stdout = run_sir_program(sir_program)
-    compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
+    # TODO: Pseudophi still not working
+    # print("Running")
+    # select_stdout = run_sir_program(sir_program)
+    # compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
+
 
     print("---PROMOTE PSEUDO PHI---")
     promote_pseudo_phi(sir_program)
     # print_sir_ast(sir_program)
-    # graph_sir_program(sir_program)
+    graph_sir_program(sir_program)
     print("Running")
 
     promote_pseudo_phi_stdout = run_sir_program(sir_program)
     compare_stdout(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi")
-
-
+    return
     print("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)

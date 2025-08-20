@@ -173,6 +173,18 @@ ShuLangNode* BodyNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressBodyNode(this);
 }
 
+std::vector<ShuLangNode*> WhileNode::children() {
+  return { condition.get(), body.get() };
+}
+childholder<ShuLangNode> WhileNode::ingressVisitor(ShuLangVisitor* visitor) {
+  visitor->onIngressWhileNode(this);
+  return visitor->ingressWhileNode(this, 2);
+}
+ShuLangNode* WhileNode::egressVisitor(ShuLangVisitor* visitor) {
+  visitor->onEgressWhileNode(this);
+  return visitor->egressWhileNode(this);
+}
+
 childholder<ShuLangNode> ProgramNode::ingressVisitor(ShuLangVisitor* visitor) {
   visitor->onIngressProgramNode(this);
   return visitor->ingressProgramNode(this, nodes.size());

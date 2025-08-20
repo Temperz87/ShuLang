@@ -1,3 +1,4 @@
+#include "LLVMCodegenVisitor.hpp"
 #include <iostream>
 #include <SIRAST.hpp>
 #include "llvm/IR/IRBuilder.h"
@@ -76,9 +77,10 @@ llvm::Value* LLVMCodegenVisitor::visit(CmpNode* node) {
 
 llvm::Value* LLVMCodegenVisitor::visit(PhiNode* node) {
     llvm::PHINode* phi = builder->CreatePHI(llvm::Type::getIntNTy(context, node->width), node->candidates.size());
-    for (std::pair<std::string, std::shared_ptr<ValueNode>> candidate : node->candidates) {
-        phi->addIncoming(candidate.second->accept(this), blocks.at(candidate.first));
-    }
+    // for (std::pair<std::string, std::shared_ptr<ValueNode>> candidate : node->candidates) {
+        // phi->addIncoming(candidate.second->accept(this), blocks.at(candidate.first));
+    // }
+    redo_phi.push_back({phi, node->candidates});
     return phi;
 }
 
@@ -159,5 +161,14 @@ llvm::Value* LLVMCodegenVisitor::visit(ProgramNode* node) {
 void LLVMCodegenVisitor::walk(SIRBlock* block) {
     for (std::shared_ptr<InstructionNode> node : block->instructions) {
         node->accept(this);
+    }
+}
+
+void LLVMCodegenVisitor::fix_phi() {
+    for (auto long_pair : redo_phi) {
+        llvm::PHINode* phi = long_pair.first;
+        for (std::pair<std::string, std::shared_ptr<ValueNode>> candidate : long_pair.second) {
+            phi->addIncoming(candidate.second->accept(this), blocks.at(candidate.first));
+        }
     }
 }

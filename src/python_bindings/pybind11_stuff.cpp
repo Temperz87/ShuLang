@@ -107,6 +107,12 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("else_block", &shulang::IfNode::else_block)
     .def_readwrite("condition", &shulang::IfNode::condition);
 
+    // WhileNode
+    py::class_<shulang::WhileNode, shulang::ShuLangNode, std::shared_ptr<shulang::WhileNode>>(m, "WhileNode")
+    .def("children", &shulang::WhileNode::children)
+    .def_readwrite("condition", &shulang::WhileNode::condition)
+    .def_readwrite("body", &shulang::WhileNode::body);
+
     // BodyNode
     py::class_<shulang::BodyNode, shulang::ShuLangNode, std::shared_ptr<shulang::BodyNode>>(m, "BodyNode")
     .def("children", &shulang::BodyNode::children)

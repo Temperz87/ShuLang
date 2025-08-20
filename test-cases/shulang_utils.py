@@ -101,6 +101,13 @@ def graph_ast(node, parent=''):
                     graph_ast(child, parent)
                     
             return my_node
+        case WhileNode():
+            my_node = graph_this_stuff("while", 1, parent)
+            graph_ast(node.condition, my_node)
+            parent = graph_this_stuff("body", 1, my_node)
+            for child in node.body.nodes:
+                graph_ast(child, parent)
+
 
 def get_value(node, env):
     match node:
@@ -174,7 +181,6 @@ def get_value(node, env):
         case NotNode():
             return not get_value(node.value, env)
         case BeginNode():
-            tmp_env = env.copy()
             for statement in node.statements:
                 run_ast(statement, env)
             return get_value(node.end_value, env)
@@ -206,4 +212,9 @@ def run_ast(node, env = {}, stdout = []):
                     run_ast(x, env, stdout)
             elif node.else_block != None:
                 for x in node.else_block.nodes:
+                    run_ast(x, env, stdout)
+        case WhileNode():
+            path = get_value(node.condition, env)
+            while get_value(node.condition, env):
+                for x in node.body.nodes:
                     run_ast(x, env, stdout)

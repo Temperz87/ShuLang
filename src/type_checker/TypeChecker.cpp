@@ -35,7 +35,7 @@ void TypeChecker::onEgressBindingNode(BindingNode* node) {
         
 void TypeChecker::onEgressVariableReferenceNode(VariableReferenceNode* node) {
     if (!variable_types.contains(node->identifier)) {
-        std::cout << node->identifier << " was used before it was declared!" << std::endl;
+        std::cout << "ShuC: " << node->identifier << " was used before it was declared!" << std::endl;
         exit(1);
     }
     node->type = variable_types.at(node->identifier);
@@ -88,5 +88,10 @@ void TypeChecker::onEgressSelectOperatorNode(SelectOperatorNode* node) {
 }
 
 void TypeChecker::onEgressIfNode(IfNode* node) { 
+    assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
+}
+
+
+void TypeChecker::onEgressWhileNode(WhileNode* node) { 
     assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
 }

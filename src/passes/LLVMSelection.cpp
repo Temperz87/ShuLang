@@ -78,42 +78,12 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
     builder->CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
 
 
-    SIRControlFlowGraph cfg(blocks);
-    std::deque<SIRBlock*> dfs_order;
-    std::unordered_set<SIRBlock*> seen;
-    // I'm gambling that set removal is faster than an if statement
-    // In the loop for "if thing is queued"
-    std::unordered_set<SIRBlock*> queued({main});
-
-    dfs_order.push_back(main);
-    while (!dfs_order.empty()) {
-        SIRBlock* current = dfs_order.front();
-        dfs_order.pop_front();
-        queued.erase(current);
-        bool seen_all = true;
-        for (SIRBlock* block : cfg.get_incoming(current)) {
-            if (!seen.contains(block)) {
-                seen_all = false;
-                break;
-            }
-        }
-
-        if (!seen_all) {
-            continue;
-        }
-
-        seen.insert(current);
-        for (SIRBlock* block : cfg.get_outgoing(current)) {
-            if (!queued.contains(block) && !seen.contains(block)) {
-                dfs_order.push_front(block);
-                queued.insert(block);
-            }
-        }
-        builder->SetInsertPoint(visitor->blocks.at(current->name));
-        visitor->walk(current);
+    for (SIRBlock* block : blocks) {
+        builder->SetInsertPoint(visitor->blocks.at(block->name));
+        visitor->walk(block);
     }
+    visitor->fix_phi();
 
-    
     verifyFunction(*main_function);
 
     // TODO: Check error code

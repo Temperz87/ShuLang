@@ -8,8 +8,10 @@
 #include <llvm/IR/NoFolder.h>
 #include <llvm/IR/Value.h>
 #include <unordered_map>
+#include <vector>
 
 namespace sir {
+    class ValueNode;
     class ImmediateNode;
     class ReferenceNode;
     class SelectNode;
@@ -32,6 +34,8 @@ namespace sir {
             llvm::IRBuilder<llvm::NoFolder>* builder;
             llvm::Module* module;
             std::unordered_map<std::string, llvm::Value*> bindings;
+
+            std::vector<std::pair<llvm::PHINode*, std::vector<std::pair<std::string, std::shared_ptr<ValueNode>>>>> redo_phi;
 
         public:
             std::unordered_map<std::string, llvm::BasicBlock*> blocks;
@@ -57,5 +61,7 @@ namespace sir {
             llvm::Value* visit(ProgramNode* node);
 
             void walk(SIRBlock* block);
+
+            void fix_phi();
     };
 }

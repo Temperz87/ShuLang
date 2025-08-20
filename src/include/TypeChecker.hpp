@@ -22,4 +22,5 @@ class TypeChecker : public ShuLangVisitor {
         void onEgressBeginNode(BeginNode* node) override;
         void onEgressSelectOperatorNode(SelectOperatorNode* node) override;
         void onEgressIfNode(IfNode* node) override;
+        void onEgressWhileNode(WhileNode* node) override;
 };

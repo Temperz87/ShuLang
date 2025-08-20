@@ -29,9 +29,15 @@ while ::= "while" value body
 Making sure that the condition of the while loop is a boolean, everything else is the same
 
 ### Remove complex operands
-The condition of the while loop has to be atomic!
+If and while loop conditions don't have to be atomic anymore as we can levarage the begin node
 
 ### Select SIR instructions
 I am jumping around at the speed of sound
 
+### Select LLVM instructions
+I had to modify how I'm inserting Phi nodes. Basically I just insert the node then wait to add the incoming values until everything else has been done.
+
 And that's it! You'll notice that the changes don't seem that numerous. That's probably because I'm forgetting something, but also is because I'm only adding a single construct to my language. Said construct also doesn't change the IR which is nice.
+
+
+I did this act in the span of one hour, maybe call it a "mini act?" I don't know I thought this would be harder.

@@ -112,10 +112,10 @@ namespace shulang {
   // Returns last value
   class BeginNode : public ValueNode {
     public:
-      ValueNode* parent;
+      ValueNode* parent = nullptr;
       std::vector<std::shared_ptr<StatementNode>> statements;
       std::shared_ptr<ValueNode> end_value;
-      BeginNode(ValueNode* parent):parent(parent) { }
+      BeginNode(std::shared_ptr<ValueNode> end_value):end_value(end_value) { }
       std::vector<ShuLangNode*> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
@@ -128,12 +128,12 @@ namespace shulang {
       std::shared_ptr<BeginNode> false_value;
       
       SelectOperatorNode(std::shared_ptr<ValueNode> condition, std::shared_ptr<ValueNode> true_value, std::shared_ptr<ValueNode> false_value) { 
-          this->condition = std::make_shared<BeginNode>(this);
-          this->condition->end_value = condition;
-          this->true_value = std::make_shared<BeginNode>(this);
-          this->true_value->end_value = true_value;
-          this->false_value = std::make_shared<BeginNode>(this);
-          this->false_value->end_value = false_value;
+          this->condition = std::make_shared<BeginNode>(condition);
+          this->condition->parent = this;
+          this->true_value = std::make_shared<BeginNode>(true_value);
+          this->true_value->parent = this;
+          this->false_value = std::make_shared<BeginNode>(false_value);
+          this->false_value->parent = this;
         } 
 
       std::vector<ShuLangNode*> children() override;
@@ -151,7 +151,7 @@ namespace shulang {
 
   class IfNode : public StatementNode {
     public:
-      std::shared_ptr<ValueNode> condition;
+      std::shared_ptr<BeginNode> condition;
       std::shared_ptr<BodyNode> then_block = nullptr;
       std::shared_ptr<BodyNode> else_block = nullptr;
       std::vector<ShuLangNode*> children() override;
@@ -159,6 +159,14 @@ namespace shulang {
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
+  class WhileNode : public StatementNode {
+    public:
+      std::shared_ptr<BeginNode> condition;
+      std::shared_ptr<BodyNode> body;
+      std::vector<ShuLangNode*> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
+  };
 
   class ProgramNode : public BodyNode {
     public:

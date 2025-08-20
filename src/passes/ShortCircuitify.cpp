@@ -28,13 +28,17 @@ class TransformToShortCircuit : public ShuLangVisitor {
         }
         
         void onEgressIfNode(IfNode* node) override { 
-            if (not_nodes.contains(node->condition.get()) && node->else_block != nullptr) {
-                node->condition = not_nodes.at(node->condition.get());
+            if (not_nodes.contains(node->condition->end_value.get()) && node->else_block != nullptr) {
+                node->condition->end_value = not_nodes.at(node->condition->end_value.get());
                 auto tmp = node->then_block;
                 node->then_block = node->else_block;
                 node->else_block = tmp;
             }
-            replace_with_mark(node->condition);
+            replace_with_mark(node->condition->end_value);
+        }
+        
+        void onEgressWhileNode(WhileNode* node) override {
+            replace_with_mark(node->condition->end_value);
         }
 
         void onEgressNotNode(NotNode* node) override {
