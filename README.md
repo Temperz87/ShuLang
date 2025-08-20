@@ -23,4 +23,4 @@ My ShuLang visitor AND AST is a mess and I must clean it up. Here's why I want t
 - [x] Change some smart pointers to raw pointers (pybind11 hates unique pointers so I'm still going to use shared pointers)
 - [x] Rename `namespace shuir` to `namespace sir`.
 - [x] Update ShuLang/SIR specs
-- [ ] Split the tester into multiple files, e.g. ShuLang, SIR, and a driver file
+- [x] Split the tester into multiple files, e.g. ShuLang, SIR, and a driver file
