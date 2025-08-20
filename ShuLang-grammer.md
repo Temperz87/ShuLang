@@ -2,7 +2,7 @@
 
 ShuLang is an imperative procedural programming language, currently supported if statements, printing, and some math operators! The grammar of the language is outlined in this file.
 
-This specification was last updated during Act 2. Any changes past that point will not be reflected here.
+This specification was last updated during Act 3. Any changes past that point will not be reflected here.
 
 ## Concrete Syntax
 
@@ -20,7 +20,7 @@ type ::= "Integer" | "Boolean"
 Variable_binding ::= `bind identifier : type to value` | `bind identifier to value`
 - ShuLang is capable of inferring types
 
-Statement ::= Variable_binding | `if boolean statement_list statement_list` | `print(value)`
+Statement ::= Variable_binding | `if boolean statement_list statement_list` | `print(value)` | `while condition statement_list`
 
 statement_list ::= statement | statement_list statement
 

@@ -4,7 +4,7 @@ SIR the IR for ShuLang and utilizes SSA form. Hence all variables get assigned t
 
 I think most of the stuff in here is pretty self explanitory (as I lifted it from LLVM). I'm assuming that if you're here you either have no idea what you're doing and are poking around the repository, or you're a hardened veteran who has spotted 100 different inconsistencies.
 
-This specification was last updated during Act 2. Any changes past that point will not be reflected here.
+This specification was last updated during Act 3. Any changes past that point will not be reflected here.
 
 ## Concrete Syntax
 
