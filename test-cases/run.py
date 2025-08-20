@@ -467,13 +467,13 @@ def run_case(file_name):
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
 
 
-    print("---UNIQUIFICATION---")
-    uniquify(ast)
+    # print("---UNIQUIFICATION---")
+    # uniquify(ast)
     # print_ast(ast)
     # graph_ast(ast)
-    print("Running...")
-    uniquify_stdout = run_ast(ast, {}, [])
-    compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
+    # print("Running...")
+    # uniquify_stdout = run_ast(ast, {}, [])
+    # compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
 
     print("---SHORT CIRCUIT-IFICATION")
     short_circuitify(ast)

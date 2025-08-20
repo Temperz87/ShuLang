@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     // bind x to 5 bind x to 6
     // that becomes bind x.0 to 5 bind x.1 to 6
     // every variable gets a unique name
-    uniquify(program.get());
+    // uniquify(program.get());
     // ShuLangPrinter().walk(program.get());
 
 
