@@ -494,7 +494,7 @@ def run_case(file_name):
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
     # print_ast(ast)
-    graph_ast(ast)
+    # graph_ast(ast)
     print("Type checking...")
     type_check(ast)
     print("Running")

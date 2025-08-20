@@ -19,17 +19,15 @@ class TransformToShortCircuit : public ShuLangVisitor {
         }
 
     public:
-        ShuLangNode* egressBindingNode(BindingNode* node) override {
+        void onEgressBindingNode(BindingNode* node) override {
             replace_with_mark(node->value);
-            return ShuLangVisitor::egressBindingNode(node);
         }
 
-        ShuLangNode* egressPrintNode(PrintNode* node) override {
+        void onEgressPrintNode(PrintNode* node) override {
             replace_with_mark(node->to_print);
-            return ShuLangVisitor::egressPrintNode(node);
         }
         
-        ShuLangNode* egressIfNode(IfNode* node) override { 
+        void onEgressIfNode(IfNode* node) override { 
             if (not_nodes.contains(node->condition.get()) && node->else_block != nullptr) {
                 node->condition = not_nodes.at(node->condition.get());
                 auto tmp = node->then_block;
@@ -37,10 +35,9 @@ class TransformToShortCircuit : public ShuLangVisitor {
                 node->else_block = tmp;
             }
             replace_with_mark(node->condition);
-            return ShuLangVisitor::egressNode(node); 
         }
 
-        ShuLangNode* egressNotNode(NotNode* node) override {
+        void onEgressNotNode(NotNode* node) override {
             replace_with_mark(node->value);
             std::shared_ptr<ValueNode> my_val = node->value;
             if (not_nodes.contains(node->value.get())) {
@@ -49,10 +46,9 @@ class TransformToShortCircuit : public ShuLangVisitor {
             else {
                 not_nodes.insert({node, my_val});
             }
-            return ShuLangVisitor::egressNotNode(node);
         }
 
-        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
+        void onEgressOperatorApplicationNode(OperatorApplicationNode* node) override {
             replace_with_mark(node->lhs);
             replace_with_mark(node->rhs);
 
@@ -75,10 +71,9 @@ class TransformToShortCircuit : public ShuLangVisitor {
                     marks.insert({node, sel});
                 }
             }
-            return ShuLangVisitor::egressOperatorApplicationNode(node);
         }
 
-        ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) override {
+        void onEgressSelectOperatorNode(SelectOperatorNode* node) override {
             replace_with_mark(node->condition->end_value);
             replace_with_mark(node->true_value->end_value);
             replace_with_mark(node->false_value->end_value);
@@ -89,8 +84,6 @@ class TransformToShortCircuit : public ShuLangVisitor {
                 node->true_value = node->false_value;
                 node->false_value = tmp;
             }
-
-            return ShuLangVisitor::egressSelectOperatorNode(node);
         }
 };
 

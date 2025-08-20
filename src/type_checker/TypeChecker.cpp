@@ -18,35 +18,30 @@ void TypeChecker::assert_same(std::string expected, std::string actual, std::str
     }
 }
 
-TypeChecker::ASTHolder TypeChecker::ingressBindingNode(BindingNode* node, int childcount) { 
+void TypeChecker::onIngressBindingNode(BindingNode* node) { 
     if (node->ty != "Inferred") {
         variable_types.insert({node->name, node->ty});
     }
-    
-    return ShuLangVisitor::ingressBindingNode(node, childcount);
 }
 
-ShuLangNode* TypeChecker::egressBindingNode(BindingNode* node) { 
+void TypeChecker::onEgressBindingNode(BindingNode* node) { 
     if (node->ty == "Inferred") {
         node->ty = node->value->type;
         variable_types.insert({node->name, node->ty});
     }
     else 
         assert_same(node->ty, node->value->type, "Variable " + node->name + " was bound to a value of the wrong type");
-    
-    return ShuLangVisitor::egressBindingNode(node);
 }
         
-ShuLangNode* TypeChecker::egressVariableReferenceNode(VariableReferenceNode* node) {
+void TypeChecker::onEgressVariableReferenceNode(VariableReferenceNode* node) {
     if (!variable_types.contains(node->identifier)) {
         std::cout << node->identifier << " was used before it was declared!" << std::endl;
         exit(1);
     }
     node->type = variable_types.at(node->identifier);
-    return ShuLangVisitor::egressVariableReferenceNode(node);
 }
 
-ShuLangNode* TypeChecker::egressOperatorApplicationNode(OperatorApplicationNode* node) { 
+void TypeChecker::onEgressOperatorApplicationNode(OperatorApplicationNode* node) { 
     std::string expected_type;
     std::string error_msg;
     if (node->op == "=" || node->op == "!=") {
@@ -75,28 +70,23 @@ ShuLangNode* TypeChecker::egressOperatorApplicationNode(OperatorApplicationNode*
 
     assert_same(expected_type, node->lhs->type, error_msg);
     assert_same(expected_type, node->rhs->type, error_msg);
-    return ShuLangVisitor::egressOperatorApplicationNode(node);
 }
 
-ShuLangNode* TypeChecker::egressNotNode(NotNode* node) { 
+void TypeChecker::onEgressNotNode(NotNode* node) { 
     assert_same("Boolean", node->value->type, "\'not\' had the wrong type!");
-    return ShuLangVisitor::egressNotNode(node);
 }
 
 
-ShuLangNode* TypeChecker::egressBeginNode(BeginNode* node) {
+void TypeChecker::onEgressBeginNode(BeginNode* node) {
     node->type = node->end_value->type;
-    return ShuLangVisitor::egressBeginNode(node);
 }
 
-ShuLangNode* TypeChecker::egressSelectOperatorNode(SelectOperatorNode* node) {
+void TypeChecker::onEgressSelectOperatorNode(SelectOperatorNode* node) {
     assert_same("Boolean", node->condition->end_value->type, "Unexpected type for condition of if ternary");
     assert_same(node->true_value->end_value->type, node->false_value->end_value->type, "The type of the \"else\" of an if ternary must match the \"then\" type");    
     node->type = node->true_value->type;
-    return ShuLangVisitor::egressSelectOperatorNode(node);
 }
 
-ShuLangNode* TypeChecker::egressIfNode(IfNode* node) { 
+void TypeChecker::onEgressIfNode(IfNode* node) { 
     assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
-    return ShuLangVisitor::egressIfNode(node);
 }

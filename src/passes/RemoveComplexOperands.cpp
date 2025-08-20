@@ -51,7 +51,7 @@ class target_complex : public ShuLangVisitor {
         int inserted = 0;
         target_complex(std::vector<std::shared_ptr<ShuLangNode>>* nodes, long current_position):program_nodes(nodes), insert_position(current_position) { }
         
-        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override {
+        void onEgressOperatorApplicationNode(OperatorApplicationNode* node) override {
             // For operators, their lhs and rhs must be atomic
             if (ComplexDetector::IsComplex(node->lhs.get())) {
                 node->lhs = generate_binding(node->lhs);
@@ -60,51 +60,41 @@ class target_complex : public ShuLangVisitor {
             if (ComplexDetector::IsComplex(node->rhs.get())) {
                 node->rhs = generate_binding(node->rhs);
             }
-
-            return ShuLangVisitor::egressOperatorApplicationNode(node);
         }
 
-        ShuLangNode* egressPrintNode(PrintNode* node) override {
+        void onEgressPrintNode(PrintNode* node) override {
             // to_print must be atomic
             if (ComplexDetector::IsComplex(node->to_print.get())) {
                 node->to_print = generate_binding(node->to_print);
             }
-            return ShuLangVisitor::egressPrintNode(node);
         }
 
-        ShuLangNode* egressIfNode(IfNode* node) override {
+        void onEgressIfNode(IfNode* node) override {
             // Condition must be atomic
             if (ComplexDetector::IsComplex(node->condition.get())) {
                 node->condition = generate_binding(node->condition);
             }
-
-            return ShuLangVisitor::egressIfNode(node);
         }
 
-        ShuLangNode* egressNotNode(NotNode* node) override {
+        void onEgressNotNode(NotNode* node) override {
             // Value must be atomic
             if (ComplexDetector::IsComplex(node->value.get())) {
                 node->value = generate_binding(node->value);
             }
-
-            return ShuLangVisitor::egressNotNode(node);
         }
 
-        ASTHolder ingressBeginNode(BeginNode* node, int childcount) override {
+        void onIngressBeginNode(BeginNode* node) override {
             writing_to.push(node);
-            return ShuLangVisitor::ingressBeginNode(node, childcount);
         }
 
-        ShuLangNode* egressBeginNode(BeginNode* node) override {
+        void onEgressBeginNode(BeginNode* node) override {
             writing_to.pop();
-            return ShuLangVisitor::egressBeginNode(node);
         }
 
-        ASTHolder ingressBodyNode(BodyNode* node, int childcount) override {
+        void onIngressBodyNode(BodyNode* node) override {
             program_nodes = &node->nodes;
             insert_position = 0;
             updated_inserted = false;
-            return ShuLangVisitor::ingressBodyNode(node, childcount);
         }
 };
 

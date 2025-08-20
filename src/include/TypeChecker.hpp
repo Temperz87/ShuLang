@@ -12,14 +12,14 @@ class TypeChecker : public ShuLangVisitor {
         TypeChecker () { };
         ~TypeChecker() { };
 
-        ASTHolder ingressBindingNode(BindingNode* node, int childcount) override;
-        ShuLangNode* egressBindingNode(BindingNode* node) override;
+        void onIngressBindingNode(BindingNode* node) override;
+        void onEgressBindingNode(BindingNode* node) override;
 
 
-        ShuLangNode* egressVariableReferenceNode(VariableReferenceNode* node) override;
-        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override;
-        ShuLangNode* egressNotNode(NotNode* node) override;
-        ShuLangNode* egressBeginNode(BeginNode* node) override;
-        ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) override;
-        ShuLangNode* egressIfNode(IfNode* node) override;
+        void onEgressVariableReferenceNode(VariableReferenceNode* node) override;
+        void onEgressOperatorApplicationNode(OperatorApplicationNode* node) override;
+        void onEgressNotNode(NotNode* node) override;
+        void onEgressBeginNode(BeginNode* node) override;
+        void onEgressSelectOperatorNode(SelectOperatorNode* node) override;
+        void onEgressIfNode(IfNode* node) override;
 };

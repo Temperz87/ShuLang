@@ -46,56 +46,85 @@ class ShuLangVisitor {
             this->egress = std::stack<ASTHolder>();
         }
 
-        virtual ASTHolder ingressStatementNode(StatementNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressStatementNode(StatementNode* node) { return this->egressNode(node); }
+        ASTHolder ingressStatementNode(StatementNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressStatementNode(StatementNode* node) { return this->egressNode(node); }
+        virtual void onIngressStatementNode(StatementNode* node) { };
+        virtual void onEgressStatementNode(StatementNode* node) { };
 
-        virtual ASTHolder ingressPrintNode(PrintNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressPrintNode(PrintNode* node) { return this->egressNode(node); }
+        ASTHolder ingressPrintNode(PrintNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressPrintNode(PrintNode* node) { return this->egressNode(node); }
+        virtual void onIngressPrintNode(PrintNode* node) { };
+        virtual void onEgressPrintNode(PrintNode* node) { };
 
-        virtual ASTHolder ingressValueNode(ValueNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressValueNode(ValueNode* node) { return this->egressNode(node); }
+        ASTHolder ingressValueNode(ValueNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressValueNode(ValueNode* node) { return this->egressNode(node); }
+        virtual void onIngressValueNode(ValueNode* node) { };
+        virtual void onEgressValueNode(ValueNode* node) { };
 
-        virtual ASTHolder ingressIntegerNode(IntegerNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressIntegerNode(IntegerNode* node) { return this->egressNode(node); }
+        ASTHolder ingressIntegerNode(IntegerNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressIntegerNode(IntegerNode* node) { return this->egressNode(node); }
+        virtual void onIngressIntegerNode(IntegerNode* node) { };
+        virtual void onEgressIntegerNode(IntegerNode* node) { };
 
-        virtual ASTHolder ingressBooleanNode(BooleanNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressBooleanNode(BooleanNode* node) { return this->egressNode(node); }
+        ASTHolder ingressBooleanNode(BooleanNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressBooleanNode(BooleanNode* node) { return this->egressNode(node); }
+        virtual void onIngressBooleanNode(BooleanNode* node) { };
+        virtual void onEgressBooleanNode(BooleanNode* node) { };
 
-        virtual ASTHolder ingressVariableReferenceNode(VariableReferenceNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressVariableReferenceNode(VariableReferenceNode* node) { return this->egressNode(node); }
+        ASTHolder ingressVariableReferenceNode(VariableReferenceNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressVariableReferenceNode(VariableReferenceNode* node) { return this->egressNode(node); }
+        virtual void onIngressVariableReferenceNode(VariableReferenceNode* node) { };
+        virtual void onEgressVariableReferenceNode(VariableReferenceNode* node) { };
 
-        virtual ASTHolder ingressBindingNode(BindingNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressBindingNode(BindingNode* node) { return this->egressNode(node); }
+        ASTHolder ingressBindingNode(BindingNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressBindingNode(BindingNode* node) { return this->egressNode(node); }
+        virtual void onIngressBindingNode(BindingNode* node) { };
+        virtual void onEgressBindingNode(BindingNode* node) { };
 
-        virtual ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) { return this->egressNode(node); }
+        ASTHolder ingressOperatorApplicationNode(OperatorApplicationNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) { return this->egressNode(node); }
+        virtual void onIngressOperatorApplicationNode(OperatorApplicationNode* node) { };
+        virtual void onEgressOperatorApplicationNode(OperatorApplicationNode* node) { };
 
-        virtual ASTHolder ingressNotNode(NotNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressNotNode(NotNode* node) { return this->egressNode(node); }
+        ASTHolder ingressNotNode(NotNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressNotNode(NotNode* node) { return this->egressNode(node); }
+        virtual void onIngressNotNode(NotNode* node) { };
+        virtual void onEgressNotNode(NotNode* node) { };
 
-        virtual ASTHolder ingressBeginNode(BeginNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressBeginNode(BeginNode* node) { return this->egressNode(node); }
+        ASTHolder ingressBeginNode(BeginNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressBeginNode(BeginNode* node) { return this->egressNode(node); }
+        virtual void onIngressBeginNode(BeginNode* node) { };
+        virtual void onEgressBeginNode(BeginNode* node) { };
 
-        virtual ASTHolder ingressSelectOperatorNode(SelectOperatorNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) { return this->egressNode(node); }
+        ASTHolder ingressSelectOperatorNode(SelectOperatorNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) { return this->egressNode(node); }
+        virtual void onIngressSelectOperatorNode(SelectOperatorNode* node) { };
+        virtual void onEgressSelectOperatorNode(SelectOperatorNode* node) { };
 
-        virtual ASTHolder ingressBodyNode(BodyNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressBodyNode(BodyNode* node) { return this->egressNode(node); }
+        ASTHolder ingressBodyNode(BodyNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressBodyNode(BodyNode* node) { return this->egressNode(node); }
+        virtual void onIngressBodyNode(BodyNode* node) { };
+        virtual void onEgressBodyNode(BodyNode* node) { };
 
-        virtual ASTHolder ingressIfNode(IfNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressIfNode(IfNode* node) { return this->egressNode(node); }
+        ASTHolder ingressIfNode(IfNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressIfNode(IfNode* node) { return this->egressNode(node); }
+        virtual void onIngressIfNode(IfNode* node) { };
+        virtual void onEgressIfNode(IfNode* node) { };
 
-        virtual ASTHolder ingressProgramNode(ProgramNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        virtual ShuLangNode* egressProgramNode(ProgramNode* node) { return this->egressNode(node); }
+        ASTHolder ingressProgramNode(ProgramNode* node, int childcount) { return this->ingressNode(node, childcount); }
+        ShuLangNode* egressProgramNode(ProgramNode* node) { return this->egressNode(node); }
+        virtual void onIngressProgramNode(ProgramNode* node) { };
+        virtual void onEgressProgramNode(ProgramNode* node) { };
 
-        virtual ASTHolder ingressNode(ShuLangNode* node, int childcount) { 
+
+        ASTHolder ingressNode(ShuLangNode* node, int childcount) { 
             ASTHolder ret;
             ret.node = node;
             ret.waitingfor = childcount;
             return ret;
         }
 
-        virtual ShuLangNode* egressNode(ShuLangNode* node) { 
+        ShuLangNode* egressNode(ShuLangNode* node) { 
             return node;
         }
 
@@ -111,12 +140,12 @@ class ShuLangVisitor {
 
 
                 // Take the example of
-                // bind x : Integer to 5 print(x)
+                // bind x : Integer to 5 Program(x)
                 // If to the vector in the normal order
-                // We end up with {bind, print}
+                // We end up with {bind, Program}
                 // However, when we push onto a stack
-                // It ends up with {print, bind}
-                // Then descends into the print before the bind
+                // It ends up with {Program, bind}
+                // Then descends into the Program before the bind
                 // Which is bad!!!
                 std::vector<std::shared_ptr<ShuLangNode>> children = current->children();
                 for (int i = children.size() - 1; i >= 0; i--) {

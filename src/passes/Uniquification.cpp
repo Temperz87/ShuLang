@@ -8,7 +8,7 @@ using namespace shulang;
 Uniquification::Uniquification() { };
 Uniquification::~Uniquification() { };
 
-ShuLangNode* Uniquification::egressBindingNode(BindingNode* node) {
+void Uniquification::onEgressBindingNode(BindingNode* node) {
 
     // Check if we've already assigned a name
     if (map.find(node->name) == map.end()) {
@@ -20,12 +20,10 @@ ShuLangNode* Uniquification::egressBindingNode(BindingNode* node) {
     // At some point I'll need to phi 
     // But we'll get there when we get there
     node->name = map.at(node->name);
-    return ShuLangVisitor::egressBindingNode(node);
 }
 
-Uniquification::ASTHolder Uniquification::ingressVariableReferenceNode(VariableReferenceNode* node, int childcount) {
+void Uniquification::onIngressVariableReferenceNode(VariableReferenceNode* node) {
     node->identifier = map.at(node->identifier);
-    return ShuLangVisitor::ingressVariableReferenceNode(node, childcount);
 }
 
 void uniquify(shulang::ProgramNode* ast) {

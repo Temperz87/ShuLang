@@ -7,7 +7,6 @@
 
 class ShuLangVisitor;
 
-class ASTNode;
 // ShuLang AST
 template <class T> 
 struct childholder {
@@ -27,7 +26,6 @@ namespace shulang {
 
   class StatementNode : public ShuLangNode {
     public:
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor* visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -36,6 +34,7 @@ namespace shulang {
   class ValueNode : public StatementNode {
     public:
       std::string type;
+      std::vector<std::shared_ptr<ShuLangNode>> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -43,7 +42,7 @@ namespace shulang {
   class PrintNode : public StatementNode {
     public:
       std::shared_ptr<ValueNode> to_print;
-      PrintNode(std::shared_ptr<ValueNode> printable):to_print(printable) {};
+      PrintNode(std::shared_ptr<ValueNode> printable):to_print(printable) { };
       std::vector<std::shared_ptr<ShuLangNode>> children() override;
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor* visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
@@ -52,8 +51,7 @@ namespace shulang {
   class IntegerNode : public ValueNode {
     public:
       int value;
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
-      IntegerNode(int value): value(value) { this->type = "Integer"; }
+      IntegerNode(int value):value(value) { this->type = "Integer"; }
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -61,8 +59,7 @@ namespace shulang {
   class BooleanNode : public ValueNode {
     public:
       bool value;
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
-      BooleanNode(bool value): value(value) { this->type = "Boolean"; }
+      BooleanNode(bool value):value(value) { this->type = "Boolean"; }
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
@@ -70,8 +67,7 @@ namespace shulang {
   class VariableReferenceNode : public ValueNode {
     public:
       std::string identifier;
-      VariableReferenceNode(std::string identifier);
-      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      VariableReferenceNode(std::string identifier):identifier(identifier) { }
       childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };

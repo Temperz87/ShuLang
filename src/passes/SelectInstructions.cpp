@@ -6,7 +6,6 @@
 #include <iostream>
 #include <llvm/IR/Metadata.h>
 #include <memory>
-#include <numbers>
 #include <stack>
 #include <string>
 #include <unordered_map>
@@ -37,6 +36,8 @@ class SLTranslator : public ShuLangVisitor {
 
         // If a begin node is in a select node and is the select node's condition, here's where the jumps are stored
         std::unordered_map<shulang::BeginNode*, std::pair<std::shared_ptr<shuir::SIRBlock>, std::shared_ptr<shuir::SIRBlock>>> select_val_to_block;
+        // If a begin node is a part of a select block, and should do jumping stuff
+        std::unordered_set<shulang::BeginNode*> jumpable;
         // The final phi node candidates for select nodes
         std::unordered_map<shulang::ValueNode*, std::vector<std::pair<std::string, std::shared_ptr<shuir::ValueNode>>>> select_to_candidates;
 
@@ -73,13 +74,12 @@ class SLTranslator : public ShuLangVisitor {
             have_reached.insert(initial_block_name);
         };
     
-        shulang::ShuLangNode* egressIntegerNode(shulang::IntegerNode* node) override {
+        void onEgressIntegerNode(shulang::IntegerNode* node) override {
             std::shared_ptr<shuir::ImmediateNode> imm = std::make_shared<shuir::ImmediateNode>(node->value, 32);
             completed.push(imm);
-            return ShuLangVisitor::egressIntegerNode(node);
         }
 
-        shulang::ShuLangNode* egressBooleanNode(shulang::BooleanNode* node) override {
+        void onEgressBooleanNode(shulang::BooleanNode* node) override {
             std::shared_ptr<shuir::ImmediateNode> ret;
             // So in our langauge we treat 0 as false and 1 as true
             // when we're at such a low level
@@ -90,10 +90,9 @@ class SLTranslator : public ShuLangVisitor {
                 ret = std::make_shared<shuir::ImmediateNode>(0, 1);
             }
             completed.push(ret);
-            return ShuLangVisitor::egressBooleanNode(node);
         }
 
-        shulang::ShuLangNode* egressVariableReferenceNode(shulang::VariableReferenceNode* node) override {
+        void onEgressVariableReferenceNode(shulang::VariableReferenceNode* node) override {
             std::string identifier = node->identifier;
             int width = type_to_width(node->type);
             if (!current_block->variable_to_ref.contains(identifier)) {
@@ -114,10 +113,9 @@ class SLTranslator : public ShuLangVisitor {
             std::string new_id = current_block->variable_to_ref.at(node->identifier);
             std::shared_ptr<shuir::ReferenceNode> ref = std::make_shared<shuir::ReferenceNode>(new_id, width);
             completed.push(ref);
-            return ShuLangVisitor::egressVariableReferenceNode(node);
         }
 
-        shulang::ShuLangNode* egressOperatorApplicationNode(shulang::OperatorApplicationNode* node) override {
+        void onEgressOperatorApplicationNode(shulang::OperatorApplicationNode* node) override {
             std::shared_ptr<shuir::BinOpNode> ret;
 
             if (node->op == "+") {
@@ -138,12 +136,11 @@ class SLTranslator : public ShuLangVisitor {
             ret->lhs = completed.top();
             completed.pop();
             completed.push(ret);
-            return ShuLangVisitor::egressOperatorApplicationNode(node);
         }
 
         // The only top level nodes we can have at this point are statements
         // Because I don't wanna do s-expressions
-        shulang::ShuLangNode* egressBindingNode(shulang::BindingNode* node) override {
+        void onEgressBindingNode(shulang::BindingNode* node) override {
             // std::cout << "Creating binding node!" << std::endl;
             std::shared_ptr<shuir::DefinitionNode> def = std::make_shared<shuir::DefinitionNode>(gen_name(node->name), completed.top());
 
@@ -157,18 +154,16 @@ class SLTranslator : public ShuLangVisitor {
             // We can ALWAYS use the completed vector
             // And assume it has the exact right size 
             current_block->instructions.push_back(def);
-            return ShuLangVisitor::egressBindingNode(node);
         }
 
-        shulang::ShuLangNode* egressPrintNode(shulang::PrintNode* node) override {
+        void onEgressPrintNode(shulang::PrintNode* node) override {
             // std::cout << "Making print node " << std::endl;
             std::shared_ptr<shuir::PrintNode> print = std::make_shared<shuir::PrintNode>(completed.top(), node->to_print->type);
             completed.pop();
             current_block->instructions.push_back(print);
-            return ShuLangVisitor::egressPrintNode(node);
         }
 
-        shulang::ShuLangNode* egressBodyNode(shulang::BodyNode* node) override {
+        void onEgressBodyNode(shulang::BodyNode* node) override {
             // We check if the current block is owned by the node we're egressing
             // If it's not then we don't do anything else
             // If we don't know who owns the current block (nullptr)
@@ -177,7 +172,11 @@ class SLTranslator : public ShuLangVisitor {
             //    As egress if will also change the current block 
             if (this->node != nullptr && this->node != node) {
                 // std::cout << "Not popping block " << current_block->name << std::endl;
-                return ShuLangVisitor::egressBodyNode(node);
+                return;
+            }
+
+            if (this->node != nullptr && this->node != node) {
+                // std::cout << "Not popping block " << current_block->name << std::endl;
             }
 
             // std::cout << "Popping block " << current_block->name << std::endl;
@@ -196,25 +195,21 @@ class SLTranslator : public ShuLangVisitor {
             continuation = next_block_stack.top().continuation;
             // this->node = next_block_stack.top().node;
             this->node = next_block_stack.top().node;
-            // std::cout << "\tNow on block " << current_block->name << std::endl;
             next_block_stack.pop();
-            // std::cout << "Egressed body node" << std::endl;
 
             need_to_write_exit = true;
-            return ShuLangVisitor::egressBodyNode(node);
         }
 
-        shulang::ShuLangNode* egressNotNode(shulang::NotNode* node) override {
+        void onEgressNotNode(shulang::NotNode* node) override {
             // Neat trick I found on stack overflow
             std::shared_ptr<shuir::CmpNode> op = std::make_shared<shuir::CmpNode>("=");
             op->lhs = completed.top();
             completed.pop();
             op->rhs = std::make_shared<shuir::ImmediateNode>(0, 1);
             completed.push(op);
-            return ShuLangVisitor::egressNotNode(node);
         }
 
-        shulang::ShuLangNode* egressBeginNode(shulang::BeginNode* node) override {
+        void onEgressBeginNode(shulang::BeginNode* node) override {
             std::shared_ptr<shuir::ValueNode> val = completed.top();
             completed.pop();
 
@@ -231,8 +226,12 @@ class SLTranslator : public ShuLangVisitor {
 
                 std::shared_ptr<shuir::JumpIfElseNode> jmp = std::make_shared<shuir::JumpIfElseNode>(true_block, false_block, val);
                 current_block->instructions.push_back(jmp);
+                // If last was some block we go into true
+                current_block = next_block_stack.top().block;
+                continuation = next_block_stack.top().continuation;
+                next_block_stack.pop();
             }
-            else {
+            else if (jumpable.contains(node)){
                 // Otherwise push create a def here so we get lazy evaluation
                 std::shared_ptr<shuir::DefinitionNode> def = std::make_shared<shuir::DefinitionNode>(gen_name("select_intermdiate"), val);
                 current_block->instructions.push_back(def);
@@ -246,19 +245,21 @@ class SLTranslator : public ShuLangVisitor {
                 std::shared_ptr<shuir::JumpNode> jmp = std::make_shared<shuir::JumpNode>(continuation);
                 current_block->instructions.push_back(jmp);
 
+                // If last was the true then we go to false
+                // If last was false we go to cont
+                current_block = next_block_stack.top().block;
+                continuation = next_block_stack.top().continuation;
+                next_block_stack.pop();
             }
 
-            // If last was some block we go into true
-            // If last was the true then we go to false
-            // If last was false we go to cont
-            current_block = next_block_stack.top().block;
-            continuation = next_block_stack.top().continuation;
-            next_block_stack.pop();
-
-            return ShuLangVisitor::egressBeginNode(node);
         }
 
-        ASTHolder ingressSelectOperatorNode(shulang::SelectOperatorNode* node, int childcount) override {
+        void onIngressSelectOperatorNode(shulang::SelectOperatorNode* node) override {
+            // These blocks should be doing jump stuff
+            jumpable.insert(node->true_value.get());
+            jumpable.insert(node->false_value.get());
+
+
             std::shared_ptr<shuir::SIRBlock> cont_block = std::make_shared<shuir::SIRBlock>(gen_name("select_cont"));
             std::shared_ptr<shuir::SIRBlock> true_block = std::make_shared<shuir::SIRBlock>(gen_name("select_true"));
             std::shared_ptr<shuir::SIRBlock> false_block = std::make_shared<shuir::SIRBlock>(gen_name("select_false"));
@@ -269,20 +270,18 @@ class SLTranslator : public ShuLangVisitor {
 
             select_val_to_block.insert({node->condition.get(), {true_block, false_block}});
             select_to_candidates.insert({node, {}});
-            return ShuLangVisitor::ingressSelectOperatorNode(node, childcount);
         }
 
-        shulang::ShuLangNode* egressSelectOperatorNode(shulang::SelectOperatorNode* node) override {
+        void onEgressSelectOperatorNode(shulang::SelectOperatorNode* node) override {
             std::shared_ptr<shuir::PhiNode> phi = std::make_shared<shuir::PhiNode>(select_to_candidates.at(node), type_to_width(node->type));
             std::shared_ptr<shuir::DefinitionNode> phi_def = std::make_shared<shuir::DefinitionNode>(gen_name("select_final"), phi);
             current_block->instructions.push_back(phi_def);
 
             std::shared_ptr<shuir::ReferenceNode> phi_ref = std::make_shared<shuir::ReferenceNode>(phi_def->identifier, phi_def->width);
             completed.push(phi_ref);
-            return ShuLangVisitor::egressSelectOperatorNode(node);
         }
 
-        shulang::ShuLangNode* egressIfNode(shulang::IfNode* node) override {
+        void onEgressIfNode(shulang::IfNode* node) override {
             // std::cout << "Egress if node!!!" << std::endl;
 
             // We store what happens after the if in a new block
@@ -290,7 +289,6 @@ class SLTranslator : public ShuLangVisitor {
             if (continuation == nullptr) {
                 // No need to remake the continuation if it already exists
                 continuation = std::make_shared<shuir::SIRBlock>(gen_name("continuation"));
-                // blocks.push_back(continuation);
                 next_block_stack.push({continuation, nullptr, nullptr});
             }
 
@@ -319,12 +317,7 @@ class SLTranslator : public ShuLangVisitor {
             // The contiuation for the then_block got set a couple lines up
             // std::cout << "\tCurrent then block: " << current_block->name << std::endl;
             need_to_write_exit = true;
-            return ShuLangVisitor::egressIfNode(node);
         };
-
-        shulang::ShuLangNode* egressProgramNode(shulang::ProgramNode* node) override {
-            return ShuLangVisitor::egressProgramNode(node);
-        }
 };
 
 // TODO: There's potentially undefined behavior here

@@ -12,17 +12,14 @@ bool ComplexDetector::IsComplex(ShuLangNode* node) {
     return det.is_complex;
 }
 
-ShuLangNode* ComplexDetector::egressOperatorApplicationNode(OperatorApplicationNode* node) {
+void ComplexDetector::onEgressOperatorApplicationNode(OperatorApplicationNode* node) {
     is_complex = true;
-    return ShuLangVisitor::egressOperatorApplicationNode(node);
 }
 
-ShuLangNode* ComplexDetector::egressNotNode(NotNode* node) {
+void ComplexDetector::onEgressNotNode(NotNode* node) {
     is_complex = true;
-    return ShuLangVisitor::egressNotNode(node);
 }
 
-ShuLangNode* ComplexDetector::egressSelectOperatorNode(SelectOperatorNode* node) {
+void ComplexDetector::onEgressSelectOperatorNode(SelectOperatorNode* node) {
     is_complex = true;
-    return ShuLangVisitor::egressSelectOperatorNode(node);
 }
