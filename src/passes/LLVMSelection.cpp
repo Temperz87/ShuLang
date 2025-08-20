@@ -54,18 +54,14 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
     
     std::unique_ptr<LLVMCodegenVisitor> visitor = std::make_unique<LLVMCodegenVisitor>(context, builder.get(), &module);
 
-    SIRBlock* main;
-    std::vector<SIRBlock*> blocks;
     for (std::shared_ptr<SIRBlock> block : node->blocks) {
         BasicBlock* bb;
         if (block->name == "main") {
             bb = BasicBlock::Create(context, "entry", main_function);
-            main = block.get();
         }
         else {
             bb = BasicBlock::Create(context, block->name, main_function);            
         }
-        blocks.push_back(block.get());
         visitor->blocks.insert({block->name, bb});
     }
 
@@ -78,9 +74,9 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
     builder->CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
 
 
-    for (SIRBlock* block : blocks) {
+    for (std::shared_ptr<SIRBlock> block : node->blocks) {
         builder->SetInsertPoint(visitor->blocks.at(block->name));
-        visitor->walk(block);
+        visitor->walk(block.get());
     }
     visitor->fix_phi();
 
