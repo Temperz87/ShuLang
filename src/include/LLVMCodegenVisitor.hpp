@@ -9,7 +9,7 @@
 #include <llvm/IR/Value.h>
 #include <unordered_map>
 
-namespace shuir {
+namespace sir {
     class ImmediateNode;
     class ReferenceNode;
     class SelectNode;

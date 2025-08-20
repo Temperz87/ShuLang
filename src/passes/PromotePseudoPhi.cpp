@@ -5,7 +5,7 @@
 #include <vector>
 
 
-using namespace shuir;
+using namespace sir;
 
 class PhiPromotor : SIRVisitor {
     private:

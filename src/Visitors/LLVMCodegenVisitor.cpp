@@ -19,7 +19,7 @@
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Alignment.h>
 
-using namespace shuir;
+using namespace sir;
 
 llvm::Value* LLVMCodegenVisitor::visit(ImmediateNode* node) {
     llvm::IntegerType* ty = llvm::Type::getIntNTy(context, node->width);

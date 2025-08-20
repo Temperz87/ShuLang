@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-using namespace shuir;
+using namespace sir;
 
 std::vector<std::string> SIRNode::get_usages() {
     return std::vector<std::string>();

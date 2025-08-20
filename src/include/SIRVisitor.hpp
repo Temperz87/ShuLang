@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-namespace shuir {
+namespace sir {
     class SIRNode;
     class ImmediateNode;
     class ReferenceNode;

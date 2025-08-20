@@ -25,7 +25,7 @@
 #include <system_error>
 #include <unordered_set>
 
-using namespace shuir;
+using namespace sir;
 
 void select_llvm_instructions(ProgramNode* node, std::string source_filename, std::string output) {
     using namespace llvm;

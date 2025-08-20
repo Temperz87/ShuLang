@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
 
     // std::cout << "-----SELECT SIR INSTRUCTIONS-----" << std::endl;
     // Lowering to SSA and creating pseudo phi nodes
-    shuir::ProgramNode sir_program = select_SIR_instructions(program.get());
+    sir::ProgramNode sir_program = select_SIR_instructions(program.get());
 
     // std::cout << "-----PROMOTE PHI-----" << std::endl;
     // Making the pseudo phi nodes PhiNodes

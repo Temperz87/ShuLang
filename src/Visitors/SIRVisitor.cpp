@@ -4,7 +4,7 @@
 #include <memory>
 
 
-using namespace shuir;
+using namespace sir;
 
 void SIRVisitor::walk() {
     SIRControlFlowGraph cfg(blocks);

@@ -9,7 +9,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace shuir {
+namespace sir {
     class SIRNode : public ASTNode {
         public:
             // I had this come up in an interview

@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace shuir {
+namespace sir {
     // Graph that represents the control flow in a given program
     // Currently a DAG but set to change when loops are implemented
     class SIRControlFlowGraph {

@@ -19,6 +19,6 @@ My ShuLang visitor AND AST is a mess and I must clean it up. Here's why I want t
 - [x] ASTNodes ingress/egress should call a virtual "ingress step" or "egress step" when being ingressed/egressed, THEN call `visitor->ingressNode` or `visitor->egressNode` so I'm not seemingly returning a random value
 - [x] ASTNodes's need more constructors. `ValueNode`'s not taking in a type is fine in ShuLang, but some things are weird
 - [x] Change some smart pointers to raw pointers (pybind11 hates unique pointers so I'm still going to use shared pointers)
-- [ ] Rename `namespace shuir` to `namespace sir`.
+- [ ] Rename `namespace sir` to `namespace sir`.
 - [ ] Update ShuLang/SIR specs
 - [ ] Split the tester into multiple files, e.g. ShuLang, SIR, and a driver file
