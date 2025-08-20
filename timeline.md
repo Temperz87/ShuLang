@@ -5,10 +5,13 @@ This is subject to change.
 ## Act 3: Loops
 The `while` and `for` stuff :D.
 
-## Act 4: Functions
+## Act 4: Optimizations
+Constant folding, constant propagation, and dead code elimination. I'm also introducing user input here.
+
+## Act 5: Functions
 You know what a function is, I know what a function is, it's time to have some fun compiling them.
 
-## Act 5: Objects
+## Act 6: Objects
 Me when I need a VTable.
 
 ## Previous Acts
