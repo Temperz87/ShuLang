@@ -11,6 +11,8 @@ I intend for this compiler to have at the minimum 5 Acts, which will be loosely 
 
 This language is using a recursive descent parser and tokenization is pretty much just a linear scan of a file.
 
+If you want to mess around with writing some ShuLang programs then clone the repository and run `make build` in `/src`. After that, you'll be given a `ShuC.out` executable that you can use to compile programs!
+
 If you want a timeline of what I've done and what's next, one can be find in [timeline.md](timeline.md). Here's what I'm currently working on:
 
 ## INTERMISSION
@@ -19,6 +21,6 @@ My ShuLang visitor AND AST is a mess and I must clean it up. Here's why I want t
 - [x] ASTNodes ingress/egress should call a virtual "ingress step" or "egress step" when being ingressed/egressed, THEN call `visitor->ingressNode` or `visitor->egressNode` so I'm not seemingly returning a random value
 - [x] ASTNodes's need more constructors. `ValueNode`'s not taking in a type is fine in ShuLang, but some things are weird
 - [x] Change some smart pointers to raw pointers (pybind11 hates unique pointers so I'm still going to use shared pointers)
-- [ ] Rename `namespace sir` to `namespace sir`.
+- [x] Rename `namespace shuir` to `namespace sir`.
 - [ ] Update ShuLang/SIR specs
 - [ ] Split the tester into multiple files, e.g. ShuLang, SIR, and a driver file
