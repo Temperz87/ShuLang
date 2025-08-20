@@ -6,8 +6,10 @@
 #include <iostream>
 #include <llvm/IR/Metadata.h>
 #include <memory>
+#include <numbers>
 #include <stack>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -207,18 +209,75 @@ class SLTranslator : public ShuLangVisitor {
             return ShuLangVisitor::egressNotNode(node);
         }
 
+        // TODO: MOVE TO TOP OF FILE
+        std::unordered_map<shulang::SelectValueNode*, std::pair<std::shared_ptr<shuir::SIRBlock>, std::shared_ptr<shuir::SIRBlock>>> select_val_to_block;
+        std::unordered_map<shulang::ValueNode*, std::vector<std::pair<std::string, std::shared_ptr<shuir::ValueNode>>>> select_to_candidates;
+
+        shulang::ShuLangNode* egressSelectValueNode(shulang::SelectValueNode* node) override {
+            std::shared_ptr<shuir::ValueNode> val = completed.top();
+            completed.pop();
+
+            if (node->get_select_for() == SelectValueNode::CONDITION) {
+                // Here we choose to go to either the true or false block
+                // Which allows for lazy evaluation
+                std::shared_ptr<shuir::SIRBlock> true_block = select_val_to_block.at(node).first;
+                std::shared_ptr<shuir::SIRBlock> false_block = select_val_to_block.at(node).second;
+                
+                true_block->predecesors.insert(current_block);
+                mark_block_reachable(true_block);
+                false_block->predecesors.insert(current_block);
+                mark_block_reachable(false_block);
+
+                std::shared_ptr<shuir::JumpIfElseNode> jmp = std::make_shared<shuir::JumpIfElseNode>(true_block, false_block, val);
+                current_block->instructions.push_back(jmp);
+            }
+            else {
+                // Otherwise push create a def here so we get lazy evaluation
+                std::shared_ptr<shuir::DefinitionNode> def = std::make_shared<shuir::DefinitionNode>(gen_name("select_intermdiate"), val);
+                current_block->instructions.push_back(def);
+
+                std::shared_ptr<shuir::ReferenceNode> ref = std::make_shared<shuir::ReferenceNode>(def->identifier, val->width);
+                select_to_candidates.at(node->parent).push_back({current_block->name, ref});
+                
+                continuation->predecesors.insert(current_block);
+                mark_block_reachable(continuation);
+
+                std::shared_ptr<shuir::JumpNode> jmp = std::make_shared<shuir::JumpNode>(continuation);
+                current_block->instructions.push_back(jmp);
+
+            }
+
+            // If last was some block we go into true
+            // If last was the true then we go to false
+            // If last was false we go to cont
+            current_block = next_block_stack.top().block;
+            continuation = next_block_stack.top().continuation;
+            next_block_stack.pop();
+
+            return ShuLangVisitor::egressSelectValueNode(node);
+        }
+
+        ASTHolder ingressSelectOperatorNode(shulang::SelectOperatorNode* node, int childcount) override {
+            std::shared_ptr<shuir::SIRBlock> cont_block = std::make_shared<shuir::SIRBlock>(gen_name("select_cont"));
+            std::shared_ptr<shuir::SIRBlock> true_block = std::make_shared<shuir::SIRBlock>(gen_name("select_true"));
+            std::shared_ptr<shuir::SIRBlock> false_block = std::make_shared<shuir::SIRBlock>(gen_name("select_false"));
+
+            next_block_stack.push({cont_block, continuation});
+            next_block_stack.push({false_block, cont_block});
+            next_block_stack.push({true_block, cont_block});
+
+            select_val_to_block.insert({node->condition.get(), {true_block, false_block}});
+            select_to_candidates.insert({node, {}});
+            return ShuLangVisitor::ingressSelectOperatorNode(node, childcount);
+        }
+
         shulang::ShuLangNode* egressSelectOperatorNode(shulang::SelectOperatorNode* node) override {
-            // Write primitive select
-            // Then we'll optimize later
-            std::shared_ptr<shuir::ValueNode> false_value = completed.top();
-            completed.pop();
-            std::shared_ptr<shuir::ValueNode> true_value = completed.top();
-            completed.pop();
-            std::shared_ptr<shuir::ValueNode> cond_value = completed.top();
-            completed.pop();
-            // std::cout << false_value << " " << true_value << " " << cond_value << std::endl;
-            std::shared_ptr<shuir::SelectNode> select = std::make_shared<shuir::SelectNode>(true_value->width, cond_value, true_value, false_value);
-            completed.push(select);
+            std::shared_ptr<shuir::PhiNode> phi = std::make_shared<shuir::PhiNode>(select_to_candidates.at(node), type_to_width(node->type));
+            std::shared_ptr<shuir::DefinitionNode> phi_def = std::make_shared<shuir::DefinitionNode>(gen_name("select_final"), phi);
+            current_block->instructions.push_back(phi_def);
+
+            std::shared_ptr<shuir::ReferenceNode> phi_ref = std::make_shared<shuir::ReferenceNode>(phi_def->identifier, phi_def->width);
+            completed.push(phi_ref);
             return ShuLangVisitor::egressSelectOperatorNode(node);
         }
 
@@ -267,7 +326,7 @@ class SLTranslator : public ShuLangVisitor {
         }
 };
 
-// TODOO: There's potentially undefined behavior here
+// TODO: There's potentially undefined behavior here
 shuir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
     // Now at conditionals we have multiple blocks
     SLTranslator translator = SLTranslator("main");
@@ -279,8 +338,7 @@ shuir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
     }
 
     shuir::ProgramNode node = shuir::ProgramNode();
-    // TODO:
-    // Is this a O(n) operation?
+    // TODO: Is this an O(n) operation?
     // Should I pass a reference to a buffer instead
     // when initializing the translator?
     node.blocks = translator.reachable_blocks;

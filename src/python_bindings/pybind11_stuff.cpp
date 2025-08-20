@@ -87,6 +87,11 @@ PYBIND11_MODULE(shulang, m) {
     .def("children", &shulang::NotNode::children)
     .def_readwrite("value", &shulang::NotNode::value);
 
+    // Select Value Node
+    py::class_<shulang::SelectValueNode, shulang::ShuLangNode, std::shared_ptr<shulang::SelectValueNode>>(m, "SelectValueNode")
+    .def("children", &shulang::SelectValueNode::children)
+    .def_readwrite("value", &shulang::SelectValueNode::value);
+
     // Select Operator Node
     py::class_<shulang::SelectOperatorNode, shulang::ValueNode, std::shared_ptr<shulang::SelectOperatorNode>>(m, "SelectOperatorNode")
     .def("children", &shulang::SelectOperatorNode::children)

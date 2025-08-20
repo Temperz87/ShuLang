@@ -79,6 +79,8 @@ def graph_ast(node, parent=''):
             my_node = graph_this_stuff("not", 1, parent)
             graph_ast(node.value, my_node)
             return my_node
+        case SelectValueNode():
+            return graph_ast(node.value)
         case SelectOperatorNode():
             my_node = graph_this_stuff("if", 1, parent)
             graph_ast(node.condition, my_node)
@@ -133,7 +135,6 @@ def get_value(node, env):
                 print(node.identifier, "was not found!")
                 print("\tIn env:", env)
                 exit(1)
-            
             return env[node.identifier]
         case OperatorApplicationNode():
             match node.op:
@@ -194,6 +195,8 @@ def get_value(node, env):
                     exit(1)
         case NotNode():
             return not get_value(node.value, env)
+        case SelectValueNode():
+            return get_value(node.value, env)
         case SelectOperatorNode():
             if get_value(node.condition, env):
                 return get_value(node.true_value, env)
@@ -246,8 +249,8 @@ def stringify_value(node):
                 ret += "[" + block_name + ", " + stringify_value(val) + "] "
             return ret
         case SelectNode():
-            return "Select " + stringify_value(node.condition) +  " " + stringify_value(node.true_value) + \
-                             " " + stringify_value(node.false_value)
+            return "Select (" + stringify_value(node.condition) +  ") (" + stringify_value(node.true_value) + \
+                             " (" + stringify_value(node.false_value) + ")"
         case _:
             print("Unknown value", node)
             exit(1)
@@ -467,7 +470,7 @@ def run_case(file_name):
     print("---UNIQUIFICATION---")
     uniquify(ast)
     # print_ast(ast)
-    # graph_ast(ast)k
+    # graph_ast(ast)
     print("Running...")
     uniquify_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
@@ -495,13 +498,11 @@ def run_case(file_name):
     print("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
     # print_sir_ast(sir_program)
-    graph_sir_program(sir_program)
+    # graph_sir_program(sir_program)
 
-    # TODO: WRITE A WAY TO TEST PSEUDOPHINODES
     print("Running")
     select_stdout = run_sir_program(sir_program)
     compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
-    return
 
     print("---PROMOTE PSEUDO PHI---")
     promote_pseudo_phi(sir_program)
@@ -510,7 +511,7 @@ def run_case(file_name):
     print("Running")
 
     promote_pseudo_phi_stdout = run_sir_program(sir_program)
-    compare_stdout(expected_stdout, promote_pseudo_phi_stdout, file_name, "select SIR instructions")
+    compare_stdout(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi")
 
 
     print("---SELECT LLVM INSTRUCTIONS---")
@@ -518,11 +519,10 @@ def run_case(file_name):
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
     output = subprocess.run("./a.out", shell=True, capture_output=True)
     if output.returncode == -11:
-        print("SIGSEGV\n\tAt ", file_name,"\nSpecifically error code 139 (-11 in Python)")
+        print("SIGSEGV\n\tAt ", file_name, "\nSpecifically error code 139 (-11 in Python)")
         exit(1)
     output_stdout = output.stdout.decode("utf-8")[0:-1].split("\n")
     # os.system("rm -f a.ll a.out")
-
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
 
     print("Test", file_name, "passed")

@@ -43,15 +43,6 @@ void assert_at_value(std::string expected) {
     assert_strings_equal(currenttoken.value, expected);
 }
 
-
-void assert_at_type(token_type expected) {
-    if ((expected & currenttoken.type) != 0) {
-        // TODO: Make error better
-        // I need a way to go from enum to string
-        parse_error("Unexpected token");
-    }
-}
-
 std::string operator_highest[] = {
     "=", 
     "!=",

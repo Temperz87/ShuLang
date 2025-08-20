@@ -109,14 +109,39 @@ namespace shulang {
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
+    
+  class SelectValueNode : public ShuLangNode {
+    public:
+      enum SELECT_FOR {
+      CONDITION,
+      TRUE_VALUE,
+      FALSE_VALUE
+    };
+
+      ValueNode* parent;
+      std::shared_ptr<ValueNode> value;
+      SelectValueNode(std::shared_ptr<ValueNode> value, ValueNode* parent, SELECT_FOR selecting_for)
+      :parent(parent), value(value), selecting_for(selecting_for) { }
+
+      SELECT_FOR get_select_for() { return selecting_for; }
+      std::vector<std::shared_ptr<ShuLangNode>> children() override;
+      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
+
+    private:
+      SELECT_FOR selecting_for;
+  };
+
   class SelectOperatorNode : public ValueNode {
     public:
-      std::shared_ptr<ValueNode> condition;
-      std::shared_ptr<ValueNode> true_value;
-      std::shared_ptr<ValueNode> false_value;
+      std::shared_ptr<SelectValueNode> condition;
+      std::shared_ptr<SelectValueNode> true_value;
+      std::shared_ptr<SelectValueNode> false_value;
       
-      SelectOperatorNode(std::shared_ptr<ValueNode> condition, std::shared_ptr<ValueNode> true_value, std::shared_ptr<ValueNode> false_value):
-        condition(condition), true_value(true_value), false_value(false_value) { 
+      SelectOperatorNode(std::shared_ptr<ValueNode> condition, std::shared_ptr<ValueNode> true_value, std::shared_ptr<ValueNode> false_value) { 
+          this->condition = std::make_shared<SelectValueNode>(condition, this, SelectValueNode::CONDITION);
+          this->true_value = std::make_shared<SelectValueNode>(true_value, this, SelectValueNode::TRUE_VALUE);
+          this->false_value = std::make_shared<SelectValueNode>(false_value, this, SelectValueNode::FALSE_VALUE);
           type = true_value->type;
         } 
 

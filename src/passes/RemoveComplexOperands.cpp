@@ -21,7 +21,6 @@ class target_complex : public ShuLangVisitor {
 
             std::shared_ptr<BindingNode> fresh = std::make_unique<BindingNode>();
             fresh->name = name;
-            // TODO: Assign type
             fresh->ty = complex_value->type;
             fresh->value = complex_value;
             program_nodes->insert(program_nodes->begin() + insert_position, fresh);
