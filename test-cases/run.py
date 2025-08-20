@@ -79,8 +79,11 @@ def graph_ast(node, parent=''):
             my_node = graph_this_stuff("not", 1, parent)
             graph_ast(node.value, my_node)
             return my_node
-        case SelectValueNode():
-            return graph_ast(node.value)
+        case BeginNode():
+            my_node = graph_this_stuff("begin", 1, parent)
+            for statement in node.statements:
+                graph_ast(statement, my_node)
+            return graph_ast(node.end_value, my_node)
         case SelectOperatorNode():
             my_node = graph_this_stuff("if", 1, parent)
             graph_ast(node.condition, my_node)
@@ -195,8 +198,11 @@ def get_value(node, env):
                     exit(1)
         case NotNode():
             return not get_value(node.value, env)
-        case SelectValueNode():
-            return get_value(node.value, env)
+        case BeginNode():
+            tmp_env = env.copy()
+            for statement in node.statements:
+                run_ast(statement, env)
+            return get_value(node.end_value, env)
         case SelectOperatorNode():
             if get_value(node.condition, env):
                 return get_value(node.true_value, env)
@@ -488,7 +494,7 @@ def run_case(file_name):
     print("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
     # print_ast(ast)
-    # graph_ast(ast)
+    graph_ast(ast)
     print("Type checking...")
     type_check(ast)
     print("Running")

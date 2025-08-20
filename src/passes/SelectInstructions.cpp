@@ -26,7 +26,6 @@ class SLTranslator : public ShuLangVisitor {
         std::stack<std::shared_ptr<shuir::ValueNode>> completed;
         // What blocks are the destination of a jump
         std::unordered_set<std::string> have_reached;
-
         // Stores the next blocks and where to go afterwards
         std::stack<block_cont_node_t> next_block_stack;
 
@@ -35,6 +34,12 @@ class SLTranslator : public ShuLangVisitor {
         // So we don't accidentally egress too soon
         // (e.g. an if statement that only contains a nested if statement)
         shulang::BodyNode* node = nullptr;
+
+        // If a begin node is in a select node and is the select node's condition, here's where the jumps are stored
+        std::unordered_map<shulang::BeginNode*, std::pair<std::shared_ptr<shuir::SIRBlock>, std::shared_ptr<shuir::SIRBlock>>> select_val_to_block;
+        // The final phi node candidates for select nodes
+        std::unordered_map<shulang::ValueNode*, std::vector<std::pair<std::string, std::shared_ptr<shuir::ValueNode>>>> select_to_candidates;
+
 
         std::string gen_name(std::string name) {
             static int counter = 0;
@@ -209,15 +214,11 @@ class SLTranslator : public ShuLangVisitor {
             return ShuLangVisitor::egressNotNode(node);
         }
 
-        // TODO: MOVE TO TOP OF FILE
-        std::unordered_map<shulang::SelectValueNode*, std::pair<std::shared_ptr<shuir::SIRBlock>, std::shared_ptr<shuir::SIRBlock>>> select_val_to_block;
-        std::unordered_map<shulang::ValueNode*, std::vector<std::pair<std::string, std::shared_ptr<shuir::ValueNode>>>> select_to_candidates;
-
-        shulang::ShuLangNode* egressSelectValueNode(shulang::SelectValueNode* node) override {
+        shulang::ShuLangNode* egressBeginNode(shulang::BeginNode* node) override {
             std::shared_ptr<shuir::ValueNode> val = completed.top();
             completed.pop();
 
-            if (node->get_select_for() == SelectValueNode::CONDITION) {
+            if (select_val_to_block.contains(node)) {
                 // Here we choose to go to either the true or false block
                 // Which allows for lazy evaluation
                 std::shared_ptr<shuir::SIRBlock> true_block = select_val_to_block.at(node).first;
@@ -254,7 +255,7 @@ class SLTranslator : public ShuLangVisitor {
             continuation = next_block_stack.top().continuation;
             next_block_stack.pop();
 
-            return ShuLangVisitor::egressSelectValueNode(node);
+            return ShuLangVisitor::egressBeginNode(node);
         }
 
         ASTHolder ingressSelectOperatorNode(shulang::SelectOperatorNode* node, int childcount) override {

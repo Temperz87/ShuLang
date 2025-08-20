@@ -106,14 +106,18 @@ ShuLangNode* NotNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressNotNode(this);
 }
 
-std::vector<std::shared_ptr<ShuLangNode>> SelectValueNode::children() {
-  return { value };
+std::vector<std::shared_ptr<ShuLangNode>> BeginNode::children() {
+  std::vector<std::shared_ptr<ShuLangNode>> ret;
+  ret.insert(ret.end(), statements.begin(), statements.end());
+  ret.push_back(end_value);
+  return ret;
 }
-childholder<ShuLangNode> SelectValueNode::ingressVisitor(ShuLangVisitor* visitor) {
-  return visitor->ingressSelectValueNode(this, 1);
+childholder<ShuLangNode> BeginNode::ingressVisitor(ShuLangVisitor* visitor) {
+  // +1 to account for the end value
+  return visitor->ingressBeginNode(this, statements.size() + 1);
 }
-ShuLangNode* SelectValueNode::egressVisitor(ShuLangVisitor* visitor) {
-  return visitor->egressSelectValueNode(this);
+ShuLangNode* BeginNode::egressVisitor(ShuLangVisitor* visitor) {
+  return visitor->egressBeginNode(this);
 }
 
 std::vector<std::shared_ptr<ShuLangNode>> SelectOperatorNode::children() {

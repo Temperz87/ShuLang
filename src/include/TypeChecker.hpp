@@ -19,6 +19,7 @@ class TypeChecker : public ShuLangVisitor {
         ShuLangNode* egressVariableReferenceNode(VariableReferenceNode* node) override;
         ShuLangNode* egressOperatorApplicationNode(OperatorApplicationNode* node) override;
         ShuLangNode* egressNotNode(NotNode* node) override;
+        ShuLangNode* egressBeginNode(BeginNode* node) override;
         ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) override;
         ShuLangNode* egressIfNode(IfNode* node) override;
 };

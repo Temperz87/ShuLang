@@ -3,6 +3,7 @@
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
 #include <memory>
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -12,6 +13,8 @@
 class target_complex : public ShuLangVisitor {
     private:
         std::vector<std::shared_ptr<ShuLangNode>>* program_nodes;
+        std::stack<BeginNode*> writing_to;
+
         bool updated_inserted = true;
         long insert_position;
 
@@ -23,11 +26,20 @@ class target_complex : public ShuLangVisitor {
             fresh->name = name;
             fresh->ty = complex_value->type;
             fresh->value = complex_value;
-            program_nodes->insert(program_nodes->begin() + insert_position, fresh);
-            insert_position += 1;
 
-            if (updated_inserted) {
-                inserted += 1;
+            if (writing_to.empty()) {
+                program_nodes->insert(program_nodes->begin() + insert_position, fresh);
+
+                insert_position += 1;
+
+                if (updated_inserted) {
+                    inserted += 1;
+                }
+            }
+            else {
+                std::vector<std::shared_ptr<StatementNode>>& statements = writing_to.top()->statements;
+                // Should be safe to always insert at the end of the node for now
+                statements.insert(statements.end(), fresh);
             }
 
             std::shared_ptr<VariableReferenceNode> ref = std::make_shared<VariableReferenceNode>(name);
@@ -78,16 +90,14 @@ class target_complex : public ShuLangVisitor {
             return ShuLangVisitor::egressNotNode(node);
         }
 
-        ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) override {
-            // // Condition must be atomic
-            // if (ComplexDetector::IsComplex(node->condition.get())) {
-            //     node->condition = generate_binding(node->condition);
-            // }
+        ASTHolder ingressBeginNode(BeginNode* node, int childcount) override {
+            writing_to.push(node);
+            return ShuLangVisitor::ingressBeginNode(node, childcount);
+        }
 
-            // However for the other 2 values we leave them as complex
-            // As we'll do some funky jump stuff later
-
-            return ShuLangVisitor::egressSelectOperatorNode(node);
+        ShuLangNode* egressBeginNode(BeginNode* node) override {
+            writing_to.pop();
+            return ShuLangVisitor::egressBeginNode(node);
         }
 
         ASTHolder ingressBodyNode(BodyNode* node, int childcount) override {

@@ -79,12 +79,12 @@ class TransformToShortCircuit : public ShuLangVisitor {
         }
 
         ShuLangNode* egressSelectOperatorNode(SelectOperatorNode* node) override {
-            replace_with_mark(node->condition->value);
-            replace_with_mark(node->true_value->value);
-            replace_with_mark(node->false_value->value);
+            replace_with_mark(node->condition->end_value);
+            replace_with_mark(node->true_value->end_value);
+            replace_with_mark(node->false_value->end_value);
 
-            if (not_nodes.contains(node->condition->value.get())) {
-                node->condition->value = not_nodes.at(node->condition->value.get());
+            if (not_nodes.contains(node->condition->end_value.get())) {
+                node->condition->end_value = not_nodes.at(node->condition->end_value.get());
                 auto tmp = node->true_value;
                 node->true_value = node->false_value;
                 node->false_value = tmp;
