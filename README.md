@@ -21,24 +21,23 @@ Now we have a construct that has a body, meaning I need a `parse_body` function.
 
 I also changed how operators get parsed in order to make it more extensible. Basically as I was going up in precedence I hard coded a massive `if (op == "op" ||...)` and manually passed through the next function. Now I have everything in an array and it's super easy to add new operators.
 
-I also have to write another precedence function!!!
-- I defered this to later because I really don't want to...
+I also wrote an operator precedence function for `not` and ternary `if`.
 
 ### Type checking
 Everything in ShuLang before was an Integer, but in order to implement conditionals we need to implement a type checker. I'll just do the standard bidirectional "do I synthesize or check a type :O"
 
-### Uniquification
-I changed how variables get uniquified in this pass. Basically instead of reuniquifying already uniquified variables in order to get unique variabels, I just use the already uniquified name.
+### Deprecated Pass: Uniquification
+This pass is not being used anymore because I don't think that it's necesary to lower to SSA.
 
 ### New pass: Short Circuit-ification
 In the Racket programming langauge, the expression `(and lhs rhs)` if just a macro for `(if lhs rhs #f)` And similarly `(or lhs rhs)` becomes `(if lhs #t rhs)`. This is useful because it allows for short circuiting, where we only evaluate the right hand side when we need to. The side effect of this change is we're introducing a new jump instruction, and as we know jump instructions are slow. 
 
 If the `rhs` is an atomic value (variable reference, true, or false) then short circuiting because useless, as the `rhs` is already evalutated as ShuLang is call-by value. Hence instead of inserting a new block, we'll leave it as is and use the SIR `cmp` instructions.
 
-This pass is strictly an optimization pass so I'll be saving it until after I had if's compiled. Trying to implement this pass early on demonstrated serious flaws with my visitor class, and how I'll need to reimplement it.
+I made the ternary opeerator so I could do this pass as without there's going to be code dupliation (consider the expression `and (or true false) (and true false))`).
 
 ### Remove complex operands
-We have to make sure that the condition of the if is not complex.
+We have to make sure that the condition of the if is not complex. We also make sure ternary operators have no complex values through utilization a "begin node". These nodes can store some statements to run beforehand, but will ultimately return a final value. 
 
 ### Select SIR instructions
 The first pass that's different in a meaningful way. 
@@ -49,10 +48,12 @@ I also translate `true` to `1` and `false` to `0`. The type checker assures that
 
 One other thing I took the liberty of doing is making SIR actually SSA, which means that I had to insert phi nodes (see [here](https://en.wikipedia.org/wiki/Static_single-assignment_form) for more information) in a bunch of places. However, we can't know what predecesor blocks could contain the variable we're looking for yet, so instead we insert a "pseudo phi node" and make it a real phi node (or instead just make it a reference) in the next pass.
 
+If ternaries get translated into jumps which allows for lazy evaluation.
+
 ### Promote Pseudo Phi
 This pass required me to create a [CFG](https://en.wikipedia.org/wiki/Control-flow_graph) (CFG is slang for control flow graph btw), so I did that. 
 
-The this pass works is:
+The procedure for this pass is:
 1. Push all terminal blocks onto a queue
 2. Pop some block from the queue
 3. If a Pseudo phi is found, then check all predecessor blocks
