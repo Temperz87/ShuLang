@@ -15,29 +15,6 @@ If you want to mess around with writing some ShuLang programs then clone the rep
 
 If you want a timeline of what I've done and what's next, one can be find in [timeline.md](timeline.md). Here's what I'm currently working on:
 
-## Act 4: Loops
-It's time to compile while while loops!
+## INTERMISSION: Waiting to be free from university...
+Okay so basically university is starting and I gotta lock in (and also apply for jobs); meaning that I will not be focusing on ShuLang. What's next will be constant folding, constant propagation, dead code elmination, and compiling user input. 
 
-### Parser changes
-Shouldn't be that hard. The grammar for loop construct is as follows:
-
-while ::= "while" value body
-- I'll do a for loop if someone can give me good notation
-- No I'm not doing `;;` 
-
-### Type checking
-Making sure that the condition of the while loop is a boolean, everything else is the same
-
-### Remove complex operands
-If and while loop conditions don't have to be atomic anymore as we can levarage the begin node
-
-### Select SIR instructions
-I am jumping around at the speed of sound
-
-### Select LLVM instructions
-I had to modify how I'm inserting Phi nodes. Basically I just insert the node then wait to add the incoming values until everything else has been done.
-
-And that's it! You'll notice that the changes don't seem that numerous. That's probably because I'm forgetting something, but also is because I'm only adding a single construct to my language. Said construct also doesn't change the IR which is nice.
-
-
-I did this act in the span of one hour, maybe call it a "mini act?" I don't know I thought this would be harder.

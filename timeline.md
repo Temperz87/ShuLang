@@ -13,7 +13,31 @@ Me when I need a VTable.
 
 ## Previous Acts
 
-## INTERMISSION: Cleanup AST and Tester
+### Act 4: Loops
+It's time to compile while loops! I did this act in 1 hour (loops are just fancy GOTO's) but this the last thing I did before my university started so I think it's fine to call it an act.
+
+### Parser changes
+Shouldn't be that hard. The grammar for loop construct is as follows:
+
+while ::= "while" value body
+- I'll do a for loop if someone can give me good notation
+- No I'm not doing `;;` 
+
+### Type checking
+Making sure that the condition of the while loop is a boolean, everything else is the same
+
+### Remove complex operands
+If and while loop conditions don't have to be atomic anymore as we can levarage the begin node
+
+### Select SIR instructions
+I am jumping around at the speed of sound
+
+### Select LLVM instructions
+I had to modify how I'm inserting Phi nodes. Basically I just insert the node then wait to add the incoming values until everything else has been done.
+
+And that's it! You'll notice that the changes don't seem that numerous. That's probably because I'm forgetting something, but also is because I'm only adding a single construct to my language. Said construct also doesn't change the IR which is nice.
+
+### INTERMISSION: Cleanup AST and Tester
 
 My ShuLang visitor AND AST is a mess and I must clean it up. Here's why I want to do:
 - [x] ASTNodes ingress/egress should call a virtual "ingress step" or "egress step" when being ingressed/egressed, THEN call `visitor->ingressNode` or `visitor->egressNode` so I'm not seemingly returning a random value
