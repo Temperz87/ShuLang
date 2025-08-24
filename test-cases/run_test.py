@@ -133,7 +133,7 @@ if __name__ == '__main__':
             run_regression_tests('phase_1_programs')
             run_regression_tests('phase_2_programs')
             run_regression_tests('phase_3_programs')
-            os.system("rm -f a.out")
+            os.system("rm -f a.ll")
         elif os.path.isfile(shulangable):
             run_case(shulangable)
         elif os.path.isdir(shulangable):
