@@ -101,7 +101,7 @@ def run_case(file_name):
 
 def run_regression_tests(dir):
     # This next line is a crime...
-    ShuC_file_dir = '../src/output/ShuC.out'
+    ShuC_file_dir = '../src/output/Shuc'
     for file in sorted(os.listdir(dir)):
         if file[-3:] != '.sl':
             continue
