@@ -65,6 +65,7 @@ class TransformToShortCircuit : public ShuLangVisitor {
                                                                                                    node->rhs,
                                                                                                    std::make_shared<BooleanNode>(false)
                     );
+                    sel->type = "Boolean";
                     marks.insert({node, sel});
                 }
                 else if (node->op == "or") {
@@ -72,6 +73,7 @@ class TransformToShortCircuit : public ShuLangVisitor {
                                                                                                    std::make_shared<BooleanNode>(true),
                                                                                                    node->rhs
                     );
+                    sel->type = "Boolean";
                     marks.insert({node, sel});
                 }
             }
