@@ -31,7 +31,7 @@ def run_case(file_name):
     ast = parse_file(file_name)
     print("---INITIAL AST---")
     # print_ast(ast)
-    # graph_ast(ast)
+    graph_ast(ast)
     print("Type checking...")
     type_check(ast)
     print("Running...")
