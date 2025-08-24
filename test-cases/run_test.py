@@ -101,12 +101,12 @@ def run_case(file_name):
 
 def run_regression_tests(dir):
     # This next line is a crime...
-    ShuC_file_dir = '../src/output/Shuc'
+    shuc_file_dir = '../src/output/shuc'
     for file in sorted(os.listdir(dir)):
         if file[-3:] != '.sl':
             continue
 
-        compile_output = subprocess.run(ShuC_file_dir + ' ' + os.path.join(dir, file) + ' -o a.ll', shell=True)
+        compile_output = subprocess.run(shuc_file_dir + ' ' + os.path.join(dir, file) + ' -o a.ll', shell=True)
         if compile_output.returncode != 0:
             print("Failed to compile regression test", file)
             print(compile_output.stdout)
