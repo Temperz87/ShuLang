@@ -13,6 +13,8 @@ static Iterator<token> iter;
 static token currenttoken;
 static std::string filename;
 
+using namespace shulang;
+
 bool advance() {
     if (iter.empty())
         return false;

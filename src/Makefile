@@ -23,20 +23,20 @@ DEPS := $(OBJECTS:.o=.d) ./driver/driver.d ./python_binding/pybind11_stuff.d
 %.o : %.cpp
 	$(CC) $(CPPFLAGS) -fPIC $< -c -o $@ 
 
-./output/Shuc: ./driver/driver.o
-	touch ./output/Shuc
-	$(CC) $(CPPFLAGS) $(OBJECTS) ./driver/driver.o -o ./output/Shuc
+./output/shuc: ./driver/driver.o
+	touch ./output/shuc
+	$(CC) $(CPPFLAGS) $(OBJECTS) ./driver/driver.o -o ./output/shuc
 
 ./output/shulang$(shell python3-config --extension-suffix): $(OBJECTS)
 	touch ./shulang$(shell python3-config --extension-suffix)
 	$(CC) $(PYTHONFLAGS) $(shell llvm-config --libs) $(OBJECTS) ./python_bindings/pybind11_stuff.cpp -shared -o $(PYTHONFILEPATH)
 	cp $(PYTHONFILEPATH) ../test-cases/shulang$(shell python3-config --extension-suffix)
 
-build: ./output/Shuc $(PYTHONFILEPATH)
+build: ./output/shuc $(PYTHONFILEPATH)
 
 clean:
 	$(RM) -f ./output/*
-	$(RM) -f Shuc
+	$(RM) -f shuc
 	$(RM) -f ShuLang.dll
 	$(RM) -f ShuLangPy.dll
 	$(RM) -f $(OBJECTS)

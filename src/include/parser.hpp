@@ -5,7 +5,5 @@
 #include "tokenizer.hpp"
 #include <vector>
 
-using namespace shulang;
-
 // TODO: DOCUMENTATION
-std::unique_ptr<ProgramNode> begin_parse(std::vector<token> tokenlist, std::string fileToParse);
+std::unique_ptr<shulang::ProgramNode> begin_parse(std::vector<token> tokenlist, std::string fileToParse);

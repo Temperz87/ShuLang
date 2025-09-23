@@ -1,6 +1,5 @@
 .vscode/*
 src/output/*
-Shuc
 *.d
 *.o
 src/compile_commands.json
