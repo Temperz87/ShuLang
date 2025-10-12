@@ -9,6 +9,7 @@ def compare_stdout(out1, out2, filename, pass_name):
     if len(out1) != len(out2):
         print("Hmm, the lengths of these standard outs look different")
         print("Did you insert or remove a print node somewhere?")
+        print(f'({len(out1)} vs {len(out2)})')
         print("Error during compilation of", filename, "during pass", pass_name)
         exit(-1)
     
@@ -94,6 +95,10 @@ def run_case(file_name):
         exit(1)
     output_stdout = output.stdout.decode("utf-8")[0:-1].split("\n")
     os.system("rm -f a.ll a.out")
+
+    # WHY DO I NEED THIS SUBPROCESS???
+    if output_stdout == ['']:
+        output_stdout = ''
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
 
     print("Test", file_name, "passed")
