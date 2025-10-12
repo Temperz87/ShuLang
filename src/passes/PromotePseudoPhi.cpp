@@ -2,6 +2,7 @@
 #include <SIRCFG.hpp>
 #include <SIRAST.hpp>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 
@@ -19,6 +20,8 @@ class PhiPromotor : SIRVisitor {
         }
 
     public:
+        std::unordered_set<SIRBlock*> redo_blocks;
+
         // PhiNodes can only appear in a definition node
         void visit(DefinitionNode* node) override {
             node->binding->accept(this);
@@ -47,6 +50,7 @@ class PhiPromotor : SIRVisitor {
                     std::shared_ptr<DefinitionNode> def = std::make_shared<DefinitionNode>(gen_name(requested), pseudo);
                     block->instructions.insert(block->instructions.begin(), def);
                     block->variable_to_ref.insert({requested, def->identifier});
+                    redo_blocks.insert(block.get());
 
                     std::shared_ptr<ReferenceNode> ref = std::make_shared<ReferenceNode>(def->identifier, node->width);
                     candidates.push_back({block->name, ref});
@@ -77,26 +81,47 @@ void promote_pseudo_phi(ProgramNode* program) {
         blocks.push_back(block.get());
 
     std::deque<SIRBlock*> queue;
-    std::unordered_set<SIRBlock*> seen;
+    std::unordered_set<SIRBlock*> handling;
     SIRControlFlowGraph cfg(blocks);
 
     std::vector<SIRBlock*> terminals = cfg.get_terminals();
+    std::deque<SIRBlock*> backwards;
     for (SIRBlock* block : terminals) {
-        seen.insert(block);
-        queue.push_back(block);
+        backwards.push_back(block);
     }
+    while (!backwards.empty()) {
+        SIRBlock* curr = backwards.front();
+        backwards.pop_front();
+        queue.push_back(curr);
+        handling.insert(curr);
+        for (SIRBlock* block : cfg.get_incoming(curr)) {
+            if (!handling.contains(block))
+                backwards.push_back(block);
+        }
+    } 
+
+    // Dataflow esque algorithm
+    // Start by pushing all blocks to a queue Q
+    //  Do so in backwards order according to the CFG
+    // While Q is not empty
+    //  Pop a block B from Q
+    //  Promote pseudo phi node's in B
+    //  If promotion placed a pseudo phi node in another block P
+    //    AND P isn't queued in Q
+    //      Then enqueue P onto Q
 
     PhiPromotor promotor;    
     while (!queue.empty()) {
         SIRBlock* curr = queue.front();
         queue.pop_front();
-        for (SIRBlock* next : cfg.get_incoming(curr)) {
-            if (seen.contains(next))
-                continue;
-            
-            seen.insert(next);
-            queue.push_back(next);
+        handling.erase(curr);
+        promotor.walk(curr);
+        for (SIRBlock* block : promotor.redo_blocks) {
+            if (!handling.contains(block)) {
+                queue.push_back(block);
+                handling.insert(block);
+            }
         }
-        promotor.walk(curr);        
+        promotor.redo_blocks.clear();
     }
 }
