@@ -13,7 +13,7 @@ Me when I need a VTable.
 
 ## Previous Acts
 
-### Act 4: Loops
+### Act 3: Loops
 It's time to compile while loops! I did this act in 1 hour (loops are just fancy GOTO's) but this the last thing I did before my university started so I think it's fine to call it an act.
 
 ### Parser changes

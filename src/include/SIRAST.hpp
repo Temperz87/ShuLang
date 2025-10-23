@@ -103,6 +103,7 @@ namespace sir {
         public:
             std::string identifier;
             std::shared_ptr<ValueNode> binding;
+            std::vector<ReferenceNode*> references;
             int width;
             DefinitionNode(std::string identifier, std::shared_ptr<ValueNode> binding):
                 identifier(identifier), binding(binding), width(binding->width) { };

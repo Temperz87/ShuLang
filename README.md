@@ -19,3 +19,8 @@ If you want a timeline of what I've done and what's next, one can be find in [ti
 Okay so basically university is starting and I gotta lock in (and also apply for jobs); meaning that I will not be focusing on ShuLang. Hence updates will slow down. What's next will be constant folding, constant propagation, dead code elmination, and compiling user input. 
 
 I noticed that I wasn't testing the actual driver file itself, so I've changed the tester to do that when the `--regression` flag is passed. For regression tests all previous programs are run, and the tester will do a diff to make sure that nothing changed when it shouldn't.
+
+I also found a bug corresponding with pseudo phi promotion that made loops not compile (kid named dataflow analysis), so I fixed that! I think theres only one thing left before I move on to optimizations, namely concerning the currently unoptimal promotion of pseudo phi nodes. I shall fix this by:
+1. [Making all "defines" have a list that have "uses"](https://en.wikipedia.org/wiki/Use-define_chain)
+2. Use the result of these new "chains" to determinei where phi nodes are live
+3. Minimally place phi nodes where needed
