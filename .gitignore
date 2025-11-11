@@ -7,3 +7,5 @@ src/.cache/*
 test-cases/shulang.cpython-313-x86_64-linux-gnu.so
 src/shulang.cpython-313-x86_64-linux-gnu.so
 test-cases/__pycache__/*
+test-cases/a.ll
+test-cases/a.out
