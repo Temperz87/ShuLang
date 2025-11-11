@@ -1,5 +1,6 @@
 ; ModuleID = 'Module'
-source_filename = "loop_in_loop_in_loop.sl"
+source_filename = "phase_3_programs/loop_in_loop_in_loop.sl"
+target triple = "x86_64-pc-linux-gnu"
 
 @printf_integer_format = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @printf_true_format = private unnamed_addr constant [6 x i8] c"true\0A\00", align 1

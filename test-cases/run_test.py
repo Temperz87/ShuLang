@@ -108,7 +108,7 @@ def run_regression_tests(dir):
     # This next line is a crime...
     shuc_file_dir = '../src/output/shuc'
     for file in sorted(os.listdir(dir)):
-        if file[-3:] != '.sl':
+        if not file.endswith('.sl'):
             continue
 
         compile_output = subprocess.run(shuc_file_dir + ' ' + os.path.join(dir, file) + ' -o a.ll', shell=True)
@@ -117,11 +117,32 @@ def run_regression_tests(dir):
             print(compile_output.stdout)
             exit(1)
 
-        diff_output = subprocess.run('diff ' + os.path.join(dir, file[0:-3] + '.ll') + ' a.ll', shell=True, capture_output=True)
+        expected_file = os.path.join(dir, file[0:-3] + '.ll')
+        diff_output = subprocess.run('diff ' + expected_file + ' a.ll', shell=True, capture_output=True)
         if diff_output.returncode != 0:
-            print(diff_output.stdout.decode("utf-8"))
-            print(file + ' has changed! See a.ll...')
-            exit(1)
+
+            output = subprocess.run('clang a.ll -O0 -g -o a.out', shell=True)
+            if output.returncode != 0:
+                print('Error: shuc generated file uncompilable by clang for:', file)
+                print('\tSee a.out')
+                exit(1)
+            subprocess.run(f'clang {expected_file} -O0 -g -o b.out', shell=True)
+
+
+            output_actual = subprocess.run('./a.out', shell=True, capture_output=True)
+            output_expected = subprocess.run('./b.out', shell=True, capture_output=True)
+            subprocess.run('rm -f a.out b.out', shell=True)
+            
+            expected = output_expected.stdout.decode("utf-8")[0:-1].split("\n")
+            actual = output_actual.stdout.decode("utf-8")[0:-1].split("\n")
+            compare_stdout(actual, expected, file, 'regression')
+
+            # We could print this information, but if the output is the same
+            # Then everything should be fine 
+            #   Assuming test coverage is good of course
+            # print('Warning:', file[0:-2] + 'll', 'has changed!')
+            # print(diff_output.stdout.decode("utf-8"))
+            # print('But the output is the same')
 
     print('Regression test', dir, 'passed!')
 

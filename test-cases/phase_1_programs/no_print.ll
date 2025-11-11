@@ -1,5 +1,5 @@
 ; ModuleID = 'Module'
-source_filename = "no_print.sl"
+source_filename = "phase_1_programs/no_print.sl"
 target triple = "x86_64-pc-linux-gnu"
 
 @printf_integer_format = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
