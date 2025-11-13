@@ -79,11 +79,11 @@ def run_case(file_name):
     # print_sir_ast(sir_program)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
-    # TODO: Pseudophi still not working
-    # print("Running")
+    verbose("Running")
+    # TODO: Pseudo phi nodes aren't handled so we can't run this
+    #       Maybe they just can't be handled?
     # select_stdout = run_sir_program(sir_program)
     # compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
-
 
     verbose("---PROMOTE PSEUDO PHI---")
     promote_pseudo_phi(sir_program)
@@ -91,7 +91,6 @@ def run_case(file_name):
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
     verbose("Running")
-
     promote_pseudo_phi_stdout = run_sir_program(sir_program)
     compare_stdout(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi")
     verbose("---SELECT LLVM INSTRUCTIONS---")
@@ -109,7 +108,7 @@ def run_case(file_name):
         output_stdout = ''
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
 
-    print("Test", file_name, "passed")
+    verbose("Test", file_name, "passed")
 
 
 def run_regression_tests(dir):
@@ -189,7 +188,7 @@ if __name__ == '__main__':
     tests_ran = 0
     for file in shulangables:
         run_case(file)
-        print()
+        verbose()
         tests_ran += 1
 
     if tests_ran > 0:
