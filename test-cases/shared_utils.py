@@ -1,3 +1,9 @@
+VERBOSE = False
+
+def set_verbose(verbose: bool) -> None:
+    global VERBOSE
+    VERBOSE = verbose
+
 def print_indentation(indentation):
     if indentation > 0:
         print(" " * indentation * 2, end='')
@@ -20,3 +26,7 @@ def graph_this_stuff(label, indentation, parent=None, name=None):
         print(parent, "->", name)
 
     return name
+
+def verbose(*args, **kwargs):
+    if VERBOSE:
+        print(*args, **kwargs)

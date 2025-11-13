@@ -175,14 +175,14 @@ def run_sir_block(block, blocks, last_block, env, stdout):
                 val = get_sir_value(instruction.to_print, last_block, env)
                 match instruction.print_type:
                     case 'Integer':
-                        print(val)
+                        verbose(val)
                         stdout.append(str(val).lower())
                     case 'Boolean':
                         if val == 1:
-                            print('true')
+                            verbose('true')
                             stdout.append('true')
                         elif val == 0:
-                            print('false')
+                            verbose('false')
                             stdout.append('false')
                         else:
                             print('Val was', val, 'which is not a boolean?')

@@ -203,7 +203,7 @@ def run_ast(node, env = {}, stdout = []):
                 printable = "true"
             elif str(printable) == "False":
                 printable = "false"
-            print(printable)
+            verbose(printable)
             stdout.append(printable)
         case IfNode():
             path = get_value(node.condition, env)

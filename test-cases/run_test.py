@@ -5,6 +5,9 @@ from shulang import *
 from shulang_utils import *
 from sir_utils import *
 
+SHOULD_GRAPH_SHULANG = False
+SHOULD_GRAPH_SIR = False
+
 def compare_stdout(out1, out2, filename, pass_name):
     if len(out1) != len(out2):
         print("Hmm, the lengths of these standard outs look different")
@@ -28,14 +31,16 @@ def run_case(file_name):
     with open(file_name + ".exp", "r") as f:
         expected_stdout = [str(x).strip() for x in f.readlines()]
             
-    print("Compiling", file_name)
+    verbose("Compiling", file_name)
     ast = parse_file(file_name)
-    print("---INITIAL AST---")
+    
+    verbose("---INITIAL AST---")
     # print_ast(ast)
-    # graph_ast(ast)
-    print("Type checking...")
+    if SHOULD_GRAPH_SHULANG:
+        graph_ast(ast)
+    verbose("Type checking...")
     type_check(ast)
-    print("Running...")
+    verbose("Running...")
     parse_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
 
@@ -47,46 +52,49 @@ def run_case(file_name):
     # uniquify_stdout = run_ast(ast, {}, [])
     # compare_stdout(expected_stdout, uniquify_stdout, file_name, "uniquify")
 
-    print("---SHORT CIRCUIT-IFICATION")
+    verbose("---SHORT CIRCUIT-IFICATION---")
     short_circuitify(ast)
     # print_ast(ast)
-    # graph_ast(ast)
-    print("Type checking...")
+    if SHOULD_GRAPH_SHULANG:
+        graph_ast(ast)
+    verbose("Type checking...")
     type_check(ast)
-    print("Running...")
+    verbose("Running...")
     short_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, short_stdout, file_name, "short circuitification")
 
-    print("---REMOVE COMPLEX OPERANDS---")
+    verbose("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
     # print_ast(ast)
-    # graph_ast(ast)
-    print("Type checking...")
+    if SHOULD_GRAPH_SHULANG:
+        graph_ast(ast)
+    verbose("Type checking...")
     type_check(ast)
-    print("Running")
+    verbose("Running")
     rco_stdout = run_ast(ast, {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
 
-    print("---SELECT SIR INSTRUCTIONS---")
+    verbose("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
     # print_sir_ast(sir_program)
-    # graph_sir_program(sir_program)
-
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
     # TODO: Pseudophi still not working
     # print("Running")
     # select_stdout = run_sir_program(sir_program)
     # compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
 
 
-    print("---PROMOTE PSEUDO PHI---")
+    verbose("---PROMOTE PSEUDO PHI---")
     promote_pseudo_phi(sir_program)
     # print_sir_ast(sir_program)
-    graph_sir_program(sir_program)
-    print("Running")
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
+    verbose("Running")
 
     promote_pseudo_phi_stdout = run_sir_program(sir_program)
     compare_stdout(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi")
-    print("---SELECT LLVM INSTRUCTIONS---")
+    verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
     output = subprocess.run("./a.out", shell=True, capture_output=True)
@@ -152,28 +160,37 @@ if __name__ == '__main__':
         # Halo
         print("I need a test case")
 
+    shulangables = []
     for x in range(1, len(sys.argv)):
-        shulangable = sys.argv[x]
-
-        if shulangable == '--regression':
+        arg = sys.argv[x]
+        if arg == '--regression':
             run_regression_tests('phase_1_programs')
             run_regression_tests('phase_2_programs')
             run_regression_tests('phase_3_programs')
             os.system("rm -f a.ll")
-        elif os.path.isfile(shulangable):
-            run_case(shulangable)
-        elif os.path.isdir(shulangable):
-            files = sorted(os.listdir(shulangable))
+        elif arg == '--graph-sir':
+            SHOULD_GRAPH_SIR = True
+        elif arg == '--graph-shulang':
+            SHOULD_GRAPH_SHULANG = True
+        elif arg == '--verbose':
+            set_verbose(True)
+        elif os.path.isfile(arg):
+            shulangables.append(arg)
+        elif os.path.isdir(arg):
+            files = sorted(os.listdir(arg))
             for file in files:      
-                fp = os.path.join(shulangable, file)
+                fp = os.path.join(arg, file)
                 if fp[-3:] != '.sl':
                     continue
-
-                run_case(fp)
-                print()
-                tests_ran += 1
+                shulangables.append(fp)
         else:
-            print("I don't know what", shulangable, "is")
+            print("I don't know what", arg, "is")
+
+    tests_ran = 0
+    for file in shulangables:
+        run_case(file)
+        print()
+        tests_ran += 1
 
     if tests_ran > 0:
         print(tests_ran, "tests passed. Good job!")
