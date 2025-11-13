@@ -8,8 +8,15 @@ from sir_utils import *
 SHOULD_GRAPH_SHULANG = False
 SHOULD_GRAPH_SIR = False
 
+def update_progress_bar(percentage: float) -> None:
+    # Neat little progress bar
+    amt = int(percentage * 10) 
+    progress = 'Progress: [' + ('#' * amt) + (' ' * (10 - amt)) + '] ' + str(int(percentage * 100)) + '%'
+    print("\33[2K\r" + progress, end='')
+
 def compare_stdout(out1, out2, filename, pass_name):
     if len(out1) != len(out2):
+        print()
         print("Hmm, the lengths of these standard outs look different")
         print("Did you insert or remove a print node somewhere?")
         print(f'({len(out1)} vs {len(out2)})')
@@ -19,13 +26,14 @@ def compare_stdout(out1, out2, filename, pass_name):
     for (f, s) in zip(out1, out2):
         # TODO: When strings are added something not this dumb
         if str(f) != str(s):
+            print()
             print(f, "was expected but instead got", s)
             print("Error during compilation of", filename, "during pass", pass_name)
             exit(1)
 
 def run_case(file_name):
     if not os.path.exists(file_name + ".exp"):
-        print("Could not find", file_name + '.exp', "Please add it")
+        print("\nCould not find", file_name + '.exp', "Please add it")
         return 
     
     with open(file_name + ".exp", "r") as f:
@@ -112,9 +120,13 @@ def run_case(file_name):
 
 
 def run_regression_tests(dir):
+    print('Running regression tests for dir:', dir)
     # This next line is a crime...
     shuc_file_dir = '../src/output/shuc'
-    for file in sorted(os.listdir(dir)):
+    files = sorted([file for file in os.listdir(dir) if file.endswith('.sl')])
+    total_files = len(files)
+    ran_files = 0
+    for file in files:
         if not file.endswith('.sl'):
             continue
 
@@ -130,7 +142,7 @@ def run_regression_tests(dir):
 
             output = subprocess.run('clang a.ll -O0 -g -o a.out', shell=True)
             if output.returncode != 0:
-                print('Error: shuc generated file uncompilable by clang for:', file)
+                print('\nError: shuc generated file uncompilable by clang for:', file)
                 print('\tSee a.out')
                 exit(1)
             subprocess.run(f'clang {expected_file} -O0 -g -o b.out', shell=True)
@@ -150,6 +162,9 @@ def run_regression_tests(dir):
             # print('Warning:', file[0:-2] + 'll', 'has changed!')
             # print(diff_output.stdout.decode("utf-8"))
             # print('But the output is the same')
+        
+        ran_files += 1
+        update_progress_bar(ran_files / total_files)
 
     print('Regression test', dir, 'passed!')
 
@@ -186,10 +201,15 @@ if __name__ == '__main__':
             print("I don't know what", arg, "is")
 
     tests_ran = 0
+    tests_to_run = len(shulangables)
     for file in shulangables:
         run_case(file)
         verbose()
         tests_ran += 1
+        if not VERBOSE:
+            update_progress_bar(tests_ran / tests_to_run)
 
     if tests_ran > 0:
+        if not VERBOSE:
+            print()
         print(tests_ran, "tests passed. Good job!")
