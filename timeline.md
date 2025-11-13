@@ -2,9 +2,6 @@
 
 This is subject to change.
 
-## Act 4: Optimizations
-Constant folding, constant propagation, and dead code elimination. I'm also introducing user input here.
-
 ## Act 5: Functions
 You know what a function is, I know what a function is, it's time to have some fun compiling them.
 
@@ -12,6 +9,15 @@ You know what a function is, I know what a function is, it's time to have some f
 Me when I need a VTable.
 
 ## Previous Acts
+
+## INTERMISSION: Waiting to be free from university...
+Okay so basically university is starting and I gotta lock in (and also apply for jobs); meaning that I will not be focusing on ShuLang. Hence updates will slow down. What's next will be constant folding, constant propagation, dead code elmination, and compiling user input. 
+
+I noticed that I wasn't testing the actual driver file itself, so I've changed the tester to do that when the `--regression` flag is passed. For regression tests all previous programs are run, and the tester will do a diff to make sure that nothing changed when it shouldn't.
+
+I also found a bug corresponding with pseudo phi promotion that made loops not compile (kid named dataflow analysis), so I fixed that! 
+
+I also was about to start doing liveness analysis then found out I didn't need to, so that was fun! Also my algorithm for pseudo phi promotion [seems to be optimal](https://c9x.me/compile/bib/braun13cc.pdf)? I just need to do dead store elimination.
 
 ### Act 3: Loops
 It's time to compile while loops! I did this act in 1 hour (loops are just fancy GOTO's) but this the last thing I did before my university started so I think it's fine to call it an act.

@@ -15,9 +15,13 @@ If you want to mess around with writing some ShuLang programs then clone the rep
 
 If you want a timeline of what I've done and what's next, one can be find in [timeline.md](timeline.md). Here's what I'm currently working on:
 
-## INTERMISSION: Waiting to be free from university...
-Okay so basically university is starting and I gotta lock in (and also apply for jobs); meaning that I will not be focusing on ShuLang. Hence updates will slow down. What's next will be constant folding, constant propagation, dead code elmination, and compiling user input. 
+## Act 4: Optimizations
+Constant folding, constant propagation, and dead code elimination. 
 
-I noticed that I wasn't testing the actual driver file itself, so I've changed the tester to do that when the `--regression` flag is passed. For regression tests all previous programs are run, and the tester will do a diff to make sure that nothing changed when it shouldn't.
+With all of the features currently in the language, we can constant fold EVERY program to just be "print thing". Hence before we start optimizing, it's time to add user input. This shouldn't be too hard on its own, so let's also add a little bit to this to start supporting functions. Now we can add function calls into ShuLang, but not have a way for users to define functions yet.
 
-I also found a bug corresponding with pseudo phi promotion that made loops not compile (kid named dataflow analysis), so I fixed that! 
+`statement ::= identifier()`
+
+`value ::= identifier`
+
+RCO shall treat function calls (right now only `print` and `read_input`) as complex values. 
