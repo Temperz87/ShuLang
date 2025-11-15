@@ -69,6 +69,10 @@ def graph_ast(node, parent=''):
             my_node = graph_this_stuff("bind " + node.name + " : " + node.ty, 1, parent)
             graph_ast(node.value, my_node)
             return my_node
+        case CallNode():
+            my_node = graph_this_stuff('call ' + node.function_name,  1, parent)
+            for arg in node.arguments:
+                graph_ast(arg, my_node)
         case PrintNode():
             my_node = graph_this_stuff("print", 1, parent)
             graph_ast(node.to_print, my_node)
@@ -197,14 +201,23 @@ def run_ast(node, env = {}, stdout = []):
             return stdout
         case BindingNode():
             env[node.name] = get_value(node.value, env)
-        case PrintNode():
-            printable = get_value(node.to_print, env)
-            if str(printable) == "True":
-                printable = "true"
-            elif str(printable) == "False":
-                printable = "false"
-            verbose(printable)
-            stdout.append(printable)
+        case CallNode():
+            match node.function_name:
+                case 'print':
+                    printable = get_value(node.arguments[0], env)
+                    if str(printable) == "True":
+                        printable = "true"
+                    elif str(printable) == "False":
+                        printable = "false"
+                    verbose(printable)
+                    stdout.append(printable)
+                case 'read_input':
+                    print("TODO: read_input")
+                    exit(1)
+                case _:
+                    print('Unrecognized function:', node.function_name)
+                    print('\tI am returning None for this call')
+                    return None
         case IfNode():
             path = get_value(node.condition, env)
             if path:
@@ -218,3 +231,5 @@ def run_ast(node, env = {}, stdout = []):
             while get_value(node.condition, env):
                 for x in node.body.nodes:
                     run_ast(x, env, stdout)
+        case _:
+            print("run_ast: unhandled " + node)

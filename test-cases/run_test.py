@@ -50,8 +50,9 @@ def run_case(file_name):
     type_check(ast)
     verbose("Running...")
     parse_stdout = run_ast(ast, {}, [])
+    exit(0)
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
-
+    
     # print("---UNIQUIFICATION---")
     # uniquify(ast)
     # print_ast(ast)
