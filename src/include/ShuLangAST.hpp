@@ -141,6 +141,16 @@ namespace shulang {
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
+  class CallNode : public ValueNode {
+    public:
+    std::string function_name;
+    std::vector<std::shared_ptr<ValueNode>> arguments;    
+    CallNode(std::string function_name): function_name(function_name) { };
+    std::vector<ShuLangNode*> children() override;
+    childholder<ShuLangNode> ingressVisitor(ShuLangVisitor *visitor) override;
+    ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
+  };
+
   class BodyNode : public ShuLangNode {
     public:
       std::vector<std::shared_ptr<ShuLangNode>> nodes;

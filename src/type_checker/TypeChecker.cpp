@@ -9,7 +9,6 @@ using namespace shulang;
 // To do typchecking we have to ask ourselves
 // Should I be getting a type from below and checking
 // Or should I be creating a type?
-
 void TypeChecker::assert_same(std::string expected, std::string actual, std::string error_msg) {
     if (expected != actual) {
         std::cout << "ShuC: " << error_msg << std::endl;
@@ -26,6 +25,10 @@ void TypeChecker::onIngressBindingNode(BindingNode* node) {
 
 void TypeChecker::onEgressBindingNode(BindingNode* node) { 
     if (node->type == "Inferred") {
+        if (node->value->type == "Void") {
+            std::cout << "ShuC: cannot bind variable:\n\t" << node->identifier << "\nto something that returns void!" << std::endl;
+            exit(1);
+        }
         node->type = node->value->type;
         variable_types.insert({node->identifier, node->type});
     }
@@ -76,7 +79,6 @@ void TypeChecker::onEgressNotNode(NotNode* node) {
     assert_same("Boolean", node->value->type, "\'not\' had the wrong type!");
 }
 
-
 void TypeChecker::onEgressBeginNode(BeginNode* node) {
     node->type = node->end_value->type;
 }
@@ -87,10 +89,33 @@ void TypeChecker::onEgressSelectOperatorNode(SelectOperatorNode* node) {
     node->type = node->true_value->type;
 }
 
+void TypeChecker::onEgressCallNode(CallNode* node) {
+    if (!function_types.contains(node->function_name)) {
+        std::cout << "ShuC: function used before defined " << node->function_name;
+        exit(1);
+    }
+
+    int expected_arguments = function_types.at(node->function_name).first;
+    if (node->arguments.size() != expected_arguments) {
+        std::cout << "ShuC: expected " << expected_arguments << " argument(s) for call to function\n\t" << node->function_name;
+        std::cout << "\nBut got " << node->arguments.size() << " argument(s) instead!" << std::endl;
+        exit(1);
+    }
+
+    for (int i = 0; i < node->arguments.size(); i++) {
+        std::string expected_type = function_types.at(node->function_name).second.at(i + 1);
+        if (expected_type != "Any") {
+            std::string error_msg = "Argument expected type " + expected_type + 
+                " at position " + std::to_string(i) + " in call to function\n\t" + node->function_name; 
+            assert_same(expected_type, node->arguments.at(i)->type, error_msg);
+        }
+    }
+    node->type = function_types.at(node->function_name).second.at(0);
+}
+
 void TypeChecker::onEgressIfNode(IfNode* node) { 
     assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
 }
-
 
 void TypeChecker::onEgressWhileNode(WhileNode* node) { 
     assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");

@@ -133,6 +133,20 @@ ShuLangNode* SelectOperatorNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressSelectOperatorNode(this);
 }
 
+std::vector<ShuLangNode*> CallNode::children() {
+  std::vector<ShuLangNode*> ret;
+  for (int i = 0; i < arguments.size(); i++)
+    ret.push_back(arguments.at(i).get());
+  return ret;
+}
+childholder<ShuLangNode> CallNode::ingressVisitor(ShuLangVisitor *visitor) {
+  visitor->onIngressCallNode(this);
+  return visitor->ingressCallNode(this, arguments.size());
+}
+ShuLangNode* CallNode::egressVisitor(ShuLangVisitor *visitor) {
+  visitor->onEgressCallNode(this);
+  return visitor->egressCallNode(this);
+}
 
 std::vector<ShuLangNode*> IfNode::children() {
   std::vector<ShuLangNode*> childs;

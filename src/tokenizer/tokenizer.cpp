@@ -42,8 +42,7 @@ const char* keyword[] = {
 const char* statements[] = {
     "bind",
     "if",
-    "print",
-    "while",
+    "while"
 };
 
 // Just like the {} and () stuff

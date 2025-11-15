@@ -100,6 +100,12 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("true_value", &shulang::SelectOperatorNode::true_value)
     .def_readwrite("false_value", &shulang::SelectOperatorNode::false_value);
 
+    // Call Node 
+    py::class_<shulang::CallNode, shulang::ValueNode, std::shared_ptr<shulang::CallNode>>(m, "CallNode")
+    .def("children", &shulang::CallNode::children)
+    .def_readwrite("function_name", &shulang::CallNode::function_name)
+    .def_readwrite("arguments", &shulang::CallNode::arguments);
+
     // IfNode
     py::class_<shulang::IfNode, shulang::ShuLangNode, std::shared_ptr<shulang::IfNode>>(m, "IfNode")
     .def("children", &shulang::IfNode::children)
