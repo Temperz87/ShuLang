@@ -22,9 +22,6 @@ def print_ast(node : ASTNode, indentation = 0):
             print("INTEGER(" + str(node.value) + ")")
         case BooleanNode():
             print("BOOL(" + str(node.value) + ")")
-        case PrintNode():
-            print("PRINT")
-            print_ast(node.to_print, indentation + 1)
         case IfNode():
             print("IF")
             print_ast(node.condition, indentation + 1)
@@ -73,9 +70,6 @@ def graph_ast(node, parent=''):
             my_node = graph_this_stuff('call ' + node.function_name,  1, parent)
             for arg in node.arguments:
                 graph_ast(arg, my_node)
-        case PrintNode():
-            my_node = graph_this_stuff("print", 1, parent)
-            graph_ast(node.to_print, my_node)
             return my_node
         case IntegerNode():
             my_node = graph_this_stuff(node.value, 1, parent)

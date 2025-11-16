@@ -15,19 +15,6 @@ ShuLangNode* StatementNode::egressVisitor(ShuLangVisitor* visitor) {
   return visitor->egressStatementNode(this);
 }
 
-std::vector<ShuLangNode*> PrintNode::children() {
-  return { to_print.get() };
-}
-childholder<ShuLangNode> PrintNode::ingressVisitor(ShuLangVisitor* visitor) {
-  visitor->onIngressPrintNode(this);
-  return visitor->ingressPrintNode(this, 1);
-}
-ShuLangNode* PrintNode::egressVisitor(ShuLangVisitor* visitor) {
-  visitor->onEgressPrintNode(this);
-  return visitor->egressPrintNode(this);
-}
-
-
 std::vector<ShuLangNode*> ValueNode::children() {
   return { };  
 }

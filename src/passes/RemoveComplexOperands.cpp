@@ -58,13 +58,6 @@ class target_complex : public ShuLangVisitor {
             }
         }
 
-        void onEgressPrintNode(PrintNode* node) override {
-            // to_print must be atomic
-            if (ComplexDetector::IsComplex(node->to_print.get())) {
-                node->to_print = generate_binding(node->to_print);
-            }
-        }
-
         void onEgressNotNode(NotNode* node) override {
             // Value must be atomic
             if (ComplexDetector::IsComplex(node->value.get())) {

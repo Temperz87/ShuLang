@@ -51,11 +51,6 @@ class ShuLangVisitor {
         virtual void onIngressStatementNode(StatementNode* node) { };
         virtual void onEgressStatementNode(StatementNode* node) { };
 
-        ASTHolder ingressPrintNode(PrintNode* node, int childcount) { return this->ingressNode(node, childcount); }
-        ShuLangNode* egressPrintNode(PrintNode* node) { return this->egressNode(node); }
-        virtual void onIngressPrintNode(PrintNode* node) { };
-        virtual void onEgressPrintNode(PrintNode* node) { };
-
         ASTHolder ingressValueNode(ValueNode* node, int childcount) { return this->ingressNode(node, childcount); }
         ShuLangNode* egressValueNode(ValueNode* node) { return this->egressNode(node); }
         virtual void onIngressValueNode(ValueNode* node) { };

@@ -156,13 +156,6 @@ class SLTranslator : public ShuLangVisitor {
             current_block->instructions.push_back(def);
         }
 
-        void onEgressPrintNode(shulang::PrintNode* node) override {
-            // std::cout << "Making print node " << std::endl;
-            std::shared_ptr<sir::PrintNode> print = std::make_shared<sir::PrintNode>(completed.top(), node->to_print->type);
-            completed.pop();
-            current_block->instructions.push_back(print);
-        }
-
         void onEgressBodyNode(shulang::BodyNode* node) override {
             // We check if the current block is owned by the node we're egressing
             // If it's not then we don't do anything else

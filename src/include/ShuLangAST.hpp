@@ -38,15 +38,6 @@ namespace shulang {
       ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
   };
 
-  class PrintNode : public StatementNode {
-    public:
-      std::shared_ptr<ValueNode> to_print;
-      PrintNode(std::shared_ptr<ValueNode> printable):to_print(printable) { };
-      std::vector<ShuLangNode*> children() override;
-      childholder<ShuLangNode> ingressVisitor(ShuLangVisitor* visitor) override;
-      ShuLangNode* egressVisitor(ShuLangVisitor *visitor) override;
-  };
-
   class IntegerNode : public ValueNode {
     public:
       int value;

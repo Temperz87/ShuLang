@@ -22,10 +22,6 @@ class TransformToShortCircuit : public ShuLangVisitor {
         void onEgressBindingNode(BindingNode* node) override {
             replace_with_mark(node->value);
         }
-
-        void onEgressPrintNode(PrintNode* node) override {
-            replace_with_mark(node->to_print);
-        }
         
         void onEgressIfNode(IfNode* node) override { 
             if (not_nodes.contains(node->condition->end_value.get()) && node->else_block != nullptr) {

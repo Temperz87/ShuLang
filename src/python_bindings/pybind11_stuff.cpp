@@ -46,12 +46,6 @@ PYBIND11_MODULE(shulang, m) {
     // ValueNode
     py::class_<shulang::ValueNode, shulang::ShuLangNode, std::shared_ptr<shulang::ValueNode>>(m, "ValueNode");
 
-    // PrintNode
-    py::class_<shulang::PrintNode, shulang::StatementNode, std::shared_ptr<shulang::PrintNode>>(m, "PrintNode")
-    .def(py::init<std::shared_ptr<ValueNode>>())
-    .def("children", &shulang::PrintNode::children)
-    .def_readwrite("to_print", &shulang::PrintNode::to_print);
-    
     // IntegerNode
     py::class_<shulang::IntegerNode, shulang::ValueNode, std::shared_ptr<shulang::IntegerNode>>(m, "IntegerNode")
     .def(py::init<int>())

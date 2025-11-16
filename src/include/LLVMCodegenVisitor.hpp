@@ -21,7 +21,6 @@ namespace sir {
     class CmpNode;
     class DefinitionNode;
     class PhiNode;
-    class PrintNode;
     class JumpNode;
     class JumpIfElseNode;
     class ExitNode;
