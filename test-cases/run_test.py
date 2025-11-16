@@ -38,7 +38,13 @@ def run_case(file_name):
     
     with open(file_name + ".exp", "r") as f:
         expected_stdout = [str(x).strip() for x in f.readlines()]
-            
+
+    if os.path.exists(file_name + ".in"):
+        with open(file_name + ".in", "r") as f:
+            stdin = [str(x).strip() for x in f.readlines()]
+    else:
+        stdin = []
+
     verbose("Compiling", file_name)
     ast = parse_file(file_name)
     
@@ -49,8 +55,7 @@ def run_case(file_name):
     verbose("Type checking...")
     type_check(ast)
     verbose("Running...")
-    parse_stdout = run_ast(ast, {}, [])
-    exit(0)
+    parse_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
     compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
     
     # print("---UNIQUIFICATION---")
@@ -69,8 +74,9 @@ def run_case(file_name):
     verbose("Type checking...")
     type_check(ast)
     verbose("Running...")
-    short_stdout = run_ast(ast, {}, [])
+    short_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
     compare_stdout(expected_stdout, short_stdout, file_name, "short circuitification")
+    exit(0)
 
     verbose("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
@@ -80,7 +86,7 @@ def run_case(file_name):
     verbose("Type checking...")
     type_check(ast)
     verbose("Running")
-    rco_stdout = run_ast(ast, {}, [])
+    rco_stdout = run_ast(ast, iter(stdin), {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
 
     verbose("---SELECT SIR INSTRUCTIONS---")
