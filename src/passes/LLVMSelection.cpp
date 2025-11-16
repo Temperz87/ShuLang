@@ -38,7 +38,10 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
     // Extern printf function
     FunctionType* printf_ty = FunctionType::get(Type::getInt32Ty(context), PointerType::get(Type::getInt8Ty(context), 0), true);
     Function::Create(printf_ty, Function::ExternalLinkage, "printf", module);
-    // TODO: SET ARGUMENT NAMES
+
+    // Extern scanf function
+    FunctionType* scanf_ty = FunctionType::get(Type::getInt32Ty(context), PointerType::get(Type::getInt8Ty(context), 0), true);
+    Function::Create(scanf_ty, Function::ExternalLinkage, "scanf", module);
 
     // Add %d format
     builder->CreateGlobalString(StringRef("%d\n"), "printf_integer_format", 0, &module);

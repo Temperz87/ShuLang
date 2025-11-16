@@ -107,16 +107,22 @@ def run_case(file_name):
     verbose("Running")
     promote_pseudo_phi_stdout = run_sir_program(sir_program, iter(stdin))
     compare_stdout(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi")
-    return
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
-    output = subprocess.run("./a.out", shell=True, capture_output=True)
-    if output.returncode == -11:
+    # output = subprocess.run("./a.out", shell=True, capture_output=True, stdin=)
+    proc = subprocess.Popen(['./a.out'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    for thing in stdin:
+        if proc.returncode != None:
+            break
+        proc.stdin.write(thing + '\n')
+    proc.stdin.close()
+
+    if proc.returncode == -11:
         print("SIGSEGV\n\tAt ", file_name, "\nSpecifically error code 139 (-11 in Python)")
         exit(1)
-    output_stdout = output.stdout.decode("utf-8")[0:-1].split("\n")
+    output_stdout = [x.removesuffix('\n') for x in proc.stdout.readlines()]
     os.system("rm -f a.ll a.out")
 
     # WHY DO I NEED THIS SUBPROCESS???

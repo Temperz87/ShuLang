@@ -149,7 +149,25 @@ llvm::Value* LLVMCodegenVisitor::visit(PrintNode* node) {
 }
 
 llvm::Value* LLVMCodegenVisitor::visit(InputNode* node) {
-    return nullptr;
+    llvm::Function* print_func = module->getFunction("scanf");
+    if (!print_func) {
+        std::cout << "Could not find function scanf" << std::endl;
+        return nullptr;
+    }
+    llvm::Value* ptr = this->builder->CreateAlloca(llvm::PointerType::getInt32Ty(context));
+    std::vector<llvm::Value*> args;
+
+    // %d\n
+    llvm::GlobalValue* format_global = module->getNamedValue("printf_integer_format"); // Same format!
+    
+    // ...what
+    llvm::Value* index_field[2] = {llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
+                                llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0)};
+    llvm::Value* gimme_the_gep_gun = builder->CreateGEP(format_global->getValueType(), format_global, index_field); // Deus Ex Machina reference please laugh
+    args.push_back(gimme_the_gep_gun);
+    args.push_back(ptr);
+    this->builder->CreateCall(module->getFunction("scanf"), args);
+    return this->builder->CreateLoad(llvm::Type::getInt32Ty(context), ptr);
 }
 
 llvm::Value* LLVMCodegenVisitor::visit(ExitNode* node) {
