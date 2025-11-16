@@ -5,8 +5,11 @@ target triple = "x86_64-pc-linux-gnu"
 @printf_integer_format = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @printf_true_format = private unnamed_addr constant [6 x i8] c"true\0A\00", align 1
 @printf_false_format = private unnamed_addr constant [7 x i8] c"false\0A\00", align 1
+@scanf_integer_format = private unnamed_addr constant [4 x i8] c" %d\00", align 1
 
 declare i32 @printf(ptr, ...)
+
+declare i32 @scanf(ptr, ...)
 
 ; Function Attrs: nounwind
 define i32 @main() #0 {
@@ -24,7 +27,7 @@ else3:                                            ; preds = %entry
   br i1 %3, label %then5, label %else6
 
 continuation1:                                    ; preds = %else12, %then11, %then8, %then5, %then2
-  %4 = phi i32 [ 5, %else12 ], [ 1, %then11 ], [ 3, %then5 ], [ 4, %then8 ], [ 2, %then2 ]
+  %4 = phi i32 [ 5, %else12 ], [ 1, %then11 ], [ 4, %then8 ], [ 3, %then5 ], [ 2, %then2 ]
   %5 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %6 = call i32 (ptr, ...) @printf(ptr %5, i32 %4)
   br label %exit

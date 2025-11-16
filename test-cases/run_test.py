@@ -141,6 +141,8 @@ def run_regression_tests(dir):
     files = sorted([file for file in os.listdir(dir) if file.endswith('.sl')])
     total_files = len(files)
     ran_files = 0
+
+    files_changed = []
     for file in files:
         if not file.endswith('.sl'):
             continue
@@ -171,6 +173,8 @@ def run_regression_tests(dir):
             actual = run_program_with_input('./a.out', stdin)
             subprocess.run('rm -f a.out', shell=True)
             compare_stdout(actual, expected, fp, 'regression')
+            subprocess.run('mv a.ll ' + fp[0:-3] + '.ll', shell=True)
+            files_changed.append(fp)
 
             # We could print this information, but if the output is the same
             # Then everything should be fine 
@@ -178,11 +182,16 @@ def run_regression_tests(dir):
             # print('Warning:', file[0:-2] + 'll', 'has changed!')
             # print(diff_output.stdout.decode("utf-8"))
             # print('But the output is the same')
-        
+        else:
+            subprocess.run('rm -f a.ll', shell=True)
+
         ran_files += 1
         update_progress_bar(ran_files / total_files)
-
-    print('\nRegression test', dir, 'passed!')
+    
+    print()
+    if len(files_changed) > 0:
+        print('Changed files:\n\t' + '\n\t'.join(files_changed))
+    print('Regression test', dir, 'passed!')
 
 if __name__ == '__main__':
     tests_ran = 0
@@ -198,7 +207,6 @@ if __name__ == '__main__':
             run_regression_tests('phase_2_programs')
             run_regression_tests('phase_3_programs')
             run_regression_tests('phase_4_programs')
-            os.system("rm -f a.ll")
         elif arg == '--graph-sir':
             SHOULD_GRAPH_SIR = True
         elif arg == '--graph-shulang':
