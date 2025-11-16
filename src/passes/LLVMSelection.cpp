@@ -49,7 +49,10 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
     builder->CreateGlobalString(StringRef("true\n"), "printf_true_format", 0, &module);
     // Add "false\n" format
     builder->CreateGlobalString(StringRef("false\n"), "printf_false_format", 0, &module);
-
+    
+    // Add " %d" format
+    builder->CreateGlobalString(StringRef(" %d"), "scanf_integer_format", 0, &module);
+    
     // Add main function
     FunctionType* main_ty = FunctionType::get(Type::getInt32Ty(context), false);
     Function* main_function = Function::Create(main_ty, Function::ExternalLinkage, "main", module);

@@ -194,7 +194,7 @@ def get_value(node, env, stdin, file_name, stdout):
                         print('Not enough inputs to stdin were provided for test:', file_name, stdout)
                         print('Either create ' + file_name + '.in or add more inputs')
                         exit(1)
-                    return new_input 
+                    return int(new_input) 
 
 def run_ast(node, stdin, file_name, env, stdout):
     match node:
@@ -220,7 +220,7 @@ def run_ast(node, stdin, file_name, env, stdout):
                         print('Not enough inputs to stdin were provided for test:', file_name, stdout)
                         print('Either create ' + file_name + '.in or add more inputs')
                         exit(1)
-                    return new_input                    
+                    return int(new_input)                    
                 case _:
                     print('Unrecognized function:', node.function_name)
                     print('\tI am returning None for this call')

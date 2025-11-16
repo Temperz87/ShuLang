@@ -165,7 +165,8 @@ def get_sir_value(node, last_block, env, stdin):
                 return 1
             return 0
         case SIRInputNode():
-            return next(stdin)
+            # Can't fail at this point as it would've done so already on parsing
+            return int(next(stdin))
         case _:
             print("Unsupported sir value:", node)
             exit(2)

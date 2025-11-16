@@ -158,7 +158,7 @@ llvm::Value* LLVMCodegenVisitor::visit(InputNode* node) {
     std::vector<llvm::Value*> args;
 
     // %d\n
-    llvm::GlobalValue* format_global = module->getNamedValue("printf_integer_format"); // Same format!
+    llvm::GlobalValue* format_global = module->getNamedValue("scanf_integer_format");
     
     // ...what
     llvm::Value* index_field[2] = {llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
