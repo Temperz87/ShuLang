@@ -24,4 +24,9 @@ With all of the features currently in the language, we can constant fold EVERY p
 
 `value ::= identifier`
 
-RCO shall treat function calls (right now only `print` and `read_input`) as complex values. 
+We can now get rid of ShuLang's print AST node in favor of function call nodes. Type checking will have to check arity as well as set argument type. RCO shall of course treat function calls (right now only `print` and `read_input`) as complex values. 
+
+Instruction selection is where things get interesting as `print` and `read_input` have a lot abstracted away. For example in C's `printf` (what ShuLang is levaraging for print nodes), a string containing the format of how to print a value is the first argument; however avid ShuLang users (all 0 of them) won't have to deal with this, because shuc will place it for them. To help out LLVM lowering, what we'll do is translate all calls to `print` to a `PrintNode` (which is what we did before), and similarly all calls to `read_input` to an `InputNode`. Notably `InputNode` is a value NOT an instruction, so we'll also place a definition and which gets bound to the result of `read_input` return a reference to said definition.
+
+Lowering `PrintNode`'s hasn't changed, but for lowering `InputNode`'s we first create a global format ` %d` (note the space before the `%d`), then call [one of C's most unsafe functions `scanf`](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html). Technically this means that, at this moment, ShuLang is now an unsafe programming language! An alloca is needed to store the output of `scanf`, because it returns how many fields got scanned in not its input. With all of this mess, user input is now working!
+
