@@ -17,6 +17,7 @@ namespace sir {
     class PseudoPhiNode;
     class PhiNode;
     class PrintNode;
+    class InputNode;
     class JumpNode;
     class JumpIfElseNode;
     class ExitNode;
@@ -39,6 +40,7 @@ namespace sir {
             virtual void visit(PseudoPhiNode* node) {}
             virtual void visit(PhiNode* node) {}
             virtual void visit(PrintNode* node) {}
+            virtual void visit(InputNode* node) {}
             virtual void visit(JumpNode* node) {}
             virtual void visit(JumpIfElseNode* node) {}
             virtual void visit(ExitNode* node) {}

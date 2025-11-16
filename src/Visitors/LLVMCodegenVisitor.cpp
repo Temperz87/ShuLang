@@ -148,6 +148,10 @@ llvm::Value* LLVMCodegenVisitor::visit(PrintNode* node) {
     return this->builder->CreateCall(module->getFunction("printf"), args);
 }
 
+llvm::Value* LLVMCodegenVisitor::visit(InputNode* node) {
+    return nullptr;
+}
+
 llvm::Value* LLVMCodegenVisitor::visit(ExitNode* node) {
     return this->builder->CreateBr(blocks.at("exit"));
 }

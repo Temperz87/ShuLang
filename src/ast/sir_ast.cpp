@@ -98,6 +98,14 @@ llvm::Value* PrintNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->visit(this);
 }
 
+std::vector<std::string> InputNode::get_usages() {
+    return {};
+}
+
+llvm::Value* InputNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->visit(this);
+}
+
 std::vector<std::string> JumpNode::get_usages() {
     return std::vector<std::string>();
 }

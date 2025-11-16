@@ -125,6 +125,14 @@ namespace sir {
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
+    class InputNode : public ValueNode {
+        public:
+            InputNode():ValueNode(32) { };
+            std::vector<std::string> get_usages() override;
+            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
+    };
+
     class JumpNode : public InstructionNode {
         public:
             std::shared_ptr<SIRBlock> destination;

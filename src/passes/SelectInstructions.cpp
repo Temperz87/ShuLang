@@ -3,7 +3,6 @@
 #include <ShuLangVisitor.hpp>
 #include <SIRAST.hpp>
 #include <ShuLangVisitor.hpp>
-#include <iostream>
 #include <llvm/IR/Metadata.h>
 #include <memory>
 #include <stack>
@@ -273,6 +272,22 @@ class SLTranslator : public ShuLangVisitor {
 
             std::shared_ptr<sir::ReferenceNode> phi_ref = std::make_shared<sir::ReferenceNode>(phi_def->identifier, phi_def->width);
             completed.push(phi_ref);
+        }
+
+        void onEgressCallNode(CallNode* node) override {
+            if (node->function_name == "print") {
+                std::shared_ptr<sir::PrintNode> print = std::make_shared<sir::PrintNode>(completed.top(), node->arguments.at(0)->type);
+                completed.pop();
+                current_block->instructions.push_back(print);
+            }
+            else if (node->function_name == "read_input") {
+                std::shared_ptr<sir::InputNode> input = std::make_shared<sir::InputNode>();
+                std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name("input_result"), input);
+                completed.push(std::make_shared<sir::ReferenceNode>(def->identifier, def->width));
+                current_block->instructions.push_back(def);
+            }
+            // TODO: every function call is an intrinsic right now
+            //  However that won't always be the case
         }
 
         void onEgressIfNode(shulang::IfNode* node) override {

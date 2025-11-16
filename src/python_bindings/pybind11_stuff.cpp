@@ -196,6 +196,9 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("to_print", &sir::PrintNode::to_print)
     .def_readwrite("print_type", &sir::PrintNode::print_type);
 
+    py::class_<sir::InputNode, sir::ValueNode, std::shared_ptr<sir::InputNode>>(m, "SIRInputNode")
+    .def("get_usages", &sir::InputNode::get_usages);
+
     py::class_<sir::JumpNode, sir::InstructionNode, std::shared_ptr<sir::JumpNode>>(m, "JumpNode")
     .def(py::init<std::shared_ptr<sir::SIRBlock>>())
     .def("get_usages", &sir::JumpNode::get_usages)

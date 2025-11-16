@@ -25,6 +25,8 @@ def stringify_value(node):
         case SelectNode():
             return "Select (" + stringify_value(node.condition) +  ") (" + stringify_value(node.true_value) + \
                              " (" + stringify_value(node.false_value) + ")"
+        case SIRInputNode():
+            return 'read_input()'
         case _:
             print("Unknown value", node)
             exit(1)
@@ -107,7 +109,7 @@ def print_sir_ast(node, indentation = 0):
             print("Unknown definition", node)
             exit(1)
 
-def get_sir_value(node, last_block, env):
+def get_sir_value(node, last_block, env, stdin):
     match node:
         case ImmediateNode():
             return node.number
@@ -119,26 +121,26 @@ def get_sir_value(node, last_block, env):
         case PhiNode():
             for block_name, val in node.candidates:
                 if block_name == last_block.name:
-                    return get_sir_value(val, last_block, env)
+                    return get_sir_value(val, last_block, env, stdin)
         case SelectNode():
-            if get_sir_value(node.condition, last_block, env):
-                return get_sir_value(node.true_value, last_block, env)
-            return get_sir_value(node.false_value, last_block, env)
+            if get_sir_value(node.condition, last_block, env, stdin):
+                return get_sir_value(node.true_value, last_block, env, stdin)
+            return get_sir_value(node.false_value, last_block, env, stdin)
         case AddNode():
-            lhs = get_sir_value(node.lhs, last_block, env)
-            rhs = get_sir_value(node.rhs, last_block, env)
+            lhs = get_sir_value(node.lhs, last_block, env, stdin)
+            rhs = get_sir_value(node.rhs, last_block, env, stdin)
             return lhs + rhs
         case SubNode():
-            lhs = get_sir_value(node.lhs, last_block, env)
-            rhs = get_sir_value(node.rhs, last_block, env)
+            lhs = get_sir_value(node.lhs, last_block, env, stdin)
+            rhs = get_sir_value(node.rhs, last_block, env, stdin)
             return lhs - rhs
         case MultNode():
-            lhs = get_sir_value(node.lhs, last_block, env)
-            rhs = get_sir_value(node.rhs, last_block, env)
+            lhs = get_sir_value(node.lhs, last_block, env, stdin)
+            rhs = get_sir_value(node.rhs, last_block, env, stdin)
             return lhs * rhs
         case CmpNode():
-            lhs = get_sir_value(node.lhs, last_block, env)
-            rhs = get_sir_value(node.rhs, last_block, env)
+            lhs = get_sir_value(node.lhs, last_block, env, stdin)
+            rhs = get_sir_value(node.rhs, last_block, env, stdin)
             match node.op:
                 case "<":
                     ret = lhs < rhs
@@ -162,17 +164,19 @@ def get_sir_value(node, last_block, env):
             if ret:
                 return 1
             return 0
+        case SIRInputNode():
+            return next(stdin)
         case _:
             print("Unsupported sir value:", node)
             exit(2)
 
-def run_sir_block(block, blocks, last_block, env, stdout):
+def run_sir_block(block, blocks, last_block, env, stdout, stdin):
     for instruction in block.instructions:
         match instruction:
             case ExitNode():
                 break
             case SIRPrintNode():
-                val = get_sir_value(instruction.to_print, last_block, env)
+                val = get_sir_value(instruction.to_print, last_block, env, stdin)
                 match instruction.print_type:
                     case 'Integer':
                         verbose(val)
@@ -190,22 +194,22 @@ def run_sir_block(block, blocks, last_block, env, stdout):
                         print("Unsupported print type found in a SIRPrintNode:", instruction.print_type)
                 
             case DefinitionNode():
-                val = get_sir_value(instruction.binding, last_block, env)
+                val = get_sir_value(instruction.binding, last_block, env, stdin)
                 env[instruction.identifier] = val
                 for k, v in block.variable_to_ref.items():
                     if v in env:
                         env[k] = env[v]
             case JumpIfElseNode():
-                val = get_sir_value(instruction.condition, last_block, env)
+                val = get_sir_value(instruction.condition, last_block, env, stdin)
                 if val:
-                    return run_sir_block(instruction.destination, blocks, block, env, stdout)
+                    return run_sir_block(instruction.destination, blocks, block, env, stdout, stdin)
                 else:
-                    return run_sir_block(instruction.else_destination, blocks, block, env, stdout)
+                    return run_sir_block(instruction.else_destination, blocks, block, env, stdout, stdin)
             case JumpNode():
-                return run_sir_block(instruction.destination, blocks, block, env, stdout)
+                return run_sir_block(instruction.destination, blocks, block, env, stdout, stdin)
     return stdout
 
-def run_sir_program(program_node):
+def run_sir_program(program_node, stdin):
     for block in program_node.blocks:
         if block.name == 'main':
-            return run_sir_block(block, program_node.blocks, "", {}, [])
+            return run_sir_block(block, program_node.blocks, "", {}, [], stdin)

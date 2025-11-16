@@ -87,7 +87,6 @@ def run_case(file_name):
     verbose("Running")
     rco_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
-    return
 
     verbose("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
@@ -106,8 +105,10 @@ def run_case(file_name):
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
     verbose("Running")
-    promote_pseudo_phi_stdout = run_sir_program(sir_program)
+    promote_pseudo_phi_stdout = run_sir_program(sir_program, iter(stdin))
     compare_stdout(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi")
+    return
+
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)

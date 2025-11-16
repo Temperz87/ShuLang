@@ -21,6 +21,8 @@ namespace sir {
     class CmpNode;
     class DefinitionNode;
     class PhiNode;
+    class PrintNode;
+    class InputNode;
     class JumpNode;
     class JumpIfElseNode;
     class ExitNode;
@@ -54,6 +56,7 @@ namespace sir {
             llvm::Value* visit(DefinitionNode* node);
             llvm::Value* visit(PhiNode* node);
             llvm::Value* visit(PrintNode* node);
+            llvm::Value* visit(InputNode* node);
             llvm::Value* visit(JumpNode* node);
             llvm::Value* visit(JumpIfElseNode* node);
             llvm::Value* visit(ExitNode* node);
