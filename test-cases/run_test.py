@@ -124,7 +124,7 @@ def run_case(file_name):
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
-    output_stdout = run_program_with_input(file_name, stdin)
+    output_stdout = run_program_with_input('./a.out', stdin)
     os.system("rm -f a.ll a.out")
 
     # WHY DO I NEED THIS SUBPROCESS???
