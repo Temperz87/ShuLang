@@ -31,6 +31,19 @@ def compare_stdout(out1, out2, filename, pass_name):
             print("Error during compilation of", filename, "during pass", pass_name)
             exit(1)
 
+def run_program_with_input(filename: str, stdin: list[str]) -> list[str]:   
+    proc = subprocess.Popen([filename], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    for thing in stdin:
+        if proc.returncode != None:
+            break
+        proc.stdin.write(thing + '\n')
+    proc.stdin.close()
+
+    if proc.returncode == -11:
+        print("SIGSEGV\n\tAt ", filename, "\nSpecifically error code 139 (-11 in Python)")
+        exit(1)
+    return [x.removesuffix('\n') for x in proc.stdout.readlines()]
+
 def run_case(file_name):
     if not os.path.exists(file_name + ".exp"):
         print("\nCould not find", file_name + '.exp', "Please add it")
@@ -111,25 +124,13 @@ def run_case(file_name):
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
-    # output = subprocess.run("./a.out", shell=True, capture_output=True, stdin=)
-    proc = subprocess.Popen(['./a.out'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
-    for thing in stdin:
-        if proc.returncode != None:
-            break
-        proc.stdin.write(thing + '\n')
-    proc.stdin.close()
-
-    if proc.returncode == -11:
-        print("SIGSEGV\n\tAt ", file_name, "\nSpecifically error code 139 (-11 in Python)")
-        exit(1)
-    output_stdout = [x.removesuffix('\n') for x in proc.stdout.readlines()]
+    output_stdout = run_program_with_input(file_name, stdin)
     os.system("rm -f a.ll a.out")
 
     # WHY DO I NEED THIS SUBPROCESS???
     if output_stdout == ['']:
         output_stdout = ''
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
-
     verbose("Test", file_name, "passed")
 
 
@@ -143,7 +144,7 @@ def run_regression_tests(dir):
     for file in files:
         if not file.endswith('.sl'):
             continue
-
+        fp = os.path.join(dir, file)
         compile_output = subprocess.run(shuc_file_dir + ' ' + os.path.join(dir, file) + ' -o a.ll', shell=True)
         if compile_output.returncode != 0:
             print("Failed to compile regression test", file)
@@ -153,22 +154,23 @@ def run_regression_tests(dir):
         expected_file = os.path.join(dir, file[0:-3] + '.ll')
         diff_output = subprocess.run('diff ' + expected_file + ' a.ll', shell=True, capture_output=True)
         if diff_output.returncode != 0:
-
             output = subprocess.run('clang a.ll -O0 -g -o a.out', shell=True)
             if output.returncode != 0:
                 print('\nError: shuc generated file uncompilable by clang for:', file)
                 print('\tSee a.out')
                 exit(1)
-            subprocess.run(f'clang {expected_file} -O0 -g -o b.out', shell=True)
 
+            with open(fp + '.exp', 'r') as f:
+                expected = [str(x).strip() for x in f.readlines()]
 
-            output_actual = subprocess.run('./a.out', shell=True, capture_output=True)
-            output_expected = subprocess.run('./b.out', shell=True, capture_output=True)
-            subprocess.run('rm -f a.out b.out', shell=True)
-            
-            expected = output_expected.stdout.decode("utf-8")[0:-1].split("\n")
-            actual = output_actual.stdout.decode("utf-8")[0:-1].split("\n")
-            compare_stdout(actual, expected, file, 'regression')
+            if os.path.exists(fp + ".in"):
+                with open(fp + ".in", "r") as f:
+                    stdin = [str(x).strip() for x in f.readlines()]
+            else:
+                stdin = []
+            actual = run_program_with_input('./a.out', stdin)
+            subprocess.run('rm -f a.out', shell=True)
+            compare_stdout(actual, expected, fp, 'regression')
 
             # We could print this information, but if the output is the same
             # Then everything should be fine 
@@ -180,7 +182,7 @@ def run_regression_tests(dir):
         ran_files += 1
         update_progress_bar(ran_files / total_files)
 
-    print('Regression test', dir, 'passed!')
+    print('\nRegression test', dir, 'passed!')
 
 if __name__ == '__main__':
     tests_ran = 0
@@ -195,6 +197,7 @@ if __name__ == '__main__':
             run_regression_tests('phase_1_programs')
             run_regression_tests('phase_2_programs')
             run_regression_tests('phase_3_programs')
+            run_regression_tests('phase_4_programs')
             os.system("rm -f a.ll")
         elif arg == '--graph-sir':
             SHOULD_GRAPH_SIR = True
