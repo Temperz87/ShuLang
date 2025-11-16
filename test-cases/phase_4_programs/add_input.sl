@@ -1,0 +1,1 @@
+print(5 + read_input())
