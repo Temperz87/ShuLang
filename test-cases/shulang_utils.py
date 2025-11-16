@@ -113,7 +113,7 @@ def graph_ast(node, parent=''):
                 graph_ast(child, parent)
 
 
-def get_value(node, env, stdin, file_name):
+def get_value(node, env, stdin, file_name, stdout):
     match node:
         case IntegerNode():
             return node.value
@@ -128,92 +128,92 @@ def get_value(node, env, stdin, file_name):
         case OperatorApplicationNode():
             match node.op:
                 case '+':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs + rhs
                 case '-':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs - rhs
                 case '*':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs * rhs
                 case '=':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs == rhs
                 case '!=':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs != rhs
                 case 'or':
-                    if get_value(node.lhs, env, stdin, file_name):
+                    if get_value(node.lhs, env, stdin, file_name, stdout):
                         return True
-                    return get_value(node.rhs, env, stdin, file_name)
+                    return get_value(node.rhs, env, stdin, file_name, stdout)
                 case 'and':
-                    if get_value(node.lhs, env, stdin, file_name):
-                        return get_value(node.rhs, env, stdin, file_name)
+                    if get_value(node.lhs, env, stdin, file_name, stdout):
+                        return get_value(node.rhs, env, stdin, file_name, stdout)
                     return False
                 case 'xor':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs ^ rhs
                 case '>':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs > rhs
                 case '>=':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs >= rhs
                 case '<':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs < rhs
                 case '<=':
-                    lhs = get_value(node.lhs, env, stdin, file_name)
-                    rhs = get_value(node.rhs, env, stdin, file_name)
+                    lhs = get_value(node.lhs, env, stdin, file_name, stdout)
+                    rhs = get_value(node.rhs, env, stdin, file_name, stdout)
                     return lhs <= rhs
                 case '?':
-                    if get_value(node.lhs, env, stdin, file_name):
-                        return get_value(node.rhs, env, stdin, file_name)
+                    if get_value(node.lhs, env, stdin, file_name, stdout):
+                        return get_value(node.rhs, env, stdin, file_name, stdout)
                     return False
                 case _:
                     print("Unrecognized operator", node.op)
                     exit(1)
         case NotNode():
-            return not get_value(node.value, env, stdin, file_name)
+            return not get_value(node.value, env, stdin, file_name, stdout)
         case BeginNode():
             for statement in node.statements:
-                run_ast(statement, env, stdin, file_name)
-            return get_value(node.end_value, env, stdin, file_name)
+                run_ast(statement, stdin, file_name, env, stdout)
+            return get_value(node.end_value, env, stdin, file_name, stdout)
         case SelectOperatorNode():
-            if get_value(node.condition, env, stdin, file_name):
-                return get_value(node.true_value, env, stdin, file_name)
-            return get_value(node.false_value, env, stdin, file_name)
+            if get_value(node.condition, env, stdin, file_name, stdout):
+                return get_value(node.true_value, env, stdin, file_name, stdout)
+            return get_value(node.false_value, env, stdin, file_name, stdout)
         case CallNode():
             match node.function_name:
                 case 'read_input':  
                     new_input = next(stdin, None)
                     if new_input == None:
-                        print('Not enough inputs to stdin were provided for test:', file_name)
+                        print('Not enough inputs to stdin were provided for test:', file_name, stdout)
                         print('Either create ' + file_name + '.in or add more inputs')
                         exit(1)
                     return new_input 
 
-def run_ast(node, stdin, file_name, env = {}, stdout = []):
+def run_ast(node, stdin, file_name, env, stdout):
     match node:
         case ProgramNode():
             for node in node.children():
                 run_ast(node, stdin, file_name, env, stdout)
             return stdout
         case BindingNode():
-            env[node.name] = get_value(node.value, env, stdin, file_name)
+            env[node.name] = get_value(node.value, env, stdin, file_name, stdout)
         case CallNode():
             match node.function_name:
                 case 'print':
-                    printable = get_value(node.arguments[0], env, stdin, file_name)
+                    printable = get_value(node.arguments[0], env, stdin, file_name, stdout)
                     if str(printable) == "True":
                         printable = "true"
                     elif str(printable) == "False":
@@ -223,7 +223,7 @@ def run_ast(node, stdin, file_name, env = {}, stdout = []):
                 case 'read_input':
                     new_input = next(stdin, None)
                     if new_input == None:
-                        print('Not enough inputs to stdin were provided for test:', file_name)
+                        print('Not enough inputs to stdin were provided for test:', file_name, stdout)
                         print('Either create ' + file_name + '.in or add more inputs')
                         exit(1)
                     return new_input                    
@@ -232,7 +232,7 @@ def run_ast(node, stdin, file_name, env = {}, stdout = []):
                     print('\tI am returning None for this call')
                     return None
         case IfNode():
-            path = get_value(node.condition, env, stdin, file_name)
+            path = get_value(node.condition, env, stdin, file_name, stdout)
             if path:
                 for x in node.then_block.nodes:
                     run_ast(x, stdin, file_name, env, stdout)
@@ -240,8 +240,8 @@ def run_ast(node, stdin, file_name, env = {}, stdout = []):
                 for x in node.else_block.nodes:
                     run_ast(x, stdin, file_name, env, stdout)
         case WhileNode():
-            path = get_value(node.condition, env, stdin, file_name)
-            while get_value(node.condition, env, stdin, file_name):
+            path = get_value(node.condition, env, stdin, file_name, stdout)
+            while get_value(node.condition, env, stdin, file_name, stdout):
                 for x in node.body.nodes:
                     run_ast(x, stdin, file_name, env, stdout)
         case _:

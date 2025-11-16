@@ -158,34 +158,6 @@ std::shared_ptr<ValueNode> parse_value() {
     return ret;
 }
 
-
-// Assoc helper functions
-// Given a token (
-// Find its matching )
-int get_closing_idx(std::vector<token>& tokens, int start, int end) {
-    for (int i = start + 1; i < end; i++) {
-        if (tokens.at(i).value == "(") {
-            i = get_closing_idx(tokens, i, end);
-        }
-        else if (tokens.at(i).value == ")")
-            return i;
-    }
-    return end;
-}
-
-// Given a token )
-// Find its mactching (
-int get_matching_open_idx(std::vector<token>& tokens, int start) {
-    for (int i = start - 1; i > 1; i--) {
-        if (tokens.at(i).value == ")") {
-            i = get_matching_open_idx(tokens, i);
-        }
-        else if (tokens.at(i).value == "(")
-            return i;
-    }
-    return 0;
-}
-
 std::shared_ptr<ValueNode> parse_prefix_operator() {
     if (currenttoken.value == "if") {
         advance();
@@ -212,12 +184,17 @@ std::shared_ptr<ValueNode> parse_operator(std::shared_ptr<ValueNode> lhs, int cu
         int precedence = operator_precedences.at(my_op);
         if (precedence < current_precedence)
             return lhs;
+        else if (precedence > current_precedence) {
+            lhs = parse_operator(lhs, precedence);
+            continue;
+        }
         advance();
         std::shared_ptr<ValueNode> rhs = parse_value();
         std::string op = currenttoken.value;
-        if (!operator_precedences.contains(op))
+        if (!operator_precedences.contains(op)) {
+            lhs = std::make_shared<OperatorApplicationNode>(my_op, lhs, rhs);
             break;
-
+        }
         precedence = operator_precedences.at(op);
         while (precedence > current_precedence) {
             rhs = parse_operator(rhs, current_precedence + 1);
@@ -233,13 +210,11 @@ std::shared_ptr<ValueNode> parse_operator(std::shared_ptr<ValueNode> lhs, int cu
 
 std::shared_ptr<ValueNode> parse_complex_value() {
     std::shared_ptr<ValueNode> lhs = nullptr;
-    switch (currenttoken.type) {
-        case OPERATOR: {
-            lhs = parse_prefix_operator();
-        }
-        default: {
-            lhs = parse_value();
-        }
+    if (currenttoken.type == OPERATOR || currenttoken.value == "if") {
+        lhs = parse_prefix_operator();
+    }
+    else {
+        lhs = parse_value();
     }
     if (currenttoken.type == OPERATOR) {
         return parse_operator(lhs, 0);

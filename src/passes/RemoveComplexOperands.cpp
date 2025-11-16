@@ -80,6 +80,14 @@ class target_complex : public ShuLangVisitor {
             writing_to.pop();
         }
 
+        void onEgressCallNode(CallNode* node) override {
+            for (int i = 0; i < node->arguments.size(); i++) {
+                if (ComplexDetector::IsComplex(node->arguments[i].get())) {
+                    node->arguments[i] = generate_binding(node->arguments[i]);
+                }
+            }
+        }
+
         void onIngressBodyNode(BodyNode* node) override {
             program_nodes = &node->nodes;
             insert_position = 0;

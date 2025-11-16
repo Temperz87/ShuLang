@@ -15,4 +15,5 @@ class ComplexDetector : public ShuLangVisitor {
         void onEgressOperatorApplicationNode(OperatorApplicationNode* node) override;
         void onEgressNotNode(NotNode* node) override;
         void onEgressSelectOperatorNode(SelectOperatorNode* node) override;
+        void onEgressCallNode(CallNode* node) override;
 };

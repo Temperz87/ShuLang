@@ -76,7 +76,6 @@ def run_case(file_name):
     verbose("Running...")
     short_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
     compare_stdout(expected_stdout, short_stdout, file_name, "short circuitification")
-    exit(0)
 
     verbose("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
@@ -86,8 +85,9 @@ def run_case(file_name):
     verbose("Type checking...")
     type_check(ast)
     verbose("Running")
-    rco_stdout = run_ast(ast, iter(stdin), {}, [])
+    rco_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
     compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
+    return
 
     verbose("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)

@@ -23,3 +23,7 @@ void ComplexDetector::onEgressNotNode(NotNode* node) {
 void ComplexDetector::onEgressSelectOperatorNode(SelectOperatorNode* node) {
     is_complex = true;
 }
+
+void ComplexDetector::onEgressCallNode(CallNode* node) {
+    is_complex = true;
+}
