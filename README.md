@@ -24,7 +24,9 @@ With all of the features currently in the language, we can constant fold EVERY p
 
 `value ::= identifier`
 
-We can now get rid of ShuLang's print AST node in favor of function call nodes. Type checking will have to check arity as well as set argument type. RCO shall of course treat function calls (right now only `print` and `read_input`) as complex values. 
+We can now get rid of ShuLang's (not SIR's) print AST node in favor of function call nodes. Type checking will have to check arity as well as set argument type. RCO shall of course treat function calls (right now only `print` and `read_input`) as complex values. 
+
+The parser was in such a bad state when it came to parsing precedence that when I tried parsing functions everything broke. Instead of doing "parse_term_hi" and "parse_term_low" nonsense I didn't understand, it now does [operator precedence climbing](https://en.wikipedia.org/wiki/Operator-precedence_parser#Precedence_climbing_method)!
 
 Instruction selection is where things get interesting as `print` and `read_input` have a lot abstracted away. For example in C's `printf` (what ShuLang is levaraging for print nodes), a string containing the format of how to print a value is the first argument; however avid ShuLang users (all 0 of them) won't have to deal with this, because shuc will place it for them. To help out LLVM lowering, what we'll do is translate all calls to `print` to a `PrintNode` (which is what we did before), and similarly all calls to `read_input` to an `InputNode`. Notably `InputNode` is a value NOT an instruction, so we'll also place a definition and which gets bound to the result of `read_input` return a reference to said definition.
 
