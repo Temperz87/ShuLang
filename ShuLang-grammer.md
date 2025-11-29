@@ -8,19 +8,21 @@ This specification was last updated during Act 4. Any changes past that point wi
 
 boolean ::= `true` | `false`
 
-binary_operation ::= `x + y` | `x - y` | `x * y` | `x > y` | `x >= y` | `x < y` | `x <= y`  | `x = y` | `x != y` | `x and y` | `x or y` | `x xor y`
+binary_operation ::= `x "+" y` | `x "-" y` | `x "*" y` | `x ">" y` | `x ">=" y` | `x "<" y` | `x "<=" y`  | `x "=" y` | `x "!=" y` | `x "and" y` | `x "or" y` | `x "xor" y`
 
-unary_prefix_operation ::= `not b` | `if condition consequence alternative`
+unary_prefix_operation ::= `"not" b` | `"if" condition consequence alternative`
 
-value ::= `identifier` | number | boolean | binary_operation | unary_prefix_operation | `if boolean value value` | `read_input`
+value ::= `identifier` | number | boolean | binary_operation | unary_prefix_operation | `"if" boolean value value` | `"read_input"()`
 - Numbers are 0-9
 
 type ::= `Integer` | `Boolean` | `Void`
 
-bariable_binding ::= `bind identifier : type to value` | `bind identifier to value`
+variable_binding ::= `"bind" identifier : type "to" value` | `"bind" identifier "to" value`
 - ShuLang is capable of inferring types
 
-statement ::= variable_binding | `if boolean statement_list statement_list` | `print(value)` | `while condition statement_list` | `read_input()`
+body ::= `{ statement_list }` | `statement`
+
+statement ::= variable_binding | `"if" boolean body body` | `"read_input"()` | `"print"(value)` `"while" condition body`
 
 statement_list ::= statement | statement_list statement
 

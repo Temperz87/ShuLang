@@ -8,24 +8,24 @@ This specification was last updated during Act 3. Any changes past that point wi
 
 ## Concrete Syntax
 
-statements ::= `name <- value` | `jump to block` | `jump to block if condition else block` | `print(value)`
+statements ::= `name "<-" value` | `"jump to" block` | `"jump to" block "if" condition "else" block` | `"print"(value)`
 
-boolean ::= `true` | `false`
+boolean ::= `"true"` | `"false"`
 
-immediate ::= `$number`
-- Number is a number
+immediate ::= Integer | `"read_input"()`
+- 
 
 variable_reference ::= `%identifier`
 
-cmp ::=  `x > y` | `x >= y` | `x < y` | `x <= y`  | `x = y` | `x != y` | `x and y` | `x or y` | `x xor y`
+cmp ::=  `x ">" y` | `x ">=" y` | `x "<" y` | `x "<=" y`  | `x "=" y` | `x "!=" y` | `x "and" y` | `x "or" y` | `x "xor" y`
 - Boolean comparison
 - `x` and `y` should be booleans
 
-binary_arithmatic ::= `x + y` | `x * y` | `x - y` 
+binary_arithmatic ::= `x "+" y` | `x "*" y` | `x "-" y` 
 - Basically just math
 - `x` and `y` should be immediates
 
-values ::= immediates | variable_reference | binary_arithmatic | cmp | `Φ [block, value], ...` | `Select x y z`
+values ::= immediates | variable_reference | binary_arithmatic | cmp | `"Φ" [block, value], ...` | `"Select" x y z`
 - for select, `x` has to be a boolean, and `y, z` have to have the same type
 
 
@@ -41,4 +41,4 @@ Cmp ::= `x > y` | `x >= y` | `x < y` | `x <= y`  | `x = y` | `x != y` | `x and y
 BinOp ::= `add(x, y)` | `mult(x, y)` | `sub(x, y)`
 - `x` and `y` have a width of 8
 
-Values ::=  BinOp | Cmp | `Reference(identifier)` | `PhiNode({(predecesor_block, value), ...})` | `Immediate(number, width)` | `Select(condition, true_value, false_value)`
+Values ::=  BinOp | Cmp | `Reference(identifier)` | `PhiNode({(predecesor_block, value), ...})` | `Immediate(number, width)` | `Select(condition, true_value, false_value)` | `InputNode()`
