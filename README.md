@@ -22,7 +22,7 @@ With all of the features currently in the language, we can constant fold EVERY p
 
 `statement ::= identifier()`
 
-`value ::= identifier`
+`value ::= identifier()`
 
 We can now get rid of ShuLang's (not SIR's) print AST node in favor of function call nodes. Type checking will have to check arity as well as set argument type. RCO shall of course treat function calls (right now only `print` and `read_input`) as complex values. 
 
