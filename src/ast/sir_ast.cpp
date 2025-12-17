@@ -29,7 +29,7 @@ llvm::Value* ReferenceNode::accept(LLVMCodegenVisitor* visitor) {
 }
 
 std::vector<std::string>ReferenceNode::get_usages() {
-    return { identifier };
+    return { definition->identifier };
 }
 
 std::vector<std::string> SelectNode::get_usages() {

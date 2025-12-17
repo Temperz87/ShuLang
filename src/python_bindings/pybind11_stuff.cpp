@@ -136,10 +136,10 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("width", &sir::ImmediateNode::width);
 
     py::class_<sir::ReferenceNode, sir::ValueNode, std::shared_ptr<sir::ReferenceNode>>(m, "ReferenceNode")
-    .def(py::init<std::string, int>())
+    .def(py::init<sir::DefinitionNode*, int>())
     .def("get_usages", &sir::ReferenceNode::get_usages)
     .def_readwrite("width", &sir::ReferenceNode::width)
-    .def_readwrite("identifier", &sir::ReferenceNode::identifier);
+    .def_readwrite("definition", &sir::ReferenceNode::definition);
 
     py::class_<sir::SelectNode, sir::ValueNode, std::shared_ptr<sir::SelectNode>>(m, "SelectNode")
     .def("get_usages", &sir::SelectNode::get_usages)

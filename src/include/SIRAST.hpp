@@ -41,8 +41,8 @@ namespace sir {
 
     class ReferenceNode : public ValueNode {
         public:
-            std::string identifier;
-            ReferenceNode(std::string identifier, int width):ValueNode(width), identifier(identifier) { };
+            DefinitionNode* definition;
+            ReferenceNode(DefinitionNode* definition, int width):ValueNode(width), definition(definition) { };
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
@@ -184,7 +184,7 @@ namespace sir {
             std::unordered_set<std::shared_ptr<SIRBlock>> predecesors;
             // Maintain a shared_ptr because the map "owns" this
             // TODO: Make this an unique_ptr
-            std::unordered_map<std::string, std::string> variable_to_ref;
+            std::unordered_map<std::string, DefinitionNode*> variable_to_ref;
             std::vector<std::shared_ptr<InstructionNode>> instructions;
             std::string name;
             bool is_terminal = false;

@@ -114,7 +114,7 @@ def get_sir_value(node, last_block, env, stdin):
         case ImmediateNode():
             return node.number
         case ReferenceNode():
-            return env[node.identifier]
+            return env[node.definition.identifier]
         case PseudoPhiNode():
             print(env, node.requested_previous)
             return env[node.requested_previous]
