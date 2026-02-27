@@ -39,8 +39,8 @@ class PhiPromotor : SIRVisitor {
             // ALL predecesors MUST contain the requested variable 
             for (std::shared_ptr<SIRBlock> block : block->predecesors) {
                 if (block->variable_to_ref.contains(requested)) {
-                    std::string ref_name = block->variable_to_ref.at(requested);
-                    candidates.push_back({block->name, std::make_shared<ReferenceNode>(ref_name, node->width)});
+                    DefinitionNode* def = block->variable_to_ref.at(requested);
+                    candidates.push_back({block->name, std::make_shared<ReferenceNode>(def, def->width)});
                 }
                 else {
                     // If the previous block doesn't have the variable
@@ -49,10 +49,9 @@ class PhiPromotor : SIRVisitor {
                     std::shared_ptr<PseudoPhiNode> pseudo = std::make_shared<PseudoPhiNode>(requested, node->width);
                     std::shared_ptr<DefinitionNode> def = std::make_shared<DefinitionNode>(gen_name(requested), pseudo);
                     block->instructions.insert(block->instructions.begin(), def);
-                    block->variable_to_ref.insert({requested, def->identifier});
+                    block->variable_to_ref.insert({requested, def.get()});
                     redo_blocks.insert(block.get());
-
-                    std::shared_ptr<ReferenceNode> ref = std::make_shared<ReferenceNode>(def->identifier, node->width);
+                    std::shared_ptr<ReferenceNode> ref = std::make_shared<ReferenceNode>(def.get(), node->width);
                     candidates.push_back({block->name, ref});
                 }
             }

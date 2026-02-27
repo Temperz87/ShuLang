@@ -28,7 +28,7 @@ llvm::Value* LLVMCodegenVisitor::visit(ImmediateNode* node) {
 }
 
 llvm::Value* LLVMCodegenVisitor::visit(ReferenceNode* node) {
-    return bindings.at(node->identifier);
+    return bindings.at(node->definition->identifier);
     // return builder->CreateLoad(llvm::Type::getIntNTy(context, node->width), bindings.at(node->identifier), node->identifier);
 }
 
