@@ -22,12 +22,18 @@ class SLTranslator : public ShuLangVisitor {
         // Completed values, e.g. Immediate and operator values
         // There will be at most 2 values in here currently
         std::stack<std::shared_ptr<sir::ValueNode>> completed;
+        
         // What blocks are the destination of a jump
         std::unordered_set<std::string> have_reached;
+        
         // Stores the next blocks and where to go afterwards
         std::stack<block_cont_node_t> next_block_stack;
-
         std::shared_ptr<sir::SIRBlock> continuation = nullptr;
+
+        // Stores if a block is a part of a loop
+        // Relevant for if statement continuation merging
+        std::unordered_set<sir::SIRBlock*> loop_blocks;
+
         // Node tells us which body node the current block corresponds to
         // So we don't accidentally egress too soon
         // (e.g. an if statement that only contains a nested if statement)
@@ -180,16 +186,19 @@ class SLTranslator : public ShuLangVisitor {
             else {
                 current_block->instructions.push_back(std::make_shared<sir::ExitNode>());
                 current_block->is_terminal = true;
+                need_to_write_exit = false;
                 // std::cout << "\tBlock " << current_block->name << " has no continuation!" << std::endl;
             }
-
-            current_block = next_block_stack.top().block;
-            continuation = next_block_stack.top().continuation;
-            // this->node = next_block_stack.top().node;
-            this->node = next_block_stack.top().node;
-            next_block_stack.pop();
-
-            need_to_write_exit = true;
+            
+            // TODO: This seems very suspicious
+            // I think this introduces a bug somewhere, but I don't know where
+            if (!next_block_stack.empty()) {
+                current_block = next_block_stack.top().block;
+                continuation = next_block_stack.top().continuation;
+                this->node = next_block_stack.top().node;
+                next_block_stack.pop();
+                need_to_write_exit = true;
+            }
         }
 
         void onEgressNotNode(shulang::NotNode* node) override {
@@ -295,7 +304,7 @@ class SLTranslator : public ShuLangVisitor {
 
             // We store what happens after the if in a new block
             // In order to avoid code duplication and exponential file size
-            if (continuation == nullptr) {
+            if (continuation == nullptr || loop_blocks.contains(continuation.get())) {
                 // No need to remake the continuation if it already exists
                 continuation = std::make_shared<sir::SIRBlock>(gen_name("continuation"));
                 next_block_stack.push({continuation, nullptr, nullptr});
@@ -330,19 +339,23 @@ class SLTranslator : public ShuLangVisitor {
 
         void onIngressWhileNode(WhileNode* node) override {
             std::shared_ptr<sir::SIRBlock> loop_condition = std::make_shared<sir::SIRBlock>(gen_name("loop_condition"));
-            std::shared_ptr<sir::SIRBlock> loop_block = std::make_shared<sir::SIRBlock>(gen_name("loop_body"));
+            std::shared_ptr<sir::SIRBlock> loop_body = std::make_shared<sir::SIRBlock>(gen_name("loop_body"));
             std::shared_ptr<sir::SIRBlock> loop_continuation = std::make_shared<sir::SIRBlock>(gen_name("loop_continuation"));
-            
+            loop_blocks.insert(loop_condition.get());
+            loop_blocks.insert(loop_body.get());
+            loop_blocks.insert(loop_condition.get());
+
             loop_condition->predecesors.insert(current_block);
             next_block_stack.push({loop_continuation, continuation});
-            next_block_stack.push({loop_block, loop_condition});
+            next_block_stack.push({loop_body, loop_condition});
 
             std::shared_ptr<sir::JumpNode> jump = std::make_shared<sir::JumpNode>(loop_condition);
             current_block->instructions.push_back(jump);
             mark_block_reachable(loop_condition);   
             current_block = loop_condition;
-
-            select_val_to_block.insert({node->condition.get(), {loop_block, loop_continuation}});
+            // As there's two different continuations we just use nullptr
+            continuation = nullptr;
+            select_val_to_block.insert({node->condition.get(), {loop_body, loop_continuation}});
         }
 };
 
