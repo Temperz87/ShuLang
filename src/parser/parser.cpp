@@ -16,10 +16,12 @@ using namespace shulang;
 static Iterator<token> iter;
 static token currenttoken;
 static std::string filename;
+std::shared_ptr<ValueNode> parse_prefix_operator();
 
 const std::set<std::string> prefix_operators = {
     "not",
-    "if"
+    "if",
+    "-"
 };
 
 // Map operators to their precedences
@@ -113,7 +115,35 @@ void parse_type_annot(std::string& buf) {
     parse_type(buf);
 }
 
+std::shared_ptr<ValueNode> parse_prefix_operator() {
+    if (currenttoken.value == "if") {
+        advance();
+        std::shared_ptr<ValueNode> condition = parse_complex_value();
+        std::shared_ptr<ValueNode> then_value = parse_complex_value();
+        std::shared_ptr<ValueNode> else_value = parse_complex_value();
+        return std::make_shared<SelectOperatorNode>(condition, then_value, else_value);
+    }
+    else if (currenttoken.value == "not") {
+        advance();
+        std::shared_ptr<ValueNode> value = parse_complex_value();
+        return std::make_shared<NotNode>(value);
+    }
+    else if (currenttoken.value == "-") {
+        advance();
+        std::shared_ptr<ValueNode> value = parse_complex_value();
+        return std::make_shared<OperatorApplicationNode>("-", std::make_shared<IntegerNode>(0), value);
+    }
+    else {
+        parse_error("ShuC: You should not be able to see this. Please report \"prefix operator precedence bug\".");
+        return nullptr;
+    }
+}
+
 std::shared_ptr<ValueNode> parse_value() {
+    if (prefix_operators.contains(currenttoken.value)) {
+        return parse_prefix_operator();
+    }
+
     std::shared_ptr<ValueNode> ret;
     switch (currenttoken.type){
         case INTEGER: {
@@ -158,25 +188,6 @@ std::shared_ptr<ValueNode> parse_value() {
     return ret;
 }
 
-std::shared_ptr<ValueNode> parse_prefix_operator() {
-    if (currenttoken.value == "if") {
-        advance();
-        std::shared_ptr<ValueNode> condition = parse_complex_value();
-        std::shared_ptr<ValueNode> then_value = parse_complex_value();
-        std::shared_ptr<ValueNode> else_value = parse_complex_value();
-        return std::make_shared<SelectOperatorNode>(condition, then_value, else_value);
-    }
-    else if (currenttoken.value == "not") {
-        advance();
-        std::shared_ptr<ValueNode> value = parse_complex_value();
-        return std::make_shared<NotNode>(value);
-    }
-    else {
-        parse_error("ShuC: You should not be able to see this. Please report \"prefix operator precedence bug\".");
-        return nullptr;
-    }
-}
-
 // Precedence climbing
 std::shared_ptr<ValueNode> parse_operator(std::shared_ptr<ValueNode> lhs, int current_precedence) {
     while (operator_precedences.contains(currenttoken.value)) {
@@ -209,16 +220,11 @@ std::shared_ptr<ValueNode> parse_operator(std::shared_ptr<ValueNode> lhs, int cu
 } 
 
 std::shared_ptr<ValueNode> parse_complex_value() {
-    std::shared_ptr<ValueNode> lhs = nullptr;
-    if (currenttoken.type == OPERATOR || currenttoken.value == "if") {
-        lhs = parse_prefix_operator();
-    }
-    else {
-        lhs = parse_value();
-    }
+    std::shared_ptr<ValueNode> lhs = parse_value();
     if (currenttoken.type == OPERATOR) {
         return parse_operator(lhs, 0);
     }
+
     return lhs;
 }
 
