@@ -13,7 +13,6 @@ binary_operation ::= `x "+" y` | `x "-" y` | `x "*" y` | `x ">" y` | `x ">=" y` 
 unary_prefix_operation ::= `"not" b` | `"if" condition consequence alternative`
 
 value ::= `identifier` | number | boolean | binary_operation | unary_prefix_operation | `"if" boolean value value` | `"read_input"()`
-- Numbers are 0-9
 
 type ::= `Integer` | `Boolean` | `Void`
 
@@ -22,7 +21,7 @@ variable_binding ::= `"bind" identifier : type "to" value` | `"bind" identifier 
 
 body ::= `{ statement_list }` | `statement`
 
-statement ::= variable_binding | `"if" boolean body body` | `"read_input"()` | `"print"(value)` `"while" condition body`
+statement ::= variable_binding | `"if" boolean body` | `"if" boolean body else body` | | `"read_input"()` | `"print"(value)` `"while" condition body`
 
 statement_list ::= statement | statement_list statement
 
