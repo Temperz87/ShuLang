@@ -1,110 +1,112 @@
 from shulang import *
 from shared_utils import *
+from sys import stdout
 
-def print_ast(node : ASTNode, indentation = 0):
-    print_indentation(indentation)
+def print_ast(node : ASTNode, indentation = 0, file=stdout):
+    print_indentation(indentation, file=file)
     match node:
         case ProgramNode():
             indentation = 0
-            print("PROGRAM:")
+            print("PROGRAM:", file=file)
             for node in node.children():
                 print_ast(node, indentation + 1)
         case OperatorApplicationNode():
-            print("OPERATOR(" + node.op + ")")
-            print_ast(node.lhs, indentation + 1)
-            print_ast(node.rhs, indentation + 1)
+            print("OPERATOR(" + node.op + ")", file=file)
+            print_ast(node.lhs, indentation + 1, file=file)
+            print_ast(node.rhs, indentation + 1, file=file)
         case BindingNode():
-            print("BIND(" + node.name + ") to")
+            print("BIND(" + node.name + ") to", file=file)
             print_ast(node.value, indentation + 1)
         case VariableReferenceNode():
-            print("REFERENCE(" + node.identifier + ")")
+            print("REFERENCE(" + node.identifier + ")", file=file)
         case IntegerNode():
-            print("INTEGER(" + str(node.value) + ")")
+            print("INTEGER(" + str(node.value) + ")", file=file)
         case BooleanNode():
-            print("BOOL(" + str(node.value) + ")")
+            print("BOOL(" + str(node.value) + ")", file=file)
         case IfNode():
-            print("IF")
-            print_ast(node.condition, indentation + 1)
-            print_indentation(indentation)
-            print("THEN")
+            print("IF", file=file)
+            print_ast(node.condition, indentation + 1, file=file)
+            print_indentation(indentation, file=file)
+            print("THEN", file=file)
             for x in node.then_block.nodes:
-                print_ast(x, indentation + 1)
-            print_indentation(indentation)
-            if node.else_block != None:
-                print("ELSE")
-                for x in node.else_block.nodes:
-                    print_ast(x, indentation + 1)
+                print_ast(x, indentation + 1, file=file)
 
-def graph_ast(node, parent=''):
+            print_indentation(indentation, file=file)
+            if node.else_block != None:
+                print("ELSE", file=file)
+                for x in node.else_block.nodes:
+                    print_ast(x, indentation + 1, file=file)
+
+def graph_ast(node, parent='', file=stdout):
     match node:
         case ProgramNode():
-            print("digraph ShuLangProgram {")
+            print("digraph ShuLangProgram {", file=file)
             for node in node.children():
-                graph_ast(node, "program")
-            print("}")
+                graph_ast(node, "program", file=file)
+            print("}", file=file)
         case OperatorApplicationNode():
-            my_node = graph_this_stuff(node.op, 1, parent)
-            graph_ast(node.lhs, my_node)
-            graph_ast(node.rhs, my_node)
+            my_node = graph_this_stuff(node.op, 1, parent, file=file)
+            graph_ast(node.lhs, my_node, file=file)
+            graph_ast(node.rhs, my_node, file=file)
             return my_node
         case NotNode():
-            my_node = graph_this_stuff("not", 1, parent)
-            graph_ast(node.value, my_node)
+            my_node = graph_this_stuff("not", 1, parent, file=file)
+            graph_ast(node.value, my_node, file=file)
             return my_node
         case BeginNode():
-            my_node = graph_this_stuff("begin", 1, parent)
+            my_node = graph_this_stuff("begin", 1, parent, file=file)
             for statement in node.statements:
-                graph_ast(statement, my_node)
-            return graph_ast(node.end_value, my_node)
+                graph_ast(statement, my_node, file=file)
+            return graph_ast(node.end_value, my_node, file=file)
         case SelectOperatorNode():
-            my_node = graph_this_stuff("if", 1, parent)
-            graph_ast(node.condition, my_node)
-            graph_ast(node.true_value, my_node)
-            graph_ast(node.false_value, my_node)
+            my_node = graph_this_stuff("if", 1, parent, file=file)
+            graph_ast(node.condition, my_node, file=file)
+            graph_ast(node.true_value, my_node, file=file)
+            graph_ast(node.false_value, my_node, file=file)
             return my_node
         case BindingNode():
-            my_node = graph_this_stuff("bind " + node.name + " : " + node.ty, 1, parent)
-            graph_ast(node.value, my_node)
+            my_node = graph_this_stuff("bind " + node.name + " : " + node.ty, 1, parent, file=file)
+            graph_ast(node.value, my_node, file=file)
             return my_node
         case CallNode():
-            my_node = graph_this_stuff('call ' + node.function_name,  1, parent)
+            my_node = graph_this_stuff('call ' + node.function_name,  1, parent, file=file)
             for arg in node.arguments:
-                graph_ast(arg, my_node)
+                graph_ast(arg, my_node, file=file)
             return my_node
         case IntegerNode():
-            my_node = graph_this_stuff(node.value, 1, parent)
+            my_node = graph_this_stuff(node.value, 1, parent, file=file)
             return my_node
         case BooleanNode():
-            my_node = graph_this_stuff(node.value, 1, parent)
+            my_node = graph_this_stuff(node.value, 1, parent, file=file)
             return my_node
         case VariableReferenceNode():
-            my_node = graph_this_stuff(node.identifier, 1, parent)
+            my_node = graph_this_stuff(node.identifier, 1, parent, file=file)
             return my_node
         case IfNode():
-            my_node = graph_this_stuff("if", 1, parent)
-            graph_ast(node.condition, my_node)
+            my_node = graph_this_stuff("if", 1, parent, file=file)
+            graph_ast(node.condition, my_node, file=file)
 
             count = 1
-            parent = graph_this_stuff("then", 1, my_node)
+            parent = graph_this_stuff("then", 1, my_node, file=file)
             for child in node.then_block.nodes:
                 count += 1
-                graph_ast(child, parent)
+                graph_ast(child, parent, file=file)
 
             count = 1
-            parent = graph_this_stuff("else", 1, my_node)
+            parent = graph_this_stuff("else", 1, my_node, file=file)
 
             if node.else_block != None:
                 for child in node.else_block.nodes:
                     count += 1
-                    graph_ast(child, parent)
+                    graph_ast(child, parent, file=file)
                     
             return my_node
         case WhileNode():
-            my_node = graph_this_stuff("while", 1, parent)
-            graph_ast(node.condition, my_node)
-            parent = graph_this_stuff("body", 1, my_node)
+            my_node = graph_this_stuff("while", 1, parent, file=file)
+            graph_ast(node.condition, my_node, file=file)
+            parent = graph_this_stuff("body", 1, my_node, file=file)
             for child in node.body.nodes:
-                graph_ast(child, parent)
+                graph_ast(child, parent, file=file)
 
 
 def get_value(node, env, stdin, file_name, stdout):

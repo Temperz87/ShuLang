@@ -20,16 +20,28 @@ def compare_stdout(out1, out2, filename, pass_name):
         print("Hmm, the lengths of these standard outs look different")
         print("Did you insert or remove a print node somewhere?")
         print(f'({len(out1)} vs {len(out2)})')
-        print("Error during compilation of", filename, "during pass", pass_name)
-        exit(-1)
+        return False
     
     for (f, s) in zip(out1, out2):
         # TODO: When strings are added something not this dumb
         if str(f) != str(s):
             print()
             print(f, "was expected but instead got", s)
-            print("Error during compilation of", filename, "during pass", pass_name)
-            exit(1)
+            return False
+        
+    return True
+
+def check_expect_output(out1, out2, filename, pass_name, ast, is_shulang):
+    if not compare_stdout(out1, out2, filename, pass_name):
+        print("Error during compilation of", filename, "during pass", pass_name)
+        with open(f'./failure {pass_name}.dot', 'w') as fd:
+            if is_shulang:
+                graph_ast(ast, file=fd)
+            else:
+                graph_sir_program(ast, file=fd)
+
+        exit(1)
+
 
 def run_program_with_input(filename: str, stdin: list[str]) -> list[str]:   
     proc = subprocess.Popen([filename], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
@@ -69,7 +81,7 @@ def run_case(file_name):
     type_check(ast)
     verbose("Running...")
     parse_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
-    compare_stdout(expected_stdout, parse_stdout, file_name, "parsing")
+    check_expect_output(expected_stdout, parse_stdout, file_name, "parsing", ast, True)
     
     # print("---UNIQUIFICATION---")
     # uniquify(ast)
@@ -88,7 +100,7 @@ def run_case(file_name):
     type_check(ast)
     verbose("Running...")
     short_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
-    compare_stdout(expected_stdout, short_stdout, file_name, "short circuitification")
+    check_expect_output(expected_stdout, short_stdout, file_name, "short circuitification", ast, True)
 
     verbose("---REMOVE COMPLEX OPERANDS---")
     remove_complex_operands(ast)
@@ -99,7 +111,7 @@ def run_case(file_name):
     type_check(ast)
     verbose("Running")
     rco_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
-    compare_stdout(expected_stdout, rco_stdout, file_name, "remove complex opereands")
+    check_expect_output(expected_stdout, rco_stdout, file_name, "remove complex opereands", ast, True)
 
     verbose("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
@@ -119,7 +131,7 @@ def run_case(file_name):
         graph_sir_program(sir_program)
     verbose("Running")
     promote_pseudo_phi_stdout = run_sir_program(sir_program, iter(stdin))
-    compare_stdout(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi")
+    check_expect_output(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi", sir_program, False)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
@@ -159,7 +171,7 @@ def run_regression_tests(dir):
             output = subprocess.run('clang a.ll -O0 -g -o a.out', shell=True)
             if output.returncode != 0:
                 print('\nError: shuc generated file uncompilable by clang for:', file)
-                print('\tSee a.out')
+                print('\tSee a.ll')
                 exit(1)
 
             with open(fp + '.exp', 'r') as f:

@@ -6,7 +6,7 @@ def stringify_value(node):
         case ImmediateNode():
             return "$" + str(node.number)
         case ReferenceNode():
-            return "%" + node.identifier
+            return "%" + node.definition.identifier
         case AddNode():
             return stringify_value(node.lhs) + " + " + stringify_value(node.rhs)
         case SubNode():
@@ -45,29 +45,29 @@ def get_sir_graph_string(instruction):
         case ExitNode():
             return 'exit'
 
-def graph_sir_program(program_node):
-    print("digraph SIRProgram {")
+def graph_sir_program(program_node, file=stdout):
+    print("digraph SIRProgram {", file=file)
 
     jumpnodes = []
     for block in program_node.blocks:
-        print_indentation(1)
-        print("subgraph cluster_" + block.name + " {")
+        print_indentation(1, file=file)
+        print("subgraph cluster_" + block.name + " {", file=file)
 
-        print_indentation(2)
-        print('label = "' + block.name + '";')
+        print_indentation(2, file=file)
+        print('label = "' + block.name + '";', file=file)
 
         if len(block.instructions) == 0:
-            print_indentation(1)
-            print('}')
+            print_indentation(1, file=file)
+            print('}', file=file)
             continue
 
         current = None
         for instruction in block.instructions:
             # For our first instruction
             if current == None:
-                current = graph_this_stuff(get_sir_graph_string(instruction), 2, current, name='first_' + block.name)
+                current = graph_this_stuff(get_sir_graph_string(instruction), 2, current, name='first_' + block.name, file=file)
             else:
-                current = graph_this_stuff(get_sir_graph_string(instruction), 2, current)
+                current = graph_this_stuff(get_sir_graph_string(instruction), 2, current, file=file)
             match instruction:
                 case JumpIfElseNode():
                     jumpnodes.append((current, instruction.destination.name))
@@ -75,36 +75,37 @@ def graph_sir_program(program_node):
                 case JumpNode():
                     jumpnodes.append((current, instruction.destination.name))
 
-        print_indentation(1)
-        print('}')
+        print_indentation(1, file=file)
+        print('}', file=file)
 
     for source, destination in jumpnodes:
-        print_indentation(1)
-        print(source + ' -> first_' + destination)
+        print_indentation(1, file=file)
+        print(source + ' -> first_' + destination, file=file)
 
-    print("}")
+    print("}", file=file)
 
 
-def print_sir_ast(node, indentation = 0):
+def print_sir_ast(node, indentation = 0, file=stdout):
     if indentation > 0:
         print("  " * indentation, end='')
     # print("Discovered node", node)
     match node:
         case SIRProgramNode():
-            print("SIRProgram")
+            print("SIRProgram", file=file)
             indentation += 1
             for block in node.blocks:
-                print("  " * indentation, block.name + "(" + str(len(block.instructions)) + "):")
+                print("  " * indentation, block.name + "(" + str(len(block.instructions)) + "):", file=file)
                 for node in block.instructions:
-                    print_sir_ast(node, indentation + 1)
+                    print_sir_ast(node, indentation + 1, file=file)
         case SIRPrintNode():
-            print("PRINT", stringify_value(node.to_print))
+            print("PRINT", stringify_value(node.to_print), file=file)
         case DefinitionNode():
-            print(node.identifier, "<-", stringify_value(node.binding))
+            print(node.identifier, "<-", stringify_value(node.binding), file=file)
         case JumpIfElseNode():
-            print("jump to " + node.destination.name + " if " + stringify_value(node.condition) + " else jump to " + node.else_destination.name)
+            print("jump to " + node.destination.name + " if " + stringify_value(node.condition) \
+                             + " else jump to " + node.else_destination.name, file=file)
         case JumpNode():
-            print("jump to " + node.destination.name)
+            print("jump to " + node.destination.name, file=file)
         case _:
             print("Unknown definition", node)
             exit(1)
