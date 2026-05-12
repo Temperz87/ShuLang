@@ -27,150 +27,110 @@ else8:                                            ; preds = %entry
   %4 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %5 = call i32 (ptr, ...) @printf(ptr %4, i32 2)
   %6 = icmp slt i32 2, 10
-  br i1 %6, label %select_true76, label %select_false77
+  %7 = icmp ne i1 true, false
+  %8 = select i1 %6, i1 %7, i1 false
+  br i1 %8, label %select_true57, label %select_false58
 
 select_true10:                                    ; preds = %then7
-  %7 = icmp sgt i32 10, 3
-  br i1 %7, label %select_true14, label %select_false15
+  %9 = icmp sgt i32 10, 3
+  br i1 %9, label %select_true14, label %select_false15
 
 select_false11:                                   ; preds = %then7
-  %8 = icmp sgt i32 2, 3
-  br i1 %8, label %select_true25, label %select_false26
+  %10 = icmp sgt i32 2, 3
+  br i1 %10, label %select_true25, label %select_false26
 
 select_true14:                                    ; preds = %select_true10
-  %9 = mul i32 10, 2
+  %11 = mul i32 10, 2
   br label %select_cont16
 
 select_false15:                                   ; preds = %select_true10
-  %10 = mul i32 3, 2
+  %12 = mul i32 3, 2
   br label %select_cont16
 
 select_cont16:                                    ; preds = %select_false15, %select_true14
-  %11 = phi i32 [ 6, %select_false15 ], [ 6, %select_true14 ]
-  %12 = phi i32 [ 2, %select_false15 ], [ 2, %select_true14 ]
-  %13 = phi i32 [ 10, %select_false15 ], [ 10, %select_true14 ]
-  %14 = phi i32 [ 6, %select_false15 ], [ 6, %select_true14 ]
-  %15 = phi i32 [ 3, %select_false15 ], [ 3, %select_true14 ]
-  %16 = phi i32 [ %9, %select_true14 ], [ %10, %select_false15 ]
+  %13 = phi i32 [ 6, %select_false15 ], [ 6, %select_true14 ]
+  %14 = phi i32 [ 2, %select_false15 ], [ 2, %select_true14 ]
+  %15 = phi i32 [ 10, %select_false15 ], [ 10, %select_true14 ]
+  %16 = phi i32 [ 6, %select_false15 ], [ 6, %select_true14 ]
+  %17 = phi i32 [ 3, %select_false15 ], [ 3, %select_true14 ]
+  %18 = phi i32 [ %11, %select_true14 ], [ %12, %select_false15 ]
   br label %select_cont12
 
 select_cont12:                                    ; preds = %select_cont27, %select_cont16
-  %17 = phi i32 [ %32, %select_cont27 ], [ %15, %select_cont16 ]
-  %18 = phi i32 [ %31, %select_cont27 ], [ %14, %select_cont16 ]
-  %19 = phi i32 [ %30, %select_cont27 ], [ %13, %select_cont16 ]
-  %20 = phi i32 [ %29, %select_cont27 ], [ %12, %select_cont16 ]
-  %21 = phi i32 [ %28, %select_cont27 ], [ %11, %select_cont16 ]
-  %22 = phi i32 [ %16, %select_cont16 ], [ %33, %select_cont27 ]
-  %23 = icmp sgt i32 %22, 10
-  %24 = icmp slt i32 %21, %20
-  %25 = icmp ne i1 %23, %24
-  br i1 %25, label %then40, label %else41
+  %19 = phi i32 [ %34, %select_cont27 ], [ %17, %select_cont16 ]
+  %20 = phi i32 [ %33, %select_cont27 ], [ %16, %select_cont16 ]
+  %21 = phi i32 [ %32, %select_cont27 ], [ %15, %select_cont16 ]
+  %22 = phi i32 [ %31, %select_cont27 ], [ %14, %select_cont16 ]
+  %23 = phi i32 [ %30, %select_cont27 ], [ %13, %select_cont16 ]
+  %24 = phi i32 [ %18, %select_cont16 ], [ %35, %select_cont27 ]
+  %25 = icmp sgt i32 %24, 10
+  %26 = icmp slt i32 %23, %22
+  %27 = icmp ne i1 %25, %26
+  br i1 %27, label %then40, label %else41
 
 select_true25:                                    ; preds = %select_false11
-  %26 = add i32 2, 3
+  %28 = add i32 2, 3
   br label %select_cont27
 
 select_false26:                                   ; preds = %select_false11
-  %27 = sub i32 3, 2
+  %29 = sub i32 3, 2
   br label %select_cont27
 
 select_cont27:                                    ; preds = %select_false26, %select_true25
-  %28 = phi i32 [ 6, %select_false26 ], [ 6, %select_true25 ]
-  %29 = phi i32 [ 2, %select_false26 ], [ 2, %select_true25 ]
-  %30 = phi i32 [ 10, %select_false26 ], [ 10, %select_true25 ]
-  %31 = phi i32 [ 6, %select_false26 ], [ 6, %select_true25 ]
-  %32 = phi i32 [ 3, %select_false26 ], [ 3, %select_true25 ]
-  %33 = phi i32 [ %26, %select_true25 ], [ %27, %select_false26 ]
+  %30 = phi i32 [ 6, %select_false26 ], [ 6, %select_true25 ]
+  %31 = phi i32 [ 2, %select_false26 ], [ 2, %select_true25 ]
+  %32 = phi i32 [ 10, %select_false26 ], [ 10, %select_true25 ]
+  %33 = phi i32 [ 6, %select_false26 ], [ 6, %select_true25 ]
+  %34 = phi i32 [ 3, %select_false26 ], [ 3, %select_true25 ]
+  %35 = phi i32 [ %28, %select_true25 ], [ %29, %select_false26 ]
   br label %select_cont12
 
 then40:                                           ; preds = %select_cont12
-  %34 = icmp sgt i32 %21, %19
-  br i1 %34, label %select_true46, label %select_false47
+  %36 = icmp sgt i32 %23, %21
+  %37 = select i1 %36, i32 %23, i32 %21
+  %38 = add i32 %24, %37
+  br label %continuation6
 
 else41:                                           ; preds = %select_cont12
-  %35 = icmp slt i32 %17, %18
-  br i1 %35, label %select_true59, label %select_false60
-
-select_true46:                                    ; preds = %then40
-  br label %select_cont48
-
-select_false47:                                   ; preds = %then40
-  br label %select_cont48
-
-select_cont48:                                    ; preds = %select_false47, %select_true46
-  %36 = phi i32 [ %22, %select_false47 ], [ %22, %select_true46 ]
-  %37 = phi i32 [ %21, %select_true46 ], [ %19, %select_false47 ]
-  %38 = add i32 %36, %37
+  %39 = icmp slt i32 %19, %20
+  %40 = select i1 %39, i32 %19, i32 %20
+  %41 = sub i32 %24, %40
   br label %continuation6
 
-continuation6:                                    ; preds = %select_cont75, %select_cont61, %select_cont48
-  %39 = phi i32 [ %50, %select_cont75 ], [ %43, %select_cont61 ], [ %38, %select_cont48 ]
-  %40 = icmp ne i32 %39, 0
-  br i1 %40, label %then92, label %else93
+continuation6:                                    ; preds = %select_cont59, %else41, %then40
+  %42 = phi i32 [ %46, %select_cont59 ], [ %41, %else41 ], [ %38, %then40 ]
+  %43 = icmp ne i32 %42, 0
+  br i1 %43, label %then70, label %else71
 
-select_true59:                                    ; preds = %else41
-  br label %select_cont61
+select_true57:                                    ; preds = %else8
+  %44 = sub i32 10, 2
+  br label %select_cont59
 
-select_false60:                                   ; preds = %else41
-  br label %select_cont61
+select_false58:                                   ; preds = %else8
+  %45 = mul i32 2, 10
+  br label %select_cont59
 
-select_cont61:                                    ; preds = %select_false60, %select_true59
-  %41 = phi i32 [ %22, %select_false60 ], [ %22, %select_true59 ]
-  %42 = phi i32 [ %17, %select_true59 ], [ %18, %select_false60 ]
-  %43 = sub i32 %41, %42
+select_cont59:                                    ; preds = %select_false58, %select_true57
+  %46 = phi i32 [ %44, %select_true57 ], [ %45, %select_false58 ]
   br label %continuation6
 
-select_true76:                                    ; preds = %else8
-  %44 = icmp ne i1 true, false
-  br label %select_cont78
+then70:                                           ; preds = %continuation6
+  %47 = icmp sgt i32 %42, 20
+  %48 = add i32 %42, 100
+  %49 = select i1 %47, i32 %42, i32 %48
+  %50 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
+  %51 = call i32 (ptr, ...) @printf(ptr %50, i32 %49)
+  br label %continuation69
 
-select_false77:                                   ; preds = %else8
-  br label %select_cont78
-
-select_cont78:                                    ; preds = %select_false77, %select_true76
-  %45 = phi i32 [ 10, %select_false77 ], [ 10, %select_true76 ]
-  %46 = phi i32 [ 2, %select_false77 ], [ 2, %select_true76 ]
-  %47 = phi i1 [ %44, %select_true76 ], [ false, %select_false77 ]
-  br i1 %47, label %select_true73, label %select_false74
-
-select_true73:                                    ; preds = %select_cont78
-  %48 = sub i32 %45, %46
-  br label %select_cont75
-
-select_false74:                                   ; preds = %select_cont78
-  %49 = mul i32 %46, %45
-  br label %select_cont75
-
-select_cont75:                                    ; preds = %select_false74, %select_true73
-  %50 = phi i32 [ %48, %select_true73 ], [ %49, %select_false74 ]
-  br label %continuation6
-
-then92:                                           ; preds = %continuation6
-  %51 = icmp sgt i32 %39, 20
-  br i1 %51, label %select_true95, label %select_false96
-
-else93:                                           ; preds = %continuation6
+else71:                                           ; preds = %continuation6
   %52 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %53 = call i32 (ptr, ...) @printf(ptr %52, i32 0)
-  br label %continuation91
+  br label %continuation69
 
-select_true95:                                    ; preds = %then92
-  br label %select_cont97
-
-select_false96:                                   ; preds = %then92
-  %54 = add i32 %39, 100
-  br label %select_cont97
-
-select_cont97:                                    ; preds = %select_false96, %select_true95
-  %55 = phi i32 [ %39, %select_true95 ], [ %54, %select_false96 ]
-  %56 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
-  %57 = call i32 (ptr, ...) @printf(ptr %56, i32 %55)
-  br label %continuation91
-
-continuation91:                                   ; preds = %select_cont97, %else93
+continuation69:                                   ; preds = %else71, %then70
   br label %exit
 
-exit:                                             ; preds = %continuation91
+exit:                                             ; preds = %continuation69
   ret i32 0
 }
 
