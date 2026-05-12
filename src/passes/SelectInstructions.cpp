@@ -149,6 +149,25 @@ class SLTranslator : public ShuLangVisitor {
         }
 
         void visitNode(shulang::SelectOperatorNode* node) override {
+            if (!(ComplexDetector::IsComplex(node->true_value.get()) && ComplexDetector::IsComplex(node->false_value.get()))) {
+                // Both branches are already primitives
+                //  and therefore evaluated
+                // Hence no reason to create two blocks
+                node->condition->accept(this);
+                std::shared_ptr<sir::ValueNode> condition = completed.top();
+                completed.pop();
+                node->true_value->accept(this);
+                std::shared_ptr<sir::ValueNode> true_value = completed.top();
+                completed.pop();
+                node->false_value->accept(this);
+                std::shared_ptr<sir::ValueNode> false_value = completed.top();
+                completed.pop();
+                std::shared_ptr<sir::SelectNode> final = std::make_shared<sir::SelectNode>(true_value->width, condition, true_value, false_value);
+                completed.push(final);
+                return;
+            }
+
+
             // Translate select into two blocks to ensure lazy evaluation
             std::shared_ptr<sir::SIRBlock> then_block = std::make_shared<sir::SIRBlock>(gen_name("select_true"));
             std::shared_ptr<sir::SIRBlock> else_block = std::make_shared<sir::SIRBlock>(gen_name("select_false"));
