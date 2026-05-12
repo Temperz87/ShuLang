@@ -8,22 +8,22 @@
 // Will I fix it? Maybe.........
 bool ComplexDetector::IsComplex(ShuLangNode* node) {
     ComplexDetector det;
-    det.walk(node);
+    node->accept(&det);
     return det.is_complex;
 }
 
-void ComplexDetector::onEgressOperatorApplicationNode(OperatorApplicationNode* node) {
+void ComplexDetector::visitNode(OperatorApplicationNode* node) {
     is_complex = true;
 }
 
-void ComplexDetector::onEgressNotNode(NotNode* node) {
+void ComplexDetector::visitNode(NotNode* node) {
     is_complex = true;
 }
 
-void ComplexDetector::onEgressSelectOperatorNode(SelectOperatorNode* node) {
+void ComplexDetector::visitNode(SelectOperatorNode* node) {
     is_complex = true;
 }
 
-void ComplexDetector::onEgressCallNode(CallNode* node) {
+void ComplexDetector::visitNode(CallNode* node) {
     is_complex = true;
 }

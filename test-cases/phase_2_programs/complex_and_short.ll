@@ -15,22 +15,22 @@ declare i32 @scanf(ptr, ...)
 define i32 @main() #0 {
 entry:
   %0 = icmp slt i32 5, 0
-  br i1 %0, label %select_true1, label %select_false2
+  br i1 %0, label %select_true0, label %select_false1
 
-select_true1:                                     ; preds = %entry
+select_true0:                                     ; preds = %entry
   %1 = icmp slt i32 5, 6
-  br label %select_cont0
+  br label %select_cont2
 
-select_false2:                                    ; preds = %entry
-  br label %select_cont0
+select_false1:                                    ; preds = %entry
+  br label %select_cont2
 
-select_cont0:                                     ; preds = %select_false2, %select_true1
-  %2 = phi i1 [ %1, %select_true1 ], [ false, %select_false2 ]
+select_cont2:                                     ; preds = %select_false1, %select_true0
+  %2 = phi i1 [ %1, %select_true0 ], [ false, %select_false1 ]
   %3 = select i1 %2, ptr @printf_true_format, ptr @printf_false_format
   %4 = call i32 (ptr, ...) @printf(ptr %3)
   br label %exit
 
-exit:                                             ; preds = %select_cont0
+exit:                                             ; preds = %select_cont2
   ret i32 0
 }
 

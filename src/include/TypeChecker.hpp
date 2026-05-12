@@ -1,7 +1,5 @@
-#pragma once
-
-#include "ShuLangAST.hpp"
-#include "ShuLangVisitor.hpp"
+#include <ShuLangAST.hpp>
+#include <ShuLangVisitor.hpp>
 #include <unordered_map>
 #include <utility>
 
@@ -15,17 +13,13 @@ class TypeChecker : public ShuLangVisitor {
         void assert_same(std::string expected, std::string actual, std::string error_msg);
 
     public: 
-        TypeChecker () { };
-        ~TypeChecker() { };
-
-        void onIngressBindingNode(BindingNode* node) override;
-        void onEgressBindingNode(BindingNode* node) override;
-        void onEgressVariableReferenceNode(VariableReferenceNode* node) override;
-        void onEgressOperatorApplicationNode(OperatorApplicationNode* node) override;
-        void onEgressNotNode(NotNode* node) override;
-        void onEgressBeginNode(BeginNode* node) override;
-        void onEgressSelectOperatorNode(SelectOperatorNode* node) override;
-        void onEgressCallNode(CallNode* node) override;
-        void onEgressIfNode(IfNode* node) override;
-        void onEgressWhileNode(WhileNode* node) override;
+        void visitNode(BindingNode* node) override;
+        void visitNode(VariableReferenceNode* node) override;
+        void visitNode(OperatorApplicationNode* node) override;
+        void visitNode(NotNode* node) override;
+        void visitNode(BeginNode* node) override;
+        void visitNode(SelectOperatorNode* node) override;
+        void visitNode(CallNode* node) override;
+        void visitNode(IfNode* node) override;
+        void visitNode(WhileNode* node) override;
 };

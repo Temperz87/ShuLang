@@ -15,33 +15,33 @@ declare i32 @scanf(ptr, ...)
 define i32 @main() #0 {
 entry:
   %0 = select i1 true, i1 false, i1 false
-  br i1 %0, label %select_true4, label %select_false5
+  br i1 %0, label %select_true3, label %select_false4
 
-select_true4:                                     ; preds = %entry
-  br label %select_cont3
+select_true3:                                     ; preds = %entry
+  br label %select_cont5
 
-select_false5:                                    ; preds = %entry
+select_false4:                                    ; preds = %entry
   %1 = select i1 false, i1 false, i1 false
-  br label %select_cont3
+  br label %select_cont5
 
-select_cont3:                                     ; preds = %select_false5, %select_true4
-  %2 = phi i1 [ true, %select_true4 ], [ %1, %select_false5 ]
-  br i1 %2, label %select_true1, label %select_false2
+select_cont5:                                     ; preds = %select_false4, %select_true3
+  %2 = phi i1 [ true, %select_true3 ], [ %1, %select_false4 ]
+  br i1 %2, label %select_true0, label %select_false1
 
-select_true1:                                     ; preds = %select_cont3
-  br label %select_cont0
+select_true0:                                     ; preds = %select_cont5
+  br label %select_cont2
 
-select_false2:                                    ; preds = %select_cont3
+select_false1:                                    ; preds = %select_cont5
   %3 = select i1 true, i1 true, i1 false
-  br label %select_cont0
+  br label %select_cont2
 
-select_cont0:                                     ; preds = %select_false2, %select_true1
-  %4 = phi i1 [ true, %select_true1 ], [ %3, %select_false2 ]
+select_cont2:                                     ; preds = %select_false1, %select_true0
+  %4 = phi i1 [ true, %select_true0 ], [ %3, %select_false1 ]
   %5 = select i1 %4, ptr @printf_true_format, ptr @printf_false_format
   %6 = call i32 (ptr, ...) @printf(ptr %5)
   br label %exit
 
-exit:                                             ; preds = %select_cont0
+exit:                                             ; preds = %select_cont2
   ret i32 0
 }
 

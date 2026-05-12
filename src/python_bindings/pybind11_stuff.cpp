@@ -3,7 +3,6 @@
 #include <ShuLangPasses.hpp>
 #include <SIRAST.hpp>
 #include <memory>
-#include <ASTNode.hpp>
 #include <PromotePseudoPhi.hpp>
 #include <SelectInstructions.hpp>
 #include <LLVMSelection.hpp>
@@ -16,9 +15,8 @@ namespace py = pybind11;
 
 std::shared_ptr<shulang::ProgramNode> parse_file(std::string file) {
     std::ifstream myfile;
-    myfile.open(file);
-
     std::vector<token> token_list;
+    myfile.open(file);
     tokenize(myfile, token_list);
     myfile.close();
 
@@ -27,16 +25,14 @@ std::shared_ptr<shulang::ProgramNode> parse_file(std::string file) {
 
 void type_check(shulang::ProgramNode* ast) {
     TypeChecker tyc;
-    tyc.walk(ast);
+    ast->accept(&tyc);
 }
 
 PYBIND11_MODULE(shulang, m) {
     m.doc() = "Python binding for ShuC and the passes and AST's within";
 
-    py::class_<ASTNode, std::shared_ptr<ASTNode>>(m, "ASTNode").def(py::init());
     // ShuLang's AST
-
-    py::class_<shulang::ShuLangNode, ASTNode, std::shared_ptr<shulang::ShuLangNode>>(m, "ShuLangNode")
+    py::class_<shulang::ShuLangNode, std::shared_ptr<shulang::ShuLangNode>>(m, "ShuLangNode")
     .def("children", &shulang::ShuLangNode::children);
 
     // StatementNode
@@ -124,7 +120,7 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("nodes", &shulang::ProgramNode::nodes);
 
     // SIR's AST
-    py::class_<sir::SIRNode, ASTNode, std::shared_ptr<sir::SIRNode>>(m, "SIRNode")
+    py::class_<sir::SIRNode, std::shared_ptr<sir::SIRNode>>(m, "SIRNode")
     .def("get_usages", &sir::SIRNode::get_usages);
 
     py::class_<sir::InstructionNode, sir::SIRNode, std::shared_ptr<sir::InstructionNode>>(m, "InstructionNode");

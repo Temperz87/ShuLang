@@ -1,7 +1,6 @@
 #pragma once
 
 #include "SIRVisitor.hpp"
-#include <ASTNode.hpp>
 #include <LLVMCodegenVisitor.hpp>
 #include <llvm/IR/Value.h>
 #include <memory>
@@ -10,11 +9,12 @@
 #include <vector>
 
 namespace sir {
-    class SIRNode : public ASTNode {
+    class SIRNode {
         public:
             // I had this come up in an interview
             // So I'm pulling the yoink and twist on it
             // Thanks unnamed company :3
+            virtual ~SIRNode() = default;
             virtual std::vector<std::string> get_usages();
             virtual llvm::Value* accept(LLVMCodegenVisitor* visitor) = 0;
             virtual void accept(SIRVisitor* visitor) = 0;

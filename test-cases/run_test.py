@@ -56,6 +56,15 @@ def run_program_with_input(filename: str, stdin: list[str]) -> list[str]:
         exit(1)
     return [x.removesuffix('\n') for x in proc.stdout.readlines()]
 
+def try_type_check(ast, file_name, pass_name):
+    try:
+        type_check(ast)
+    except:
+        print('Error while type checking', file_name, 'during pass', pass_name)
+        with open(f'./failure {pass_name}.dot', 'w') as fd:
+            graph_ast(ast, file=fd)
+
+
 def run_case(file_name):
     if not os.path.exists(file_name + ".exp"):
         print("\nCould not find", file_name + '.exp', "Please add it")
@@ -77,8 +86,9 @@ def run_case(file_name):
     # print_ast(ast)
     if SHOULD_GRAPH_SHULANG:
         graph_ast(ast)
+
     verbose("Type checking...")
-    type_check(ast)
+    try_type_check(ast, file_name, 'parsing')
     verbose("Running...")
     parse_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
     check_expect_output(expected_stdout, parse_stdout, file_name, "parsing", ast, True)
@@ -96,8 +106,9 @@ def run_case(file_name):
     # print_ast(ast)
     if SHOULD_GRAPH_SHULANG:
         graph_ast(ast)
+
     verbose("Type checking...")
-    type_check(ast)
+    try_type_check(ast, file_name, 'short circuitification')
     verbose("Running...")
     short_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
     check_expect_output(expected_stdout, short_stdout, file_name, "short circuitification", ast, True)
@@ -107,8 +118,9 @@ def run_case(file_name):
     # print_ast(ast)
     if SHOULD_GRAPH_SHULANG:
         graph_ast(ast)
+
     verbose("Type checking...")
-    type_check(ast)
+    try_type_check(ast, file_name, 'remove complex operands')
     verbose("Running")
     rco_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
     check_expect_output(expected_stdout, rco_stdout, file_name, "remove complex opereands", ast, True)
@@ -118,6 +130,7 @@ def run_case(file_name):
     # print_sir_ast(sir_program)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
+
     verbose("Running")
     # TODO: Pseudo phi nodes aren't handled so we can't run this
     #       Maybe they just can't be handled?
@@ -129,6 +142,7 @@ def run_case(file_name):
     # print_sir_ast(sir_program)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
+
     verbose("Running")
     promote_pseudo_phi_stdout = run_sir_program(sir_program, iter(stdin))
     check_expect_output(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi", sir_program, False)
@@ -142,9 +156,9 @@ def run_case(file_name):
     # WHY DO I NEED THIS SUBPROCESS???
     if output_stdout == ['']:
         output_stdout = ''
+
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
     verbose("Test", file_name, "passed")
-
 
 def run_regression_tests(dir):
     print('Running regression tests for dir:', dir)

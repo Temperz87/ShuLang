@@ -1,5 +1,4 @@
 #include <SIRVisitor.hpp>
-#include <ASTNode.hpp>
 #include <SIRAST.hpp>
 #include <string>
 #include <vector>

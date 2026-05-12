@@ -8,21 +8,23 @@
 #include <vector>
 
 
+using namespace std;
+
 // This class takes in an AST that doesn't have to be atomic
 // And tries to ensure its children are
 class target_complex : public ShuLangVisitor {
     private:
-        std::vector<std::shared_ptr<ShuLangNode>>* program_nodes;
-        std::stack<BeginNode*> writing_to;
+        vector<shared_ptr<ShuLangNode>>* program_nodes;
+        stack<BeginNode*> writing_to;
 
         bool updated_inserted = true;
         long insert_position;
 
-        std::shared_ptr<VariableReferenceNode> generate_binding(std::shared_ptr<ValueNode> complex_value) {
+        shared_ptr<VariableReferenceNode> generate_binding(shared_ptr<ValueNode> complex_value) {
             static int tmp_counter = 0;
-            std::string name = "rco_output." + std::to_string(tmp_counter++);
+            string name = "rco_output." + to_string(tmp_counter++);
 
-            std::shared_ptr<BindingNode> fresh = std::make_unique<BindingNode>(name, complex_value->type, complex_value);
+            shared_ptr<BindingNode> fresh = make_unique<BindingNode>(name, complex_value->type, complex_value);
             if (writing_to.empty()) {
                 program_nodes->insert(program_nodes->begin() + insert_position, fresh);
 
@@ -33,21 +35,21 @@ class target_complex : public ShuLangVisitor {
                 }
             }
             else {
-                std::vector<std::shared_ptr<StatementNode>>& statements = writing_to.top()->statements;
+                vector<shared_ptr<StatementNode>>& statements = writing_to.top()->statements;
                 // Should be safe to always insert at the end of the node for now
                 statements.insert(statements.end(), fresh);
             }
 
-            std::shared_ptr<VariableReferenceNode> ref = std::make_shared<VariableReferenceNode>(name);
+            shared_ptr<VariableReferenceNode> ref = make_shared<VariableReferenceNode>(name);
             ref->type = complex_value->type;
             return ref;
         }
 
     public:
         int inserted = 0;
-        target_complex(std::vector<std::shared_ptr<ShuLangNode>>* nodes, long current_position):program_nodes(nodes), insert_position(current_position) { }
         
-        void onEgressOperatorApplicationNode(OperatorApplicationNode* node) override {
+        void visitNode(OperatorApplicationNode* node) override {
+            descendIntoChildren(node);
             // For operators, their lhs and rhs must be atomic
             if (ComplexDetector::IsComplex(node->lhs.get())) {
                 node->lhs = generate_binding(node->lhs);
@@ -58,22 +60,22 @@ class target_complex : public ShuLangVisitor {
             }
         }
 
-        void onEgressNotNode(NotNode* node) override {
+        void visitNode(NotNode* node) override {
+            descendIntoChildren(node);
             // Value must be atomic
             if (ComplexDetector::IsComplex(node->value.get())) {
                 node->value = generate_binding(node->value);
             }
         }
 
-        void onIngressBeginNode(BeginNode* node) override {
+        void visitNode(BeginNode* node) override {
             writing_to.push(node);
-        }
-
-        void onEgressBeginNode(BeginNode* node) override {
+            descendIntoChildren(node);
             writing_to.pop();
         }
 
-        void onEgressCallNode(CallNode* node) override {
+        void visitNode(CallNode* node) override {
+            descendIntoChildren(node);
             for (int i = 0; i < node->arguments.size(); i++) {
                 if (ComplexDetector::IsComplex(node->arguments[i].get())) {
                     node->arguments[i] = generate_binding(node->arguments[i]);
@@ -81,17 +83,22 @@ class target_complex : public ShuLangVisitor {
             }
         }
 
-        void onIngressBodyNode(BodyNode* node) override {
+        void visitNode(BodyNode* node) override {
             program_nodes = &node->nodes;
             insert_position = 0;
             updated_inserted = false;
+            for (ShuLangNode* node : node->children()) {
+                node->accept(this);
+                insert_position += 1;
+            }
+        }
+
+        void visitNode(ProgramNode* node) override {
+            visitNode(static_cast<BodyNode*>(node));
         }
 };
 
 void remove_complex_operands(ProgramNode* program) {
-    for (long i = 0; i < program->nodes.size(); i++) {
-        target_complex visitor = target_complex(&program->nodes, i);
-        visitor.walk(program->nodes.at(i).get());
-        i += visitor.inserted;
-    }
+    target_complex visitor;
+    program->accept(&visitor);
 }

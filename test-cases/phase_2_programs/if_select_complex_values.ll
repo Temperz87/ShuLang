@@ -14,25 +14,25 @@ declare i32 @scanf(ptr, ...)
 ; Function Attrs: nounwind
 define i32 @main() #0 {
 entry:
-  br i1 true, label %select_true1, label %select_false2
+  br i1 true, label %select_true0, label %select_false1
 
-select_true1:                                     ; preds = %entry
+select_true0:                                     ; preds = %entry
   %0 = add i32 1, 2
   %1 = add i32 %0, 3
-  br label %select_cont0
+  br label %select_cont2
 
-select_false2:                                    ; preds = %entry
+select_false1:                                    ; preds = %entry
   %2 = add i32 1, 2
   %3 = add i32 %2, 4
-  br label %select_cont0
+  br label %select_cont2
 
-select_cont0:                                     ; preds = %select_false2, %select_true1
-  %4 = phi i32 [ %1, %select_true1 ], [ %3, %select_false2 ]
+select_cont2:                                     ; preds = %select_false1, %select_true0
+  %4 = phi i32 [ %1, %select_true0 ], [ %3, %select_false1 ]
   %5 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %6 = call i32 (ptr, ...) @printf(ptr %5, i32 %4)
   br label %exit
 
-exit:                                             ; preds = %select_cont0
+exit:                                             ; preds = %select_cont2
   ret i32 0
 }
 

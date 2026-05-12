@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     // Because if all the compiler tests pass
     // There won't be any type issues at runtime
     TypeChecker tyc;
-    tyc.walk(program.get());
+    program->accept(&tyc);
 
     // std::cout << "-----UNIQUIFICATION-----" << std::endl;
     // If I do somethingl ike

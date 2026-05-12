@@ -15,44 +15,44 @@ declare i32 @scanf(ptr, ...)
 define i32 @main() #0 {
 entry:
   %0 = select i1 true, i1 true, i1 false
-  br i1 %0, label %select_true7, label %select_false8
+  br i1 %0, label %select_true6, label %select_false7
 
-select_true7:                                     ; preds = %entry
+select_true6:                                     ; preds = %entry
   %1 = select i1 true, i1 true, i1 false
-  br label %select_cont6
+  br label %select_cont8
 
-select_false8:                                    ; preds = %entry
-  br label %select_cont6
+select_false7:                                    ; preds = %entry
+  br label %select_cont8
 
-select_cont6:                                     ; preds = %select_false8, %select_true7
-  %2 = phi i1 [ %1, %select_true7 ], [ false, %select_false8 ]
-  br i1 %2, label %select_true4, label %select_false5
+select_cont8:                                     ; preds = %select_false7, %select_true6
+  %2 = phi i1 [ %1, %select_true6 ], [ false, %select_false7 ]
+  br i1 %2, label %select_true3, label %select_false4
 
-select_true4:                                     ; preds = %select_cont6
+select_true3:                                     ; preds = %select_cont8
   %3 = select i1 true, i1 true, i1 false
-  br label %select_cont3
+  br label %select_cont5
 
-select_false5:                                    ; preds = %select_cont6
-  br label %select_cont3
+select_false4:                                    ; preds = %select_cont8
+  br label %select_cont5
 
-select_cont3:                                     ; preds = %select_false5, %select_true4
-  %4 = phi i1 [ %3, %select_true4 ], [ false, %select_false5 ]
-  br i1 %4, label %select_true1, label %select_false2
+select_cont5:                                     ; preds = %select_false4, %select_true3
+  %4 = phi i1 [ %3, %select_true3 ], [ false, %select_false4 ]
+  br i1 %4, label %select_true0, label %select_false1
 
-select_true1:                                     ; preds = %select_cont3
+select_true0:                                     ; preds = %select_cont5
   %5 = select i1 true, i1 true, i1 false
-  br label %select_cont0
+  br label %select_cont2
 
-select_false2:                                    ; preds = %select_cont3
-  br label %select_cont0
+select_false1:                                    ; preds = %select_cont5
+  br label %select_cont2
 
-select_cont0:                                     ; preds = %select_false2, %select_true1
-  %6 = phi i1 [ %5, %select_true1 ], [ false, %select_false2 ]
+select_cont2:                                     ; preds = %select_false1, %select_true0
+  %6 = phi i1 [ %5, %select_true0 ], [ false, %select_false1 ]
   %7 = select i1 %6, ptr @printf_true_format, ptr @printf_false_format
   %8 = call i32 (ptr, ...) @printf(ptr %7)
   br label %exit
 
-exit:                                             ; preds = %select_cont0
+exit:                                             ; preds = %select_cont2
   ret i32 0
 }
 

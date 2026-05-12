@@ -1,5 +1,3 @@
-#pragma once
-
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
 
@@ -10,10 +8,11 @@
 class ComplexDetector : public ShuLangVisitor {
     private:
         bool is_complex = false;
+
     public:
         static bool IsComplex(ShuLangNode* node);
-        void onEgressOperatorApplicationNode(OperatorApplicationNode* node) override;
-        void onEgressNotNode(NotNode* node) override;
-        void onEgressSelectOperatorNode(SelectOperatorNode* node) override;
-        void onEgressCallNode(CallNode* node) override;
+        void visitNode(OperatorApplicationNode* node) override;
+        void visitNode(NotNode* node) override;
+        void visitNode(SelectOperatorNode* node) override;
+        void visitNode(CallNode* node) override;
 };

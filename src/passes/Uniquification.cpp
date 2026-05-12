@@ -1,32 +1,35 @@
 #include <ShuLangAST.hpp>
-#include <Uniquification.hpp>
 #include <ShuLangVisitor.hpp>
 #include <string>
+#include <unordered_map>
 
 using namespace shulang;
 
-Uniquification::Uniquification() { };
-Uniquification::~Uniquification() { };
+class Uniquification : public ShuLangVisitor {
+    private:
+        int unique_id = 0;
+        std::unordered_map<std::string, std::string> map;
 
-void Uniquification::onEgressBindingNode(BindingNode* node) {
+    public: 
+        void visitNode(BindingNode* node) override {
+            // Check if we've already assigned a name
+            if (map.find(node->identifier) == map.end()) {
+                // If so look it up!
+                std::string unique_name = node->identifier + "." + std::to_string(unique_id++);
+                map.insert({node->identifier, unique_name});
+            }
 
-    // Check if we've already assigned a name
-    if (map.find(node->identifier) == map.end()) {
-        std::string unique_name = node->identifier + "." + std::to_string(unique_id++);
-        map.insert({node->identifier, unique_name});
-    }
-    
-    // No need to reupdate when we can use alloca's later
-    // At some point I'll need to phi 
-    // But we'll get there when we get there
-    node->identifier = map.at(node->identifier);
-}
+            node->identifier = map.at(node->identifier);
+            descendIntoChildren(node);
+        }
 
-void Uniquification::onIngressVariableReferenceNode(VariableReferenceNode* node) {
-    node->identifier = map.at(node->identifier);
-}
+        void visitNode(VariableReferenceNode* node) override {
+            node->identifier = map.at(node->identifier);
+            descendIntoChildren(node);
+        }
+};
 
 void uniquify(shulang::ProgramNode* ast) {
     Uniquification u;
-    u.walk(ast);
+    ast->accept(&u);
 }

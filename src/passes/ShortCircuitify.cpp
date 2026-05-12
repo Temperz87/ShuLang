@@ -1,8 +1,6 @@
 #include <ComplexDetector.hpp>
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
-#include <cstddef>
-#include <iostream>
 #include <memory>
 #include <unordered_map>
 
@@ -19,25 +17,30 @@ class TransformToShortCircuit : public ShuLangVisitor {
         }
 
     public:
-        void onEgressBindingNode(BindingNode* node) override {
+        void visitNode(BindingNode* node) override {
+            descendIntoChildren(node);
             replace_with_mark(node->value);
         }
         
-        void onEgressIfNode(IfNode* node) override { 
+        void visitNode(IfNode* node) override { 
+            descendIntoChildren(node);
             if (not_nodes.contains(node->condition->end_value.get()) && node->else_block != nullptr) {
                 node->condition->end_value = not_nodes.at(node->condition->end_value.get());
                 auto tmp = node->then_block;
                 node->then_block = node->else_block;
                 node->else_block = tmp;
             }
+
             replace_with_mark(node->condition->end_value);
         }
         
-        void onEgressWhileNode(WhileNode* node) override {
+        void visitNode(WhileNode* node) override {
+            descendIntoChildren(node);
             replace_with_mark(node->condition->end_value);
         }
 
-        void onEgressNotNode(NotNode* node) override {
+        void visitNode(NotNode* node) override {
+            descendIntoChildren(node);
             replace_with_mark(node->value);
             std::shared_ptr<ValueNode> my_val = node->value;
             if (not_nodes.contains(node->value.get())) {
@@ -48,7 +51,8 @@ class TransformToShortCircuit : public ShuLangVisitor {
             }
         }
 
-        void onEgressOperatorApplicationNode(OperatorApplicationNode* node) override {
+        void visitNode(OperatorApplicationNode* node) override {
+            descendIntoChildren(node);
             replace_with_mark(node->lhs);
             replace_with_mark(node->rhs);
 
@@ -75,7 +79,8 @@ class TransformToShortCircuit : public ShuLangVisitor {
             }
         }
 
-        void onEgressSelectOperatorNode(SelectOperatorNode* node) override {
+        void visitNode(SelectOperatorNode* node) override {
+            descendIntoChildren(node);
             replace_with_mark(node->condition->end_value);
             replace_with_mark(node->true_value->end_value);
             replace_with_mark(node->false_value->end_value);
@@ -91,5 +96,5 @@ class TransformToShortCircuit : public ShuLangVisitor {
 
 void short_circuitify(ProgramNode* program) {
     TransformToShortCircuit c;
-    c.walk(program);
+    program->accept(&c);
 }

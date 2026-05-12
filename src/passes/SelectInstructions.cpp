@@ -12,22 +12,15 @@
 #include <vector>
 
 class SLTranslator : public ShuLangVisitor {
-    typedef struct {
-        std::shared_ptr<sir::SIRBlock> block;
-        std::shared_ptr<sir::SIRBlock> continuation;
-        shulang::BodyNode* node;
-    } block_cont_node_t;
-
     private:
         // Completed values, e.g. Immediate and operator values
         // There will be at most 2 values in here currently
         std::stack<std::shared_ptr<sir::ValueNode>> completed;
         
         // What blocks are the destination of a jump
-        std::unordered_set<std::string> have_reached;
+        std::unordered_set<sir::SIRBlock*> have_reached;
         
         // Stores the next blocks and where to go afterwards
-        std::stack<block_cont_node_t> next_block_stack;
         std::shared_ptr<sir::SIRBlock> continuation = nullptr;
 
         // Stores if a block is a part of a loop
@@ -37,15 +30,6 @@ class SLTranslator : public ShuLangVisitor {
         // Node tells us which body node the current block corresponds to
         // So we don't accidentally egress too soon
         // (e.g. an if statement that only contains a nested if statement)
-        shulang::BodyNode* node = nullptr;
-
-        // If a begin node is in a select node and is the select node's condition, here's where the jumps are stored
-        std::unordered_map<shulang::BeginNode*, std::pair<std::shared_ptr<sir::SIRBlock>, std::shared_ptr<sir::SIRBlock>>> select_val_to_block;
-        // If a begin node is a part of a select block, and should do jumping stuff
-        std::unordered_set<shulang::BeginNode*> jumpable;
-        // The final phi node candidates for select nodes
-        std::unordered_map<shulang::ValueNode*, std::vector<std::pair<std::string, std::shared_ptr<sir::ValueNode>>>> select_to_candidates;
-
 
         std::string gen_name(std::string name) {
             static int counter = 0;
@@ -53,9 +37,9 @@ class SLTranslator : public ShuLangVisitor {
         }
 
         void mark_block_reachable(std::shared_ptr<sir::SIRBlock> block) {
-            if (!have_reached.contains(block->name)) {
+            if (!have_reached.contains(block.get())) {
                 reachable_blocks.push_back(block);
-                have_reached.insert(block->name);
+                have_reached.insert(block.get());
             }
         }
 
@@ -76,15 +60,17 @@ class SLTranslator : public ShuLangVisitor {
         SLTranslator(std::string initial_block_name) { 
             current_block = std::make_unique<sir::SIRBlock>(initial_block_name);
             reachable_blocks.push_back(current_block);
-            have_reached.insert(initial_block_name);
+            have_reached.insert(current_block.get());
         };
     
-        void onEgressIntegerNode(shulang::IntegerNode* node) override {
+        void visitNode(shulang::IntegerNode* node) override {
+            descendIntoChildren(node);
             std::shared_ptr<sir::ImmediateNode> imm = std::make_shared<sir::ImmediateNode>(node->value, 32);
             completed.push(imm);
         }
 
-        void onEgressBooleanNode(shulang::BooleanNode* node) override {
+        void visitNode(shulang::BooleanNode* node) override {
+            descendIntoChildren(node);
             std::shared_ptr<sir::ImmediateNode> ret;
             // So in our langauge we treat 0 as false and 1 as true
             // when we're at such a low level
@@ -97,7 +83,8 @@ class SLTranslator : public ShuLangVisitor {
             completed.push(ret);
         }
 
-        void onEgressVariableReferenceNode(shulang::VariableReferenceNode* node) override {
+        void visitNode(shulang::VariableReferenceNode* node) override {
+            descendIntoChildren(node);
             std::string identifier = node->identifier;
             int width = type_to_width(node->type);
             if (!current_block->variable_to_ref.contains(identifier)) {
@@ -120,9 +107,9 @@ class SLTranslator : public ShuLangVisitor {
             completed.push(ref);
         }
 
-        void onEgressOperatorApplicationNode(shulang::OperatorApplicationNode* node) override {
+        void visitNode(shulang::OperatorApplicationNode* node) override {
+            descendIntoChildren(node);
             std::shared_ptr<sir::BinOpNode> ret;
-
             if (node->op == "+") {
                 ret = std::make_shared<sir::AddNode>();
             }
@@ -145,7 +132,8 @@ class SLTranslator : public ShuLangVisitor {
 
         // The only top level nodes we can have at this point are statements
         // Because I don't wanna do s-expressions
-        void onEgressBindingNode(shulang::BindingNode* node) override {
+        void visitNode(shulang::BindingNode* node) override {
+            descendIntoChildren(node);
             // std::cout << "Creating binding node!" << std::endl;
             std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name(node->identifier), completed.top());
 
@@ -161,47 +149,41 @@ class SLTranslator : public ShuLangVisitor {
             current_block->instructions.push_back(def);
         }
 
-        void onEgressBodyNode(shulang::BodyNode* node) override {
+        void visitNode(shulang::BodyNode* node) override {
+            descendIntoChildren(node);
+
             // We check if the current block is owned by the node we're egressing
             // If it's not then we don't do anything else
             // If we don't know who owns the current block (nullptr)
             //    Always pop it off
             // This is useful in situations such as if (cond) { body } else if ...
             //    As egress if will also change the current block 
-            if (this->node != nullptr && this->node != node) {
-                // std::cout << "Not popping block " << current_block->name << std::endl;
-                return;
-            }
+            // if (this->node != nullptr && this->node != node) {
+            //     // std::cout << "Not popping block " << current_block->name << std::endl;
+            //     return;
+            // }
 
-            if (this->node != nullptr && this->node != node) {
-                // std::cout << "Not popping block " << current_block->name << std::endl;
-            }
+            // if (this->node != nullptr && this->node != node) {
+            //     // std::cout << "Not popping block " << current_block->name << std::endl;
+            // }
 
-            // std::cout << "Popping block " << current_block->name << std::endl;
-            if (continuation != nullptr) {
-                current_block->instructions.push_back(std::make_shared<sir::JumpNode>(continuation));
-                continuation->predecesors.insert(current_block);
-                mark_block_reachable(continuation);
-            }
-            else {
-                current_block->instructions.push_back(std::make_shared<sir::ExitNode>());
-                current_block->is_terminal = true;
-                need_to_write_exit = false;
-                // std::cout << "\tBlock " << current_block->name << " has no continuation!" << std::endl;
-            }
-            
-            // TODO: This seems very suspicious
-            // I think this introduces a bug somewhere, but I don't know where
-            if (!next_block_stack.empty()) {
-                current_block = next_block_stack.top().block;
-                continuation = next_block_stack.top().continuation;
-                this->node = next_block_stack.top().node;
-                next_block_stack.pop();
-                need_to_write_exit = true;
-            }
+            // // std::cout << "Popping block " << current_block->name << std::endl;
+            // if (continuation != nullptr) {
+            //     current_block->instructions.push_back(std::make_shared<sir::JumpNode>(continuation));
+            //     continuation->predecesors.insert(current_block);
+            //     mark_block_reachable(continuation);
+            // }
+            // else {
+            //     current_block->instructions.push_back(std::make_shared<sir::ExitNode>());
+            //     current_block->is_terminal = true;
+            //     need_to_write_exit = false;
+            //     // std::cout << "\tBlock " << current_block->name << " has no continuation!" << std::endl;
+            // }
         }
 
-        void onEgressNotNode(shulang::NotNode* node) override {
+        void visitNode(shulang::NotNode* node) override {
+            descendIntoChildren(node);
+
             // Neat trick I found on stack overflow
             std::shared_ptr<sir::CmpNode> op = std::make_shared<sir::CmpNode>("=");
             op->lhs = completed.top();
@@ -210,80 +192,57 @@ class SLTranslator : public ShuLangVisitor {
             completed.push(op);
         }
 
-        void onEgressBeginNode(shulang::BeginNode* node) override {
-            if (select_val_to_block.contains(node)) {
-                std::shared_ptr<sir::ValueNode> val = completed.top();
-                completed.pop();
-                // Here we choose to go to either the true or false block
-                // Which allows for lazy evaluation
-                std::shared_ptr<sir::SIRBlock> true_block = select_val_to_block.at(node).first;
-                std::shared_ptr<sir::SIRBlock> false_block = select_val_to_block.at(node).second;
-                
-                true_block->predecesors.insert(current_block);
-                mark_block_reachable(true_block);
-                false_block->predecesors.insert(current_block);
-                mark_block_reachable(false_block);
+        void visitNode(shulang::SelectOperatorNode* node) override {
+            // Translate select into two blocks to ensure lazy evaluation
+            std::shared_ptr<sir::SIRBlock> then_block = std::make_shared<sir::SIRBlock>(gen_name("select_true"));
+            std::shared_ptr<sir::SIRBlock> else_block = std::make_shared<sir::SIRBlock>(gen_name("select_false"));
+            std::shared_ptr<sir::SIRBlock> select_cont = std::make_shared<sir::SIRBlock>(gen_name("select_cont"));
+            std::vector<std::pair<std::string, std::shared_ptr<sir::ValueNode>>> candidates;
+            node->condition->accept(this);
+            std::shared_ptr<sir::JumpIfElseNode> if_else = std::make_shared<sir::JumpIfElseNode>(then_block, else_block, completed.top());
+            current_block->instructions.push_back(if_else);
+            mark_block_reachable(then_block);
+            then_block->predecesors.insert(current_block);
+            else_block->predecesors.insert(current_block);
+            mark_block_reachable(else_block);
+            completed.pop();
+            
+            // True block
+            current_block = then_block;
+            node->true_value->accept(this);
+            std::shared_ptr<sir::DefinitionNode> def_true = std::make_shared<sir::DefinitionNode>(gen_name("select_true_val"), completed.top());
+            std::shared_ptr<sir::ReferenceNode> ref_true = std::make_shared<sir::ReferenceNode>(def_true.get(), def_true->width);
+            current_block->instructions.push_back(def_true);
+            current_block->instructions.push_back(std::make_shared<sir::JumpNode>(select_cont));
+            select_cont->predecesors.insert(current_block);
+            mark_block_reachable(select_cont);
+            candidates.push_back({current_block->name, ref_true});
+            completed.pop();
 
-                std::shared_ptr<sir::JumpIfElseNode> jmp = std::make_shared<sir::JumpIfElseNode>(true_block, false_block, val);
-                current_block->instructions.push_back(jmp);
-                // If last was some block we go into true
-                current_block = next_block_stack.top().block;
-                continuation = next_block_stack.top().continuation;
-                next_block_stack.pop();
-            }
-            else if (jumpable.contains(node)){    
-                std::shared_ptr<sir::ValueNode> val = completed.top();
-                completed.pop();
-                // Otherwise push create a def here so we get lazy evaluation
-                std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name("select_intermdiate"), val);
-                current_block->instructions.push_back(def);
+            // False block
+            current_block = else_block;
+            node->false_value->accept(this);
+            std::shared_ptr<sir::DefinitionNode> def_false = std::make_shared<sir::DefinitionNode>(gen_name("select_false_val"), completed.top());
+            std::shared_ptr<sir::ReferenceNode> ref_false = std::make_shared<sir::ReferenceNode>(def_false.get(), def_false->width);
+            current_block->instructions.push_back(def_false);
+            current_block->instructions.push_back(std::make_shared<sir::JumpNode>(select_cont));
+            select_cont->predecesors.insert(current_block);
+            candidates.push_back({current_block->name, ref_false});
+            completed.pop();
 
-                std::shared_ptr<sir::ReferenceNode> ref = std::make_shared<sir::ReferenceNode>(def.get(), val->width);
-                select_to_candidates.at(node->parent).push_back({current_block->name, ref});
-                
-                continuation->predecesors.insert(current_block);
-                mark_block_reachable(continuation);
+            // Write final value
+            current_block = select_cont;
 
-                std::shared_ptr<sir::JumpNode> jmp = std::make_shared<sir::JumpNode>(continuation);
-                current_block->instructions.push_back(jmp);
-
-                // If last was the true then we go to false
-                // If last was false we go to cont
-                current_block = next_block_stack.top().block;
-                continuation = next_block_stack.top().continuation;
-                next_block_stack.pop();
-            }
-
+            // First create a PHI node now
+            //  As we know both candidates
+            std::shared_ptr<sir::PhiNode> phi = std::make_shared<sir::PhiNode>(candidates, type_to_width(node->type));
+            std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name("select_final"), phi);
+            current_block->instructions.push_back(def);
+            completed.push(std::make_shared<sir::ReferenceNode>(def.get(), phi->width));
         }
 
-        void onIngressSelectOperatorNode(shulang::SelectOperatorNode* node) override {
-            // These blocks should be doing jump stuff
-            jumpable.insert(node->true_value.get());
-            jumpable.insert(node->false_value.get());
-
-
-            std::shared_ptr<sir::SIRBlock> cont_block = std::make_shared<sir::SIRBlock>(gen_name("select_cont"));
-            std::shared_ptr<sir::SIRBlock> true_block = std::make_shared<sir::SIRBlock>(gen_name("select_true"));
-            std::shared_ptr<sir::SIRBlock> false_block = std::make_shared<sir::SIRBlock>(gen_name("select_false"));
-
-            next_block_stack.push({cont_block, continuation});
-            next_block_stack.push({false_block, cont_block});
-            next_block_stack.push({true_block, cont_block});
-
-            select_val_to_block.insert({node->condition.get(), {true_block, false_block}});
-            select_to_candidates.insert({node, {}});
-        }
-
-        void onEgressSelectOperatorNode(shulang::SelectOperatorNode* node) override {
-            std::shared_ptr<sir::PhiNode> phi = std::make_shared<sir::PhiNode>(select_to_candidates.at(node), type_to_width(node->type));
-            std::shared_ptr<sir::DefinitionNode> phi_def = std::make_shared<sir::DefinitionNode>(gen_name("select_final"), phi);
-            current_block->instructions.push_back(phi_def);
-
-            std::shared_ptr<sir::ReferenceNode> phi_ref = std::make_shared<sir::ReferenceNode>(phi_def.get(), phi_def->width);
-            completed.push(phi_ref);
-        }
-
-        void onEgressCallNode(CallNode* node) override {
+        void visitNode(CallNode* node) override {
+            descendIntoChildren(node);
             if (node->function_name == "print") {
                 std::shared_ptr<sir::PrintNode> print = std::make_shared<sir::PrintNode>(completed.top(), node->arguments.at(0)->type);
                 completed.pop();
@@ -299,45 +258,62 @@ class SLTranslator : public ShuLangVisitor {
             //  However that won't always be the case
         }
 
-        void onEgressIfNode(shulang::IfNode* node) override {
-            // std::cout << "Egress if node!!!" << std::endl;
-
+        void visitNode(shulang::IfNode* node) override {
             // We store what happens after the if in a new block
             // In order to avoid code duplication and exponential file size
+            std::shared_ptr<sir::SIRBlock> previous_continuation = continuation;
             if (continuation == nullptr || loop_blocks.contains(continuation.get())) {
                 // No need to remake the continuation if it already exists
                 continuation = std::make_shared<sir::SIRBlock>(gen_name("continuation"));
-                next_block_stack.push({continuation, nullptr, nullptr});
             }
 
+            // Create then block
             std::shared_ptr<sir::SIRBlock> then_block = std::make_shared<sir::SIRBlock>(gen_name("then"));
             mark_block_reachable(then_block);
             then_block->predecesors.insert(current_block);
-            std::shared_ptr<sir::SIRBlock> else_destination = continuation;
 
+            // Create else destination if applicable
+            std::shared_ptr<sir::SIRBlock> else_destination = continuation;
             if (node->else_block != nullptr) {
                 std::shared_ptr<sir::SIRBlock> else_block = std::make_shared<sir::SIRBlock>(gen_name("else"));
                 mark_block_reachable(else_block);
-                next_block_stack.push({else_block, continuation, node->else_block.get()});
+                // next_block_stack.push({else_block, continuation, node->else_block.get()});
                 else_destination = else_block;
             }
 
             else_destination->predecesors.insert(current_block);
+            node->condition->accept(this);
             std::shared_ptr<sir::JumpIfElseNode> if_else = std::make_shared<sir::JumpIfElseNode>(then_block, else_destination, completed.top());
+            completed.pop();
             current_block->instructions.push_back(if_else);
-        
-            // The visitor well next visit the then_block
-            // So we set current block to be the then_block
+            
+            // Visit then block
             current_block = then_block;
-            // The body node responsible for the current block
-            // Is obviously the then_block so we also set this
-            this->node = node->then_block.get();
-            // The contiuation for the then_block got set a couple lines up
-            // std::cout << "\tCurrent then block: " << current_block->name << std::endl;
-            need_to_write_exit = true;
+            node->then_block->accept(this);
+            if (current_block != continuation) {
+                current_block->instructions.push_back(std::make_shared<sir::JumpNode>(continuation));
+                continuation->predecesors.insert(current_block);
+                mark_block_reachable(continuation);
+            }
+
+
+            // Visit else block if exists
+            if (node->else_block != nullptr) {
+                current_block = else_destination;
+                node->else_block->accept(this);
+                if (current_block != continuation) {
+                    current_block->instructions.push_back(std::make_shared<sir::JumpNode>(continuation));
+                    continuation->predecesors.insert(current_block);
+                }
+            }
+
+            // Write rest of the code to the continuation
+            current_block = continuation;
+            continuation = previous_continuation;
         }
 
-        void onIngressWhileNode(WhileNode* node) override {
+        void visitNode(WhileNode* node) override {
+            std::shared_ptr<sir::SIRBlock> previous_continuation = continuation;
             std::shared_ptr<sir::SIRBlock> loop_condition = std::make_shared<sir::SIRBlock>(gen_name("loop_condition"));
             std::shared_ptr<sir::SIRBlock> loop_body = std::make_shared<sir::SIRBlock>(gen_name("loop_body"));
             std::shared_ptr<sir::SIRBlock> loop_continuation = std::make_shared<sir::SIRBlock>(gen_name("loop_continuation"));
@@ -345,35 +321,55 @@ class SLTranslator : public ShuLangVisitor {
             loop_blocks.insert(loop_body.get());
             loop_blocks.insert(loop_condition.get());
 
+            // Translate loop condition
             loop_condition->predecesors.insert(current_block);
-            next_block_stack.push({loop_continuation, continuation});
-            next_block_stack.push({loop_body, loop_condition});
-
             std::shared_ptr<sir::JumpNode> jump = std::make_shared<sir::JumpNode>(loop_condition);
             current_block->instructions.push_back(jump);
+            loop_condition->predecesors.insert(current_block);
             mark_block_reachable(loop_condition);   
             current_block = loop_condition;
-            // As there's two different continuations we just use nullptr
+
+            // We don't want an if to jump outside the loop
+            //  Hence setting the continuation to nullptr forces a creation of a new cont
             continuation = nullptr;
-            select_val_to_block.insert({node->condition.get(), {loop_body, loop_continuation}});
+            node->condition->accept(this); 
+            loop_body->predecesors.insert(current_block);
+            std::shared_ptr<sir::JumpIfElseNode> jump_cond_body = std::make_shared<sir::JumpIfElseNode>(loop_body, loop_continuation, completed.top());
+            current_block->instructions.push_back(jump_cond_body);
+            completed.pop();
+            loop_body->predecesors.insert(current_block);
+            mark_block_reachable(loop_body);
+            loop_continuation->predecesors.insert(current_block);
+            mark_block_reachable(loop_continuation);
+
+            // Translate loop body
+            current_block = loop_body;
+            continuation = nullptr;
+            node->body->accept(this);
+            jump = std::make_shared<sir::JumpNode>(loop_condition);
+            current_block->instructions.push_back(jump);
+            loop_condition->predecesors.insert(current_block);
+            
+            // Loop done, insert all instructions after loop
+            current_block = loop_continuation;
+            continuation = previous_continuation;
+        }
+
+        void visitNode(ProgramNode* node) override {
+            visitNode(static_cast<BodyNode*>(node));
         }
 };
 
 // TODO: There's potentially undefined behavior here
 sir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
-    // Now at conditionals we have multiple blocks
     SLTranslator translator = SLTranslator("main");
-
-    translator.walk(sl_program);
+    sl_program->accept(&translator);
     if (translator.need_to_write_exit) {
         translator.current_block->instructions.push_back(std::make_shared<sir::ExitNode>());
         translator.current_block->is_terminal = true;
     }
 
     sir::ProgramNode node = sir::ProgramNode();
-    // TODO: Is this an O(n) operation?
-    // Should I pass a reference to a buffer instead
-    // when initializing the translator?
-    node.blocks = translator.reachable_blocks;
+    node.blocks = std::move(translator.reachable_blocks);
     return node;
 }

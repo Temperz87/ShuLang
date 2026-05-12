@@ -19,27 +19,27 @@ entry:
 loop_condition1:                                  ; preds = %loop_body2, %entry
   %0 = phi i32 [ %7, %loop_body2 ], [ 0, %entry ]
   %1 = icmp slt i32 %0, 5
-  br i1 %1, label %select_true5, label %select_false6
+  br i1 %1, label %select_true4, label %select_false5
 
-select_true5:                                     ; preds = %loop_condition1
+select_true4:                                     ; preds = %loop_condition1
   %2 = icmp sge i32 %0, 0
-  br label %select_cont4
+  br label %select_cont6
 
-select_false6:                                    ; preds = %loop_condition1
-  br label %select_cont4
+select_false5:                                    ; preds = %loop_condition1
+  br label %select_cont6
 
-select_cont4:                                     ; preds = %select_false6, %select_true5
-  %3 = phi i32 [ %0, %select_false6 ], [ %0, %select_true5 ]
-  %4 = phi i1 [ %2, %select_true5 ], [ false, %select_false6 ]
+select_cont6:                                     ; preds = %select_false5, %select_true4
+  %3 = phi i32 [ %0, %select_false5 ], [ %0, %select_true4 ]
+  %4 = phi i1 [ %2, %select_true4 ], [ false, %select_false5 ]
   br i1 %4, label %loop_body2, label %loop_continuation3
 
-loop_body2:                                       ; preds = %select_cont4
+loop_body2:                                       ; preds = %select_cont6
   %5 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %6 = call i32 (ptr, ...) @printf(ptr %5, i32 %3)
   %7 = add i32 %3, 1
   br label %loop_condition1
 
-loop_continuation3:                               ; preds = %select_cont4
+loop_continuation3:                               ; preds = %select_cont6
   %8 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %9 = call i32 (ptr, ...) @printf(ptr %8, i32 %3)
   br label %exit

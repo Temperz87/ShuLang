@@ -6,6 +6,7 @@ RM = rm
 OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
 		  ast/shulang_ast.o ast/sir_ast.o \
 		  Visitors/ComplexDetector.o Visitors/LLVMCodegenVisitor.o Visitors/ShuLangPrinter.o \
+		  Visitors/ShuLangVisitor.o \
 		  passes/Uniquification.o passes/ShortCircuitify.o passes/RemoveComplexOperands.o  \
 		  passes/SelectInstructions.o passes/PromotePseudoPhi.o passes/LLVMSelection.o
 
@@ -21,11 +22,11 @@ DEPS := $(OBJECTS:.o=.d) ./driver/driver.d ./python_binding/pybind11_stuff.d
 	$(CC) $(CPPFLAGS) ./driver/driver.cpp -c -o ./driver/driver.o
 
 %.o : %.cpp
-	$(CC) $(CPPFLAGS) -fPIC $< -c -o $@ 
+	$(CC) $(CPPFLAGS) -fPIC -fexceptions $< -c -o $@ 
 
 ./output/shuc: ./driver/driver.o
 	touch ./output/shuc
-	$(CC) $(CPPFLAGS) $(OBJECTS) ./driver/driver.o -o ./output/shuc
+	$(CC) $(CPPFLAGS) $(OBJECTS) ./driver/driver.o -fexceptions -o ./output/shuc
 
 ./output/shulang$(shell python3-config --extension-suffix): $(OBJECTS)
 	touch ./shulang$(shell python3-config --extension-suffix)
