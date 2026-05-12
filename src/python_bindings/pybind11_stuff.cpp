@@ -212,6 +212,7 @@ PYBIND11_MODULE(shulang, m) {
     .def(py::init<std::string>())
     .def_readwrite("instructions", &sir::SIRBlock::instructions)
     .def_readwrite("variable_to_ref", &sir::SIRBlock::variable_to_ref)
+    .def_readwrite("predecessors", &sir::SIRBlock::predecesors)
     .def_readwrite("name", &sir::SIRBlock::name);
 
     py::class_<sir::ExitNode, sir::InstructionNode, std::shared_ptr<sir::ExitNode>>(m, "ExitNode")

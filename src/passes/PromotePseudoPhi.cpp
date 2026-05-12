@@ -76,8 +76,9 @@ void promote_pseudo_phi(ProgramNode* program) {
     // TODO: There's undefined behavior somewhere...
     // Either here or in select instructions or in SIRBlock's definition
     std::vector<SIRBlock*> blocks;
-    for (std::shared_ptr<SIRBlock> block : program->blocks)
+    for (std::shared_ptr<SIRBlock> block : program->blocks) {
         blocks.push_back(block.get());
+    }
 
     std::deque<SIRBlock*> queue;
     std::unordered_set<SIRBlock*> handling;
@@ -88,6 +89,7 @@ void promote_pseudo_phi(ProgramNode* program) {
     for (SIRBlock* block : terminals) {
         backwards.push_back(block);
     }
+
     while (!backwards.empty()) {
         SIRBlock* curr = backwards.front();
         backwards.pop_front();

@@ -23,10 +23,6 @@ class SLTranslator : public ShuLangVisitor {
         // Stores the next blocks and where to go afterwards
         std::shared_ptr<sir::SIRBlock> continuation = nullptr;
 
-        // Stores if a block is a part of a loop
-        // Relevant for if statement continuation merging
-        std::unordered_set<sir::SIRBlock*> loop_blocks;
-
         // Node tells us which body node the current block corresponds to
         // So we don't accidentally egress too soon
         // (e.g. an if statement that only contains a nested if statement)
@@ -58,7 +54,7 @@ class SLTranslator : public ShuLangVisitor {
         bool need_to_write_exit = true;
 
         SLTranslator(std::string initial_block_name) { 
-            current_block = std::make_unique<sir::SIRBlock>(initial_block_name);
+            current_block = std::make_shared<sir::SIRBlock>(initial_block_name);
             reachable_blocks.push_back(current_block);
             have_reached.insert(current_block.get());
         };
@@ -88,14 +84,6 @@ class SLTranslator : public ShuLangVisitor {
             std::string identifier = node->identifier;
             int width = type_to_width(node->type);
             if (!current_block->variable_to_ref.contains(identifier)) {
-                // std::vector<std::pair<std::string, sir::ValueNode*>> candidates;
-                // for (std::shared_ptr<sir::SIRBlock> block : current_block->predecesors) {
-                //     if (block->variable_to_ref.contains(identifier)) {
-                //         std::shared_ptr<sir::ReferenceNode> ref = block->variable_to_ref.at(identifier);
-                //         // std::cout << "Discovered phi candidate " << ref->identifier << std::endl;
-                //         candidates.push_back({block->name, dynamic_cast<sir::ValueNode*>(ref.get())});
-                //     }
-                // }
                 std::shared_ptr<sir::PseudoPhiNode> phi = std::make_shared<sir::PseudoPhiNode>(identifier, width);
                 std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name(identifier), phi);
                 current_block->instructions.insert(current_block->instructions.begin(), def);
@@ -147,38 +135,6 @@ class SLTranslator : public ShuLangVisitor {
             // We can ALWAYS use the completed vector
             // And assume it has the exact right size 
             current_block->instructions.push_back(def);
-        }
-
-        void visitNode(shulang::BodyNode* node) override {
-            descendIntoChildren(node);
-
-            // We check if the current block is owned by the node we're egressing
-            // If it's not then we don't do anything else
-            // If we don't know who owns the current block (nullptr)
-            //    Always pop it off
-            // This is useful in situations such as if (cond) { body } else if ...
-            //    As egress if will also change the current block 
-            // if (this->node != nullptr && this->node != node) {
-            //     // std::cout << "Not popping block " << current_block->name << std::endl;
-            //     return;
-            // }
-
-            // if (this->node != nullptr && this->node != node) {
-            //     // std::cout << "Not popping block " << current_block->name << std::endl;
-            // }
-
-            // // std::cout << "Popping block " << current_block->name << std::endl;
-            // if (continuation != nullptr) {
-            //     current_block->instructions.push_back(std::make_shared<sir::JumpNode>(continuation));
-            //     continuation->predecesors.insert(current_block);
-            //     mark_block_reachable(continuation);
-            // }
-            // else {
-            //     current_block->instructions.push_back(std::make_shared<sir::ExitNode>());
-            //     current_block->is_terminal = true;
-            //     need_to_write_exit = false;
-            //     // std::cout << "\tBlock " << current_block->name << " has no continuation!" << std::endl;
-            // }
         }
 
         void visitNode(shulang::NotNode* node) override {
@@ -262,27 +218,27 @@ class SLTranslator : public ShuLangVisitor {
             // We store what happens after the if in a new block
             // In order to avoid code duplication and exponential file size
             std::shared_ptr<sir::SIRBlock> previous_continuation = continuation;
-            if (continuation == nullptr || loop_blocks.contains(continuation.get())) {
+            if (continuation == nullptr) {
                 // No need to remake the continuation if it already exists
                 continuation = std::make_shared<sir::SIRBlock>(gen_name("continuation"));
             }
 
             // Create then block
             std::shared_ptr<sir::SIRBlock> then_block = std::make_shared<sir::SIRBlock>(gen_name("then"));
-            mark_block_reachable(then_block);
-            then_block->predecesors.insert(current_block);
 
             // Create else destination if applicable
             std::shared_ptr<sir::SIRBlock> else_destination = continuation;
             if (node->else_block != nullptr) {
                 std::shared_ptr<sir::SIRBlock> else_block = std::make_shared<sir::SIRBlock>(gen_name("else"));
-                mark_block_reachable(else_block);
                 // next_block_stack.push({else_block, continuation, node->else_block.get()});
                 else_destination = else_block;
             }
 
-            else_destination->predecesors.insert(current_block);
             node->condition->accept(this);
+            mark_block_reachable(then_block);
+            then_block->predecesors.insert(current_block);
+            mark_block_reachable(else_destination);
+            else_destination->predecesors.insert(current_block);
             std::shared_ptr<sir::JumpIfElseNode> if_else = std::make_shared<sir::JumpIfElseNode>(then_block, else_destination, completed.top());
             completed.pop();
             current_block->instructions.push_back(if_else);
@@ -296,7 +252,6 @@ class SLTranslator : public ShuLangVisitor {
                 mark_block_reachable(continuation);
             }
 
-
             // Visit else block if exists
             if (node->else_block != nullptr) {
                 current_block = else_destination;
@@ -304,6 +259,7 @@ class SLTranslator : public ShuLangVisitor {
                 if (current_block != continuation) {
                     current_block->instructions.push_back(std::make_shared<sir::JumpNode>(continuation));
                     continuation->predecesors.insert(current_block);
+                    mark_block_reachable(continuation);
                 }
             }
 
@@ -317,12 +273,8 @@ class SLTranslator : public ShuLangVisitor {
             std::shared_ptr<sir::SIRBlock> loop_condition = std::make_shared<sir::SIRBlock>(gen_name("loop_condition"));
             std::shared_ptr<sir::SIRBlock> loop_body = std::make_shared<sir::SIRBlock>(gen_name("loop_body"));
             std::shared_ptr<sir::SIRBlock> loop_continuation = std::make_shared<sir::SIRBlock>(gen_name("loop_continuation"));
-            loop_blocks.insert(loop_condition.get());
-            loop_blocks.insert(loop_body.get());
-            loop_blocks.insert(loop_condition.get());
 
             // Translate loop condition
-            loop_condition->predecesors.insert(current_block);
             std::shared_ptr<sir::JumpNode> jump = std::make_shared<sir::JumpNode>(loop_condition);
             current_block->instructions.push_back(jump);
             loop_condition->predecesors.insert(current_block);
@@ -333,7 +285,6 @@ class SLTranslator : public ShuLangVisitor {
             //  Hence setting the continuation to nullptr forces a creation of a new cont
             continuation = nullptr;
             node->condition->accept(this); 
-            loop_body->predecesors.insert(current_block);
             std::shared_ptr<sir::JumpIfElseNode> jump_cond_body = std::make_shared<sir::JumpIfElseNode>(loop_body, loop_continuation, completed.top());
             current_block->instructions.push_back(jump_cond_body);
             completed.pop();
@@ -355,9 +306,6 @@ class SLTranslator : public ShuLangVisitor {
             continuation = previous_continuation;
         }
 
-        void visitNode(ProgramNode* node) override {
-            visitNode(static_cast<BodyNode*>(node));
-        }
 };
 
 // TODO: There's potentially undefined behavior here

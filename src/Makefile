@@ -22,11 +22,7 @@ DEPS := $(OBJECTS:.o=.d) ./driver/driver.d ./python_binding/pybind11_stuff.d
 	$(CC) $(CPPFLAGS) ./driver/driver.cpp -c -o ./driver/driver.o
 
 %.o : %.cpp
-<<<<<<< Updated upstream
 	$(CC) $(CPPFLAGS) -fPIC -fexceptions $< -c -o $@ 
-=======
-	$(CC) $(CPPFLAGS) -fPIC $< -c -o $@
->>>>>>> Stashed changes
 
 ./output/shuc: ./driver/driver.o
 	touch ./output/shuc
