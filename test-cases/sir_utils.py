@@ -117,8 +117,9 @@ def get_sir_value(node, last_block, env, stdin):
         case ReferenceNode():
             return env[node.definition.identifier]
         case PseudoPhiNode():
-            print(env, node.requested_previous)
-            return env[node.requested_previous]
+            print('Encountered a pseudo phi node')
+            print('\tDid you run promote pseudo phi first?')
+            raise RuntimeError()
         case PhiNode():
             for block_name, val in node.candidates:
                 if block_name == last_block.name:
@@ -212,6 +213,11 @@ def run_sir_block(block, blocks, last_block, env, stdout, stdin):
     return stdout
 
 def run_sir_program(program_node, stdin):
+    for b in program_node.blocks:
+        print('block:', b.name)
+        for p in b.predecessors:
+            print('\t' + p.name)
+
     for block in program_node.blocks:
         if block.name == 'main':
             return run_sir_block(block, program_node.blocks, "", {}, [], stdin)

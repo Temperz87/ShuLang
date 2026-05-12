@@ -14,15 +14,14 @@ def update_progress_bar(percentage: float) -> None:
     progress = 'Progress: [' + ('#' * amt) + (' ' * (10 - amt)) + '] ' + str(int(percentage * 100)) + '%'
     print("\33[2K\r" + progress, end='')
 
-def compare_stdout(out1, out2, filename, pass_name):
-    if len(out1) != len(out2):
-        print()
+def compare_stdout(expected_out, actual_out, filename, pass_name):
+    if len(expected_out) != len(actual_out):
         print("Hmm, the lengths of these standard outs look different")
         print("Did you insert or remove a print node somewhere?")
-        print(f'({len(out1)} vs {len(out2)})')
+        print(f'(Expected: {len(expected_out)} but got: {len(actual_out)})')
         return False
     
-    for (f, s) in zip(out1, out2):
+    for (f, s) in zip(expected_out, actual_out):
         # TODO: When strings are added something not this dumb
         if str(f) != str(s):
             print()
@@ -31,8 +30,8 @@ def compare_stdout(out1, out2, filename, pass_name):
         
     return True
 
-def check_expect_output(out1, out2, filename, pass_name, ast, is_shulang):
-    if not compare_stdout(out1, out2, filename, pass_name):
+def check_expect_output(expected_out, actual_out, filename, pass_name, ast, is_shulang):
+    if not compare_stdout(expected_out, actual_out, filename, pass_name):
         print("Error during compilation of", filename, "during pass", pass_name)
         with open(f'./failure {pass_name}.dot', 'w') as fd:
             if is_shulang:
@@ -130,8 +129,6 @@ def run_case(file_name):
     # print_sir_ast(sir_program)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
-
-    verbose("Running")
     # TODO: Pseudo phi nodes aren't handled so we can't run this
     #       Maybe they just can't be handled?
     # select_stdout = run_sir_program(sir_program)
@@ -139,12 +136,20 @@ def run_case(file_name):
 
     verbose("---PROMOTE PSEUDO PHI---")
     promote_pseudo_phi(sir_program)
+
     # print_sir_ast(sir_program)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
-
     verbose("Running")
-    promote_pseudo_phi_stdout = run_sir_program(sir_program, iter(stdin))
+    try:
+        promote_pseudo_phi_stdout = run_sir_program(sir_program, iter(stdin))
+    except:
+        print('Encountered error while running program for file\n\t' + str(file_name))
+        with open(f'./failure promote pseudo phi.dot', 'w') as fd:
+            graph_sir_program(sir_program, file=fd)
+
+        exit(1)
+
     check_expect_output(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi", sir_program, False)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
@@ -229,10 +234,11 @@ if __name__ == '__main__':
     for x in range(1, len(sys.argv)):
         arg = sys.argv[x]
         if arg == '--regression':
-            run_regression_tests('phase_1_programs')
-            run_regression_tests('phase_2_programs')
-            run_regression_tests('phase_3_programs')
-            run_regression_tests('phase_4_programs')
+            run_regression_tests('binding_and_arithmatic_tests')
+            run_regression_tests('if_tests')
+            run_regression_tests('input_tests')
+            run_regression_tests('select-tests')
+            run_regression_tests('while-tests')
         elif arg == '--graph-sir':
             SHOULD_GRAPH_SIR = True
         elif arg == '--graph-shulang':
