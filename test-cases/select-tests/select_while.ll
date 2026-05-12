@@ -22,28 +22,19 @@ loop_condition1:                                  ; preds = %continuation5, %ent
 
 loop_body2:                                       ; preds = %loop_condition1
   %1 = icmp eq i32 0, 1
-  br i1 %1, label %select_true8, label %select_false9
+  %2 = icmp eq i32 0, 0
+  %3 = select i1 %1, i1 true, i1 %2
+  br i1 %3, label %then6, label %else7
 
 loop_continuation3:                               ; preds = %loop_condition1
   br label %exit
 
-select_true8:                                     ; preds = %loop_body2
-  br label %select_cont10
-
-select_false9:                                    ; preds = %loop_body2
-  %2 = icmp eq i32 0, 0
-  br label %select_cont10
-
-select_cont10:                                    ; preds = %select_false9, %select_true8
-  %3 = phi i1 [ true, %select_true8 ], [ %2, %select_false9 ]
-  br i1 %3, label %then6, label %else7
-
-then6:                                            ; preds = %select_cont10
+then6:                                            ; preds = %loop_body2
   %4 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %5 = call i32 (ptr, ...) @printf(ptr %4, i32 1)
   br label %continuation5
 
-else7:                                            ; preds = %select_cont10
+else7:                                            ; preds = %loop_body2
   %6 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %7 = call i32 (ptr, ...) @printf(ptr %6, i32 0)
   br label %continuation5
