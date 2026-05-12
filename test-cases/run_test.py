@@ -165,7 +165,7 @@ def run_case(file_name):
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
     verbose("Test", file_name, "passed")
 
-def run_regression_tests(dir):
+def run_regression_tests(dir, optimization_level):
     print('Running regression tests for dir:', dir)
     # This next line is a crime...
     shuc_file_dir = '../src/output/shuc'
@@ -178,15 +178,18 @@ def run_regression_tests(dir):
         if not file.endswith('.sl'):
             continue
         fp = os.path.join(dir, file)
-        compile_output = subprocess.run(shuc_file_dir + ' ' + os.path.join(dir, file) + ' -o a.ll', shell=True)
+
+        compile_output = subprocess.run(shuc_file_dir + ' ' + os.path.join(dir, file) + f' -O{optimization_level} -o a.ll', shell=True)
         if compile_output.returncode != 0:
             print("Failed to compile regression test", file)
             print(compile_output.stdout)
             exit(1)
 
         expected_file = os.path.join(dir, file[0:-3] + '.ll')
-        diff_output = subprocess.run('diff ' + expected_file + ' a.ll', shell=True, capture_output=True)
-        if diff_output.returncode != 0:
+        if optimization_level == 0:
+            diff_output = subprocess.run('diff ' + expected_file + ' a.ll', shell=True, capture_output=True)
+
+        if optimization_level > 0 or diff_output.returncode != 0:
             output = subprocess.run('clang a.ll -O0 -g -o a.out', shell=True)
             if output.returncode != 0:
                 print('\nError: shuc generated file uncompilable by clang for:', file)
@@ -201,18 +204,21 @@ def run_regression_tests(dir):
                     stdin = [str(x).strip() for x in f.readlines()]
             else:
                 stdin = []
+
             actual = run_program_with_input('./a.out', stdin)
             subprocess.run('rm -f a.out', shell=True)
             compare_stdout(actual, expected, fp, 'regression')
-            subprocess.run('mv a.ll ' + fp[0:-3] + '.ll', shell=True)
-            files_changed.append(fp)
 
-            # We could print this information, but if the output is the same
-            # Then everything should be fine 
-            #   Assuming test coverage is good of course
-            # print('Warning:', file[0:-2] + 'll', 'has changed!')
-            # print(diff_output.stdout.decode("utf-8"))
-            # print('But the output is the same')
+            if optimization_level == 0:
+                subprocess.run('mv a.ll ' + fp[0:-3] + '.ll', shell=True)
+                files_changed.append(fp)
+
+                # We could print this information, but if the output is the same
+                # Then everything should be fine 
+                #   Assuming test coverage is good of course
+                print('Warning:', file[0:-2] + 'll', 'has changed!')
+                print(diff_output.stdout.decode("utf-8"))
+                print('But the output is the same')
         else:
             subprocess.run('rm -f a.ll', shell=True)
 
@@ -234,11 +240,14 @@ if __name__ == '__main__':
     for x in range(1, len(sys.argv)):
         arg = sys.argv[x]
         if arg == '--regression':
-            run_regression_tests('binding_and_arithmatic_tests')
-            run_regression_tests('if_tests')
-            run_regression_tests('input_tests')
-            run_regression_tests('select-tests')
-            run_regression_tests('while-tests')
+            max_optimization = 1
+            for i in range(0, max_optimization + 1):
+                print('Testing optimization level:', i)
+                run_regression_tests('binding_and_arithmatic_tests', i)
+                run_regression_tests('if_tests', i)
+                run_regression_tests('input_tests', i)
+                run_regression_tests('select-tests', i)
+                run_regression_tests('while-tests', i)
         elif arg == '--graph-sir':
             SHOULD_GRAPH_SIR = True
         elif arg == '--graph-shulang':

@@ -26,8 +26,6 @@ namespace sir {
     class SIRControlFlowGraph;
 
     class SIRVisitor {
-        private:
-
         public:
             virtual void visit(ImmediateNode* node) {}
             virtual void visit(ReferenceNode* node) {}

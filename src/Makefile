@@ -7,6 +7,8 @@ OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
 		  ast/shulang_ast.o ast/sir_ast.o \
 		  Visitors/ComplexDetector.o Visitors/LLVMCodegenVisitor.o Visitors/ShuLangPrinter.o \
 		  Visitors/ShuLangVisitor.o \
+		  analysis/known_constants.o analysis/KnownConstant.o \
+		  optimizations/SIRPropagateConstants.o optimizations/SIRFold.o \
 		  passes/Uniquification.o passes/ShortCircuitify.o passes/RemoveComplexOperands.o  \
 		  passes/SelectInstructions.o passes/PromotePseudoPhi.o passes/LLVMSelection.o
 

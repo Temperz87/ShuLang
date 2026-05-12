@@ -213,11 +213,6 @@ def run_sir_block(block, blocks, last_block, env, stdout, stdin):
     return stdout
 
 def run_sir_program(program_node, stdin):
-    for b in program_node.blocks:
-        print('block:', b.name)
-        for p in b.predecessors:
-            print('\t' + p.name)
-
     for block in program_node.blocks:
         if block.name == 'main':
             return run_sir_block(block, program_node.blocks, "", {}, [], stdin)

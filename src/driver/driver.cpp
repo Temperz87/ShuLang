@@ -1,3 +1,4 @@
+#include <Analysis.hpp>
 #include <SIRAST.hpp>
 #include <ShuLangAST.hpp>
 #include <ShuLangPrinter.hpp>
@@ -9,12 +10,14 @@
 #include <parser.hpp>
 #include <PromotePseudoPhi.hpp>
 #include <vector>
+#include <SIROptimizations.hpp>
 #include <ShuLangPasses.hpp>
 #include <SelectInstructions.hpp>
 #include <tokenizer.hpp>
 #include <TypeChecker.hpp>
 
 static std::string output_file = "a.ll";
+static int optimization_level = 1;
 
 std::string process_arguments(int argc, char** argv) {
     int to_compile_idx = -1;
@@ -25,6 +28,11 @@ std::string process_arguments(int argc, char** argv) {
             output_file = std::string(argv[i]);
         }
         else {
+            if (arg[0] == '-' && arg[1] == 'O') {
+                optimization_level = arg[2] - '0';
+                continue;
+            }
+
             if (to_compile_idx == -1){
                 to_compile_idx = i;
             }
@@ -39,6 +47,7 @@ std::string process_arguments(int argc, char** argv) {
         std::cout << "ShuC: fatal error: no input files" << std::endl;
         exit(1);
     }
+
     return std::string(argv[to_compile_idx]);
 }
 
@@ -109,10 +118,16 @@ int main(int argc, char** argv) {
     // Making the pseudo phi nodes PhiNodes
     promote_pseudo_phi(&sir_program);
 
+    // Optimizations
+    if (optimization_level) {
+        std::unordered_map<sir::DefinitionNode*, int> constants = analyze_constants(sir_program);
+        SIRPropagate(sir_program, constants);
+        SIRFold(sir_program, constants);
+    }
 
     // std::cout << "-----SELECT LLVM INSUTRCTIONS-----" << std::endl;
     // Emitting LLVM
-    // Later on we'll also tell LLVm to do some optimizations
+    // Later on we'll also tell LLVM to do some optimizations
     // e.g. alloca promotion
     select_llvm_instructions(&sir_program, std::string(argv[1]), output_file);
     return 0;
