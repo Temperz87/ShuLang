@@ -31,6 +31,7 @@ namespace sir {
             }
 
         public:
+            std::unordered_set<SIRBlock*> unreachable_blocks;
             SIRControlFlowGraph(const std::vector<SIRBlock*>& blocks) {
                 for (SIRBlock* block : blocks) {
                     if (block->name == "main") {
@@ -43,6 +44,21 @@ namespace sir {
 
                     for (std::shared_ptr<SIRBlock> pred : block->predecesors) {
                         add_edge(pred.get(), block);
+                    }
+                }
+            }
+
+            void remove_edge(SIRBlock* from, SIRBlock* to) {
+                incoming_edges.at(to).erase(from);
+                outgoing_edges.at(from).erase(to);
+                if (incoming_edges[to].size() == 0) {
+                    unreachable_blocks.insert(to);
+                    if (outgoing_edges.contains(to)) {
+                        std::vector<SIRBlock*> to_delete;
+                        std::unordered_set<SIRBlock*> previous = outgoing_edges[to];
+                        for (SIRBlock* childTo : previous) {
+                            remove_edge(to, childTo);
+                        }
                     }
                 }
             }

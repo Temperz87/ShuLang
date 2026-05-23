@@ -35,12 +35,16 @@ class FoldVisitor : public SIRVisitor {
             lastValue = nullopt;
         }
 
+        void visit(ImmediateNode* node) override {
+            lastValue = std::make_shared<ImmediateNode>(node->number, node->width);
+        }
+
         void visit(SelectNode* node) override {
             optional<shared_ptr<ValueNode>> cond;
             attempt_replace(node->condition, cond);
             if (cond.has_value()) {
                 optional<int> cond_true_false = KnownConstant::GetIntValue(cond.value().get());
-                if (cond.has_value()) {
+                if (cond_true_false.has_value()) {
                     std::shared_ptr<ValueNode> target = cond_true_false.value()? node->true_value : node->false_value;
                     target->accept(this);
                     if (lastValue == nullopt) {

@@ -195,8 +195,8 @@ void LLVMCodegenVisitor::walk(SIRBlock* block) {
 void LLVMCodegenVisitor::fix_phi() {
     for (auto long_pair : redo_phi) {
         llvm::PHINode* phi = long_pair.first;
-        for (std::pair<std::string, std::shared_ptr<ValueNode>> candidate : long_pair.second) {
-            phi->addIncoming(candidate.second->accept(this), blocks.at(candidate.first));
+        for (std::pair<SIRBlock*, std::shared_ptr<ValueNode>> candidate : long_pair.second) {
+            phi->addIncoming(candidate.second->accept(this), blocks.at(candidate.first->name));
         }
     }
 }

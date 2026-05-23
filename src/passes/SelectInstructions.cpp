@@ -167,12 +167,11 @@ class SLTranslator : public ShuLangVisitor {
                 return;
             }
 
-
             // Translate select into two blocks to ensure lazy evaluation
             std::shared_ptr<sir::SIRBlock> then_block = std::make_shared<sir::SIRBlock>(gen_name("select_true"));
             std::shared_ptr<sir::SIRBlock> else_block = std::make_shared<sir::SIRBlock>(gen_name("select_false"));
             std::shared_ptr<sir::SIRBlock> select_cont = std::make_shared<sir::SIRBlock>(gen_name("select_cont"));
-            std::vector<std::pair<std::string, std::shared_ptr<sir::ValueNode>>> candidates;
+            std::vector<std::pair<sir::SIRBlock*, std::shared_ptr<sir::ValueNode>>> candidates;
             node->condition->accept(this);
             std::shared_ptr<sir::JumpIfElseNode> if_else = std::make_shared<sir::JumpIfElseNode>(then_block, else_block, completed.top());
             current_block->instructions.push_back(if_else);
@@ -180,7 +179,6 @@ class SLTranslator : public ShuLangVisitor {
             then_block->predecesors.insert(current_block);
             else_block->predecesors.insert(current_block);
             mark_block_reachable(else_block);
-            completed.pop();
             
             // True block
             current_block = then_block;
@@ -191,7 +189,7 @@ class SLTranslator : public ShuLangVisitor {
             current_block->instructions.push_back(std::make_shared<sir::JumpNode>(select_cont));
             select_cont->predecesors.insert(current_block);
             mark_block_reachable(select_cont);
-            candidates.push_back({current_block->name, ref_true});
+            candidates.push_back({current_block.get(), ref_true});
             completed.pop();
 
             // False block
@@ -202,7 +200,7 @@ class SLTranslator : public ShuLangVisitor {
             current_block->instructions.push_back(def_false);
             current_block->instructions.push_back(std::make_shared<sir::JumpNode>(select_cont));
             select_cont->predecesors.insert(current_block);
-            candidates.push_back({current_block->name, ref_false});
+            candidates.push_back({current_block.get(), ref_false});
             completed.pop();
 
             // Write final value

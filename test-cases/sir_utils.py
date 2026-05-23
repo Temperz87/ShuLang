@@ -20,7 +20,7 @@ def stringify_value(node):
         case PhiNode():
             ret = "Φ "
             for block_name, val in node.candidates:
-                ret += "[" + block_name + ", " + stringify_value(val) + "] "
+                ret += "[" + block_name.name + ", " + stringify_value(val) + "] "
             return ret
         case SelectNode():
             return "Select (" + stringify_value(node.condition) +  ") (" + stringify_value(node.true_value) + \
@@ -120,8 +120,8 @@ def get_sir_value(node, last_block, env, stdin):
             print('\tDid you run promote pseudo phi first?')
             raise RuntimeError()
         case PhiNode():
-            for block_name, val in node.candidates:
-                if block_name == last_block.name:
+            for block, val in node.candidates:
+                if block.name == last_block.name:
                     return get_sir_value(val, last_block, env, stdin)
         case SelectNode():
             if get_sir_value(node.condition, last_block, env, stdin):

@@ -36,7 +36,7 @@ namespace sir {
             llvm::Module* module;
             std::unordered_map<std::string, llvm::Value*> bindings;
 
-            std::vector<std::pair<llvm::PHINode*, std::vector<std::pair<std::string, std::shared_ptr<ValueNode>>>>> redo_phi;
+            std::vector<std::pair<llvm::PHINode*, std::vector<std::pair<SIRBlock*, std::shared_ptr<ValueNode>>>>> redo_phi;
 
         public:
             std::unordered_map<std::string, llvm::BasicBlock*> blocks;

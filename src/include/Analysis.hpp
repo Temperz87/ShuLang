@@ -45,5 +45,5 @@ class UseDefAnalysis : public sir::SIRVisitor {
         static UseDefInfo get_use_def_chains(const sir::SIRControlFlowGraph& cfg);
 };
 
-std::unordered_map<sir::DefinitionNode*, int> analyze_constants(const sir::SIRControlFlowGraph& cfg);
-
+std::unordered_map<sir::DefinitionNode*, int> analyze_constants(sir::SIRControlFlowGraph& cfg);
+bool CFGSimplify(sir::ProgramNode& program, const sir::SIRControlFlowGraph& cfg);

@@ -32,7 +32,7 @@ class PhiPromotor : public SIRVisitor {
         }
 
         void visit(PseudoPhiNode* node) override {
-            std::vector<std::pair<std::string, std::shared_ptr<ValueNode>>> candidates;
+            std::vector<std::pair<SIRBlock*, std::shared_ptr<ValueNode>>> candidates;
             std::string requested = node->requested_previous;
 
             // For a Phi to work
@@ -40,7 +40,7 @@ class PhiPromotor : public SIRVisitor {
             for (std::shared_ptr<SIRBlock> block : block->predecesors) {
                 if (block->variable_to_ref.contains(requested)) {
                     std::shared_ptr<DefinitionNode> def = block->variable_to_ref.at(requested);
-                    candidates.push_back({block->name, std::make_shared<ReferenceNode>(def, def->width)});
+                    candidates.push_back({block.get(), std::make_shared<ReferenceNode>(def, def->width)});
                 }
                 else {
                     // If the previous block doesn't have the variable
@@ -52,7 +52,7 @@ class PhiPromotor : public SIRVisitor {
                     block->variable_to_ref.insert({requested, def});
                     redo_blocks.insert(block.get());
                     std::shared_ptr<ReferenceNode> ref = std::make_shared<ReferenceNode>(def, node->width);
-                    candidates.push_back({block->name, ref});
+                    candidates.push_back({block.get(), ref});
                 }
             }
             std::shared_ptr<ValueNode> phi;

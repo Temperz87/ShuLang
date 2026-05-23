@@ -8,16 +8,19 @@ using namespace sir;
 using namespace std;
 
 // TODO
-//  When values can be things other than integeres
+//  When values can be things other than integers
 //  According change this analysis!!!
 
 class ConstantAnalysisVisitor : public SIRVisitor {
     private:
         optional<int> lastValue;
+        SIRControlFlowGraph& cfg;
+        SIRBlock* current;
 
     public:
         bool modified = false;
         unordered_map<DefinitionNode*, optional<int>> constantValues;
+        ConstantAnalysisVisitor(SIRControlFlowGraph& cfg):cfg(cfg) { }
 
         void visit(ImmediateNode* node) override {
             lastValue = node->number;
@@ -167,17 +170,37 @@ class ConstantAnalysisVisitor : public SIRVisitor {
         }
         
         void visit(PhiNode* node) override {
-            node->candidates[0].second->accept(this);
-            if (!lastValue.has_value()) {
-                lastValue = nullopt;
-                return;
-            }
-            
-            int val = lastValue.value();
-            for (int i = 1; i < node->candidates.size(); i++) {
+            // If we haven't explored the first reachable candidate yet
+            bool initial_value = false;
+            optional<int> val = std::nullopt;
+            for (int i = 0; i < node->candidates.size(); i++) {
                 auto pair  = node->candidates[i];
+                if (!initial_value) {
+                    if (!cfg.unreachable_blocks.contains(pair.first)) {
+                        pair.second->accept(this);
+                        
+                        // If we've explored a candidate and gotten no constnat value back
+                        // Might as well stop now, as we know we aren't a constant
+                        if (!lastValue.has_value()) {
+                            return;
+                        }
+
+                        // Otherwise continue checking other reachable candidates
+                        val = lastValue;
+                        initial_value = true;
+                    }
+
+                    continue;
+                }
+
+                if (cfg.unreachable_blocks.contains(pair.first)) {
+                    continue;
+                }
+
                 pair.second->accept(this);
-                if (!lastValue .has_value()|| lastValue != val) {
+                if (!lastValue.has_value() || lastValue != val) {
+                    // We have two conflicting values
+                    // Hence the Phi doesn't have a constant value
                     lastValue = nullopt;
                     return;
                 }
@@ -195,10 +218,19 @@ class ConstantAnalysisVisitor : public SIRVisitor {
         }
         
         void visit(JumpIfElseNode* node) override {
-            lastValue = nullopt;
+            node->condition->accept(this);
+            if (lastValue.has_value()) {
+                if (lastValue.value()) {
+                    cfg.remove_edge(current, node->else_destination.get());
+                }
+                else {
+                    cfg.remove_edge(current, node->destination.get());
+                }
+            }
         }
 
         void walk(SIRBlock* block) {
+            current  = block;
             for (std::shared_ptr<InstructionNode> instr : block->instructions) {
                 instr->accept(this);
             }
@@ -219,7 +251,7 @@ void join(unordered_map<DefinitionNode*, optional<int>>& res,
         }
     }
 
-unordered_map<DefinitionNode*, int> analyze_constants(const SIRControlFlowGraph& cfg) {
+unordered_map<DefinitionNode*, int> analyze_constants(SIRControlFlowGraph& cfg) {
     std::deque<SIRBlock*> queue;
     std::unordered_set<SIRBlock*> handling;
     std::deque<SIRBlock*> forwards;
@@ -244,7 +276,7 @@ unordered_map<DefinitionNode*, int> analyze_constants(const SIRControlFlowGraph&
     // Top is represented by nullopt
     // Bottom is represented by no value in map
     unordered_map<SIRBlock*, unordered_map<DefinitionNode*, optional<int>>> live_outs;
-    ConstantAnalysisVisitor visitor;
+    ConstantAnalysisVisitor visitor(cfg);
     while (!queue.empty()) {
         SIRBlock* curr = queue.front();
         queue.pop_front();
@@ -253,7 +285,7 @@ unordered_map<DefinitionNode*, int> analyze_constants(const SIRControlFlowGraph&
         // Join all inside dictionaries
         unordered_map<DefinitionNode*, optional<int>> live_in;
         for (SIRBlock* block : cfg.get_incoming(curr)) {
-            if (live_outs.contains(block)) {
+            if (!cfg.unreachable_blocks.contains(block) && live_outs.contains(block)) {
                 join(live_in, live_outs[block]);
             }
         }

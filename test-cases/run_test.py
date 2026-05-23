@@ -153,6 +153,7 @@ def run_case(file_name):
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
     verbose("Compiled program passesd")
 
+    verbose("---ANALYSIS---")
     cfg = SIRControlFlowGraph(sir_program.blocks)
     constant_analysis = analyze_constants(cfg)
     verbose("---SIRFOLD---")
@@ -179,6 +180,14 @@ def run_case(file_name):
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
     check_expect_output(expected_stdout, dse_output, file_name, "SIRDSE", sir_program, False)
+
+    verbose("---CFGSimplify---")
+    CFGSimplify(sir_program, cfg)
+    verbose('Running')
+    dse_output = run_sir_program(sir_program, iter(stdin), 'CFGSimplify', file_name)
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
+    check_expect_output(expected_stdout, dse_output, file_name, "CFGSimplify", sir_program, False)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
@@ -229,7 +238,10 @@ def run_regression_tests(dir, optimization_level):
 
             actual = run_program_with_input('./a.out', stdin)
             subprocess.run('rm -f a.out', shell=True)
-            compare_stdout(actual, expected, fp, 'regression')
+            if not compare_stdout(expected, actual, fp, 'regression'):
+                print("Failed to compile regression test", file)
+                print('\n'.join(actual))
+                exit(1)
 
             if optimization_level == 0:
                 subprocess.run('mv a.ll ' + fp[0:-3] + '.ll', shell=True)

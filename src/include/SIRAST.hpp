@@ -160,8 +160,8 @@ namespace sir {
 
     class PhiNode : public ValueNode {
         public:
-            std::vector<std::pair<std::string, std::shared_ptr<ValueNode>>> candidates;
-            PhiNode(std::vector<std::pair<std::string, std::shared_ptr<ValueNode>>> candidates, int width):ValueNode(width), candidates(candidates) { }
+            std::vector<std::pair<SIRBlock*, std::shared_ptr<ValueNode>>> candidates;
+            PhiNode(std::vector<std::pair<SIRBlock*, std::shared_ptr<ValueNode>>> candidates, int width):ValueNode(width), candidates(candidates) { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };

@@ -136,6 +136,7 @@ int main(int argc, char** argv) {
         SIRFold(sir_program, constants);
         UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
         SIRDSE(info, cfg);
+        CFGSimplify(sir_program, cfg);
     }
 
     // std::cout << "-----SELECT LLVM INSUTRCTIONS-----" << std::endl;

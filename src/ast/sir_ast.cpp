@@ -83,7 +83,7 @@ llvm::Value* PseudoPhiNode::accept(LLVMCodegenVisitor* visitor) {
 
 std::vector<std::string> PhiNode::get_usages() {
     std::vector<std::string> usages;
-    for (std::pair<std::string, std::shared_ptr<ValueNode>> candidate: this->candidates) {
+    for (auto candidate: this->candidates) {
         std::vector<std::string> child_usages = candidate.second->get_usages();
         usages.insert(usages.end(), child_usages.begin(), child_usages.end());
     }

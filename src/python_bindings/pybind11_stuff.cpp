@@ -184,7 +184,7 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("requested_previous", &sir::PseudoPhiNode::requested_previous);
 
     py::class_<sir::PhiNode, sir::ValueNode, std::shared_ptr<sir::PhiNode>>(m, "PhiNode")
-    .def(py::init<std::vector<std::pair<std::string, std::shared_ptr<sir::ValueNode>>>, int>())
+    .def(py::init<std::vector<std::pair<sir::SIRBlock*, std::shared_ptr<sir::ValueNode>>>, int>())
     .def("get_usages", &sir::PhiNode::get_usages)
     .def_readwrite("candidates", &sir::PhiNode::candidates);
 
@@ -245,6 +245,7 @@ PYBIND11_MODULE(shulang, m) {
     m.def("SIRDSE", &SIRDSE, "Perform dead store elimination on a SIR Program");
     m.def("SIRFold", &SIRFold, "Perform constant folding on a SIR Program");
     m.def("SIRPropagate", &SIRPropagate, "Perform constant propagation on a SIR Program");
+    m.def("CFGSimplify", &CFGSimplify, "Perform constant propagation on a SIR Program");
     m.def("analyze_constants", &analyze_constants, "Returns a map of what definitions are constants", py::return_value_policy::reference);
 
     py::class_<UseDefInfo, std::shared_ptr<UseDefInfo>>(m, "UseDefInfo");
