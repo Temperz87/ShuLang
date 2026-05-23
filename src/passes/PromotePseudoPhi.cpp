@@ -8,7 +8,7 @@
 
 using namespace sir;
 
-class PhiPromotor : SIRVisitor {
+class PhiPromotor : public SIRVisitor {
     private:
         std::shared_ptr<ValueNode> promoted_phi = nullptr;
         SIRBlock* block;
@@ -39,7 +39,7 @@ class PhiPromotor : SIRVisitor {
             // ALL predecesors MUST contain the requested variable 
             for (std::shared_ptr<SIRBlock> block : block->predecesors) {
                 if (block->variable_to_ref.contains(requested)) {
-                    DefinitionNode* def = block->variable_to_ref.at(requested);
+                    std::shared_ptr<DefinitionNode> def = block->variable_to_ref.at(requested);
                     candidates.push_back({block->name, std::make_shared<ReferenceNode>(def, def->width)});
                 }
                 else {
@@ -49,9 +49,9 @@ class PhiPromotor : SIRVisitor {
                     std::shared_ptr<PseudoPhiNode> pseudo = std::make_shared<PseudoPhiNode>(requested, node->width);
                     std::shared_ptr<DefinitionNode> def = std::make_shared<DefinitionNode>(gen_name(requested), pseudo);
                     block->instructions.insert(block->instructions.begin(), def);
-                    block->variable_to_ref.insert({requested, def.get()});
+                    block->variable_to_ref.insert({requested, def});
                     redo_blocks.insert(block.get());
-                    std::shared_ptr<ReferenceNode> ref = std::make_shared<ReferenceNode>(def.get(), node->width);
+                    std::shared_ptr<ReferenceNode> ref = std::make_shared<ReferenceNode>(def, node->width);
                     candidates.push_back({block->name, ref});
                 }
             }

@@ -1,8 +1,12 @@
+#include "SIRCFG.hpp"
+#include "pybind11/detail/common.h"
+#include <Analysis.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <ShuLangPasses.hpp>
 #include <SIRAST.hpp>
 #include <memory>
+#include <SIROptimizations.hpp>
 #include <PromotePseudoPhi.hpp>
 #include <SelectInstructions.hpp>
 #include <LLVMSelection.hpp>
@@ -132,10 +136,15 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("width", &sir::ImmediateNode::width);
 
     py::class_<sir::ReferenceNode, sir::ValueNode, std::shared_ptr<sir::ReferenceNode>>(m, "ReferenceNode")
-    .def(py::init<sir::DefinitionNode*, int>())
+    .def(py::init<std::weak_ptr<sir::DefinitionNode>, int>())
     .def("get_usages", &sir::ReferenceNode::get_usages)
     .def_readwrite("width", &sir::ReferenceNode::width)
-    .def_readwrite("definition", &sir::ReferenceNode::definition);
+    .def_property("definition", [](const sir::ReferenceNode& self) {
+            return self.definition.lock();
+        },
+        [](sir::ReferenceNode& self, std::shared_ptr<sir::DefinitionNode> def) {
+            self.definition = def;
+        }, py::return_value_policy::reference);
 
     py::class_<sir::SelectNode, sir::ValueNode, std::shared_ptr<sir::SelectNode>>(m, "SelectNode")
     .def("get_usages", &sir::SelectNode::get_usages)
@@ -222,6 +231,7 @@ PYBIND11_MODULE(shulang, m) {
     .def("get_usages", &sir::ProgramNode::get_usages)
     .def_readwrite("blocks", &sir::ProgramNode::blocks);
 
+    // passes
     m.def("parse_file", &parse_file, "Given a file returns an AST");
     m.def("type_check", &type_check, "Given a program type check it");
     m.def("uniquify", &uniquify, "Runs the uniquification pass");
@@ -230,4 +240,18 @@ PYBIND11_MODULE(shulang, m) {
     m.def("select_instructions", &select_SIR_instructions, "Translated from ShuLang to SIR");
     m.def("promote_pseudo_phi", &promote_pseudo_phi, "Making PseudoPhiNode's just PhiNode's");
     m.def("select_llvm", &select_llvm_instructions, "Perform the final lowering!!!");
+
+    // optimizations and analysis
+    m.def("SIRDSE", &SIRDSE, "Perform dead store elimination on a SIR Program");
+    m.def("SIRFold", &SIRFold, "Perform constant folding on a SIR Program");
+    m.def("SIRPropagate", &SIRPropagate, "Perform constant propagation on a SIR Program");
+    m.def("analyze_constants", &analyze_constants, "Returns a map of what definitions are constants", py::return_value_policy::reference);
+
+    py::class_<UseDefInfo, std::shared_ptr<UseDefInfo>>(m, "UseDefInfo");
+
+    py::class_<UseDefAnalysis, std::shared_ptr<UseDefAnalysis>>(m, "UseDefAnalysis")
+    .def_static("get_use_def_chains", UseDefAnalysis::get_use_def_chains);
+
+    py::class_<sir::SIRControlFlowGraph, std::shared_ptr<sir::SIRControlFlowGraph>>(m, "SIRControlFlowGraph")
+    .def(py::init<const std::vector<sir::SIRBlock*>&>());
 }

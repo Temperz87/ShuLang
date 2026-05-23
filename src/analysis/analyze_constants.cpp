@@ -11,7 +11,7 @@ using namespace std;
 //  When values can be things other than integeres
 //  According change this analysis!!!
 
-class ConstantAnalysisVisitor : SIRVisitor {
+class ConstantAnalysisVisitor : public SIRVisitor {
     private:
         optional<int> lastValue;
 
@@ -19,20 +19,21 @@ class ConstantAnalysisVisitor : SIRVisitor {
         bool modified = false;
         unordered_map<DefinitionNode*, optional<int>> constantValues;
 
-        void visit(ImmediateNode* node) {
+        void visit(ImmediateNode* node) override {
             lastValue = node->number;
         }
 
-        void visit(ReferenceNode* node) {
-            if (constantValues.contains(node->definition)) {
-                lastValue = constantValues[node->definition];
+        void visit(ReferenceNode* node) override {
+            auto lock = node->definition.lock();
+            if (lock && constantValues.contains(lock.get())) {
+                lastValue = constantValues[lock.get()];
             }
             else {
                 lastValue = nullopt;
             }
         }
 
-        void visit(SelectNode* node) {
+        void visit(SelectNode* node) override {
             node->condition->accept(this);
             if(lastValue.has_value()) {
                 if (lastValue.value()) {
@@ -47,7 +48,7 @@ class ConstantAnalysisVisitor : SIRVisitor {
             }
         }
 
-        void visit(AddNode* node) {
+        void visit(AddNode* node) override {
             node->lhs->accept(this);
             if (!lastValue.has_value()) {
                 lastValue = nullopt;
@@ -65,7 +66,7 @@ class ConstantAnalysisVisitor : SIRVisitor {
             lastValue = lhs + lastValue.value();
         }
         
-        void visit(SubNode* node) {
+        void visit(SubNode* node) override {
             node->lhs->accept(this);
             if (!lastValue.has_value()) {
                 lastValue = nullopt;
@@ -83,7 +84,7 @@ class ConstantAnalysisVisitor : SIRVisitor {
             lastValue = lhs - lastValue.value();
         }
         
-        void visit(MultNode* node) {
+        void visit(MultNode* node) override {
             node->lhs->accept(this);
             if (!lastValue.has_value()) {
                 lastValue = nullopt;
@@ -101,7 +102,7 @@ class ConstantAnalysisVisitor : SIRVisitor {
             lastValue = lhs * lastValue.value();
         }
         
-        void visit(CmpNode* node) {
+        void visit(CmpNode* node) override {
             node->lhs->accept(this);
             if (!lastValue.has_value()) {
                 lastValue = nullopt;
@@ -148,7 +149,7 @@ class ConstantAnalysisVisitor : SIRVisitor {
             lastValue = ret;
         }
         
-        void visit(DefinitionNode* node) {
+        void visit(DefinitionNode* node) override {
             node->binding->accept(this);
             bool contained = constantValues.contains(node);
             if (contained && lastValue != constantValues[node]) {
@@ -165,7 +166,7 @@ class ConstantAnalysisVisitor : SIRVisitor {
             }
         }
         
-        void visit(PhiNode* node) {
+        void visit(PhiNode* node) override {
             node->candidates[0].second->accept(this);
             if (!lastValue.has_value()) {
                 lastValue = nullopt;
@@ -185,11 +186,15 @@ class ConstantAnalysisVisitor : SIRVisitor {
             lastValue = val;
         }
         
-        void visit(PrintNode* node) {
+        void visit(PrintNode* node) override {
             lastValue = nullopt;
         }
         
-        void visit(InputNode* node) {
+        void visit(InputNode* node) override {
+            lastValue = nullopt;
+        }
+        
+        void visit(JumpIfElseNode* node) override {
             lastValue = nullopt;
         }
 
@@ -214,15 +219,9 @@ void join(unordered_map<DefinitionNode*, optional<int>>& res,
         }
     }
 
-unordered_map<DefinitionNode*, int> analyze_constants(const ProgramNode& program) {
-    std::vector<SIRBlock*> blocks;
-    for (std::shared_ptr<SIRBlock> block : program.blocks) {
-        blocks.push_back(block.get());
-    }
-
+unordered_map<DefinitionNode*, int> analyze_constants(const SIRControlFlowGraph& cfg) {
     std::deque<SIRBlock*> queue;
     std::unordered_set<SIRBlock*> handling;
-    SIRControlFlowGraph cfg(blocks);
     std::deque<SIRBlock*> forwards;
     forwards.push_back(cfg.get_main());
     while (!forwards.empty()) {

@@ -31,7 +31,7 @@ namespace sir {
             }
 
         public:
-            SIRControlFlowGraph(std::vector<SIRBlock*> blocks) {
+            SIRControlFlowGraph(const std::vector<SIRBlock*>& blocks) {
                 for (SIRBlock* block : blocks) {
                     if (block->name == "main") {
                         main = block;
@@ -48,26 +48,26 @@ namespace sir {
             }
 
             // Returns all blocks "block" jumps to in the CFG
-            std::unordered_set<SIRBlock*> get_outgoing(SIRBlock* block) {
+            std::unordered_set<SIRBlock*> get_outgoing(SIRBlock* block) const {
                 if (outgoing_edges.contains(block))
                     return outgoing_edges.at(block);
                 return std::unordered_set<SIRBlock*>();
             }
 
             // Returns all blocks that jump to "block" in the CFG
-            std::unordered_set<SIRBlock*> get_incoming(SIRBlock* block) {
+            std::unordered_set<SIRBlock*> get_incoming(SIRBlock* block) const {
                 if (incoming_edges.contains(block))
                     return incoming_edges.at(block);
                 return std::unordered_set<SIRBlock*>();
             }
 
             // Returns a reference to the main block
-            SIRBlock* get_main() {
+            SIRBlock* get_main() const {
                 return main;
             }
 
             // Returns a reference to all blocks that jump to exit
-            std::vector<SIRBlock*> get_terminals() {
+            std::vector<SIRBlock*> get_terminals() const {
                 return terminal_blocks;
             }
     };

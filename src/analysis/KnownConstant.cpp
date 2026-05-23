@@ -7,6 +7,10 @@
 using namespace sir;
 using namespace std;
 
+void KnownConstant::visit(sir::ImmediateNode* node) {
+    lastValue = node->number;
+}
+
 std::optional<int> KnownConstant::GetIntValue(sir::ValueNode* node) {
     KnownConstant visitor;
     node->accept(&visitor);

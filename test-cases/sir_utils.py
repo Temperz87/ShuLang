@@ -47,7 +47,6 @@ def get_sir_graph_string(instruction):
 
 def graph_sir_program(program_node, file=stdout):
     print("digraph SIRProgram {", file=file)
-
     jumpnodes = []
     for block in program_node.blocks:
         print_indentation(1, file=file)
@@ -212,7 +211,24 @@ def run_sir_block(block, blocks, last_block, env, stdout, stdin):
                 return run_sir_block(instruction.destination, blocks, block, env, stdout, stdin)
     return stdout
 
-def run_sir_program(program_node, stdin):
+def _run_sir_program(program_node, stdin):
     for block in program_node.blocks:
         if block.name == 'main':
-            return run_sir_block(block, program_node.blocks, "", {}, [], stdin)
+            ret = run_sir_block(block, program_node.blocks, "", {}, [], stdin)
+            if len(list(stdin)) != 0:
+                print("\nAll input was not consumed!")
+                print("There's probably a problem with an optimization...")
+                raise RuntimeError
+            
+            return ret
+            
+def run_sir_program(sir_program, stdin, pass_name, file_name):
+    try:
+        ret = _run_sir_program(sir_program, iter(stdin))
+        return ret
+    except:
+        print('Encountered error while running program for file\n\t' + str(file_name))
+        with open(f'./failure {pass_name}.dot', 'w') as fd:
+            graph_sir_program(sir_program, file=fd)
+        exit(1)
+    

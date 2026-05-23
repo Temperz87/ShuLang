@@ -87,10 +87,10 @@ class SLTranslator : public ShuLangVisitor {
                 std::shared_ptr<sir::PseudoPhiNode> phi = std::make_shared<sir::PseudoPhiNode>(identifier, width);
                 std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name(identifier), phi);
                 current_block->instructions.insert(current_block->instructions.begin(), def);
-                current_block->variable_to_ref.insert({identifier, def.get()});
+                current_block->variable_to_ref[identifier] = def;
             }
 
-            sir::DefinitionNode* definition = current_block->variable_to_ref.at(node->identifier);
+            std::shared_ptr<sir::DefinitionNode> definition = current_block->variable_to_ref.at(node->identifier);
             std::shared_ptr<sir::ReferenceNode> ref = std::make_shared<sir::ReferenceNode>(definition, width);
             completed.push(ref);
         }
@@ -126,9 +126,9 @@ class SLTranslator : public ShuLangVisitor {
             std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name(node->identifier), completed.top());
 
             if (current_block->variable_to_ref.contains(node->identifier))
-                current_block->variable_to_ref[node->identifier] = def.get();
+                current_block->variable_to_ref[node->identifier] = def;
             else 
-                current_block->variable_to_ref.insert({node->identifier, def.get()});
+                current_block->variable_to_ref[node->identifier] = def;
 
             completed.pop();
             // Becauase the value isn't complex
@@ -186,7 +186,7 @@ class SLTranslator : public ShuLangVisitor {
             current_block = then_block;
             node->true_value->accept(this);
             std::shared_ptr<sir::DefinitionNode> def_true = std::make_shared<sir::DefinitionNode>(gen_name("select_true_val"), completed.top());
-            std::shared_ptr<sir::ReferenceNode> ref_true = std::make_shared<sir::ReferenceNode>(def_true.get(), def_true->width);
+            std::shared_ptr<sir::ReferenceNode> ref_true = std::make_shared<sir::ReferenceNode>(def_true, def_true->width);
             current_block->instructions.push_back(def_true);
             current_block->instructions.push_back(std::make_shared<sir::JumpNode>(select_cont));
             select_cont->predecesors.insert(current_block);
@@ -198,7 +198,7 @@ class SLTranslator : public ShuLangVisitor {
             current_block = else_block;
             node->false_value->accept(this);
             std::shared_ptr<sir::DefinitionNode> def_false = std::make_shared<sir::DefinitionNode>(gen_name("select_false_val"), completed.top());
-            std::shared_ptr<sir::ReferenceNode> ref_false = std::make_shared<sir::ReferenceNode>(def_false.get(), def_false->width);
+            std::shared_ptr<sir::ReferenceNode> ref_false = std::make_shared<sir::ReferenceNode>(def_false, def_false->width);
             current_block->instructions.push_back(def_false);
             current_block->instructions.push_back(std::make_shared<sir::JumpNode>(select_cont));
             select_cont->predecesors.insert(current_block);
@@ -213,7 +213,7 @@ class SLTranslator : public ShuLangVisitor {
             std::shared_ptr<sir::PhiNode> phi = std::make_shared<sir::PhiNode>(candidates, type_to_width(node->type));
             std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name("select_final"), phi);
             current_block->instructions.push_back(def);
-            completed.push(std::make_shared<sir::ReferenceNode>(def.get(), phi->width));
+            completed.push(std::make_shared<sir::ReferenceNode>(def, phi->width));
         }
 
         void visitNode(CallNode* node) override {
@@ -226,7 +226,7 @@ class SLTranslator : public ShuLangVisitor {
             else if (node->function_name == "read_input") {
                 std::shared_ptr<sir::InputNode> input = std::make_shared<sir::InputNode>();
                 std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(gen_name("input_result"), input);
-                completed.push(std::make_shared<sir::ReferenceNode>(def.get(), def->width));
+                completed.push(std::make_shared<sir::ReferenceNode>(def, def->width));
                 current_block->instructions.push_back(def);
             }
             // TODO: every function call is an intrinsic right now

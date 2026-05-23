@@ -6,7 +6,7 @@
 using namespace sir;
 using namespace std;
 
-class FoldVisitor : SIRVisitor {
+class FoldVisitor : public SIRVisitor {
     private:
         optional<shared_ptr<ValueNode>> lastValue;
         unordered_map<DefinitionNode*, int>& constantValues;
@@ -40,10 +40,12 @@ class FoldVisitor : SIRVisitor {
             attempt_replace(node->condition, cond);
             if (cond.has_value()) {
                 optional<int> cond_true_false = KnownConstant::GetIntValue(cond.value().get());
-                std::shared_ptr<ValueNode> target = cond_true_false.value()? node->true_value : node->false_value;
-                target->accept(this);
-                if (lastValue == nullopt) {
-                    lastValue = target;
+                if (cond.has_value()) {
+                    std::shared_ptr<ValueNode> target = cond_true_false.value()? node->true_value : node->false_value;
+                    target->accept(this);
+                    if (lastValue == nullopt) {
+                        lastValue = target;
+                    }
                 }
             }
             else {

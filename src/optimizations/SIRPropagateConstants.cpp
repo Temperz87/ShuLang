@@ -3,7 +3,7 @@
 using namespace sir;
 using namespace std;
 
-class PropagationVisitor : SIRVisitor {
+class PropagationVisitor : public SIRVisitor {
     private:
         optional<int> lastValue;
         unordered_map<DefinitionNode*, int>& constantValues;
@@ -22,8 +22,9 @@ class PropagationVisitor : SIRVisitor {
            constantValues(constantValues) { }
 
         void visit(ReferenceNode* node) override {
-            if (constantValues.contains(node->definition)) {
-                lastValue = constantValues[node->definition];
+            auto lock = node->definition.lock();
+            if (lock && constantValues.contains(lock.get())) {
+                lastValue = constantValues[lock.get()];
             }
             else {
                 lastValue = nullopt;

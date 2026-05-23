@@ -30,20 +30,31 @@ namespace sir {
             ValueNode(int width):width(width) { }
     };
 
-
-    class ImmediateNode : public ValueNode {
+    class DefinitionNode : public InstructionNode {
         public:
-            int number;
-            ImmediateNode(int number, int width):ValueNode(width), number(number) { };
+            std::string identifier;
+            std::shared_ptr<ValueNode> binding;
+            int width;
+            DefinitionNode(std::string identifier, std::shared_ptr<ValueNode> binding):
+                identifier(identifier), binding(binding), width(binding->width) { };
+            std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class ReferenceNode : public ValueNode {
         public:
-            DefinitionNode* definition;
-            ReferenceNode(DefinitionNode* definition, int width):ValueNode(width), definition(definition) { };
+            std::weak_ptr<DefinitionNode> definition;
+            ReferenceNode(std::weak_ptr<DefinitionNode> definition, int width):ValueNode(width), definition(definition) { };
             std::vector<std::string> get_usages() override;
+            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
+    };
+
+    class ImmediateNode : public ValueNode {
+        public:
+            int number;
+            ImmediateNode(int number, int width):ValueNode(width), number(number) { };
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
@@ -95,20 +106,6 @@ namespace sir {
         public:
             std::string op;
             CmpNode(std::string op):BinOpNode(1), op(op) { }
-            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
-            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
-    };
-
-    class DefinitionNode : public InstructionNode {
-        public:
-            std::string identifier;
-            std::shared_ptr<ValueNode> binding;
-            std::vector<ReferenceNode*> references;
-            int width;
-            DefinitionNode(std::string identifier, std::shared_ptr<ValueNode> binding):
-                identifier(identifier), binding(binding), width(binding->width) { };
-
-            std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
@@ -178,13 +175,10 @@ namespace sir {
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
-    // TODO: There's potentially undefined behavior here
     class SIRBlock {
         public:
             std::unordered_set<std::shared_ptr<SIRBlock>> predecesors;
-            // Maintain a shared_ptr because the map "owns" this
-            // TODO: Make this an unique_ptr
-            std::unordered_map<std::string, DefinitionNode*> variable_to_ref;
+            std::unordered_map<std::string, std::shared_ptr<DefinitionNode>> variable_to_ref;
             std::vector<std::shared_ptr<InstructionNode>> instructions;
             std::string name;
             bool is_terminal = false;

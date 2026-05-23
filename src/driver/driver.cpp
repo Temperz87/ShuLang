@@ -6,11 +6,13 @@
 #include <LLVMCodegenVisitor.hpp>
 #include <LLVMSelection.hpp>
 #include <iostream>
+#include <memory>
 #include <ostream>
 #include <parser.hpp>
 #include <PromotePseudoPhi.hpp>
 #include <vector>
 #include <SIROptimizations.hpp>
+#include <SIRCFG.hpp>
 #include <ShuLangPasses.hpp>
 #include <SelectInstructions.hpp>
 #include <tokenizer.hpp>
@@ -120,9 +122,20 @@ int main(int argc, char** argv) {
 
     // Optimizations
     if (optimization_level) {
-        std::unordered_map<sir::DefinitionNode*, int> constants = analyze_constants(sir_program);
+        // TODO: Some form of iteration
+        // Rebuild analysis
+        std::vector<sir::SIRBlock*> blocks;
+        for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
+            blocks.push_back(b.get());
+        } 
+        sir::SIRControlFlowGraph cfg(blocks);
+        std::unordered_map<sir::DefinitionNode*, int> constants = analyze_constants(cfg);
+
+        // Run optimizations
         SIRPropagate(sir_program, constants);
         SIRFold(sir_program, constants);
+        UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
+        SIRDSE(info, cfg);
     }
 
     // std::cout << "-----SELECT LLVM INSUTRCTIONS-----" << std::endl;

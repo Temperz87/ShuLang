@@ -28,7 +28,12 @@ llvm::Value* ReferenceNode::accept(LLVMCodegenVisitor* visitor) {
 }
 
 std::vector<std::string>ReferenceNode::get_usages() {
-    return { definition->identifier };
+    auto lock = definition.lock();
+    if (lock) {
+        return { lock->identifier };
+    }
+
+    return {};
 }
 
 std::vector<std::string> SelectNode::get_usages() {

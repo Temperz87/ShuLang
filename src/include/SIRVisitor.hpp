@@ -27,6 +27,7 @@ namespace sir {
 
     class SIRVisitor {
         public:
+            ~SIRVisitor() {};
             virtual void visit(ImmediateNode* node) {}
             virtual void visit(ReferenceNode* node) {}
             virtual void visit(SelectNode* node) {}

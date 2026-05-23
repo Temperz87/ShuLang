@@ -28,7 +28,13 @@ llvm::Value* LLVMCodegenVisitor::visit(ImmediateNode* node) {
 }
 
 llvm::Value* LLVMCodegenVisitor::visit(ReferenceNode* node) {
-    return bindings.at(node->definition->identifier);
+    auto lock = node->definition.lock();
+    if (lock) {
+        return bindings.at(lock->identifier);
+    }
+
+    std::cout << "ShuC: Tried to use a reference's definition after it has been deleted!" << std::endl;
+    exit(1);
     // return builder->CreateLoad(llvm::Type::getIntNTy(context, node->width), bindings.at(node->identifier), node->identifier);
 }
 

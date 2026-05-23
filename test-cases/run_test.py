@@ -8,6 +8,7 @@ from sir_utils import *
 SHOULD_GRAPH_SHULANG = False
 SHOULD_GRAPH_SIR = False
 
+dontdelete = []
 def update_progress_bar(percentage: float) -> None:
     # Neat little progress bar
     amt = int(percentage * 10) 
@@ -129,6 +130,7 @@ def run_case(file_name):
     # print_sir_ast(sir_program)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
+
     # TODO: Pseudo phi nodes aren't handled so we can't run this
     #       Maybe they just can't be handled?
     # select_stdout = run_sir_program(sir_program)
@@ -136,20 +138,11 @@ def run_case(file_name):
 
     verbose("---PROMOTE PSEUDO PHI---")
     promote_pseudo_phi(sir_program)
-
     # print_sir_ast(sir_program)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
     verbose("Running")
-    try:
-        promote_pseudo_phi_stdout = run_sir_program(sir_program, iter(stdin))
-    except:
-        print('Encountered error while running program for file\n\t' + str(file_name))
-        with open(f'./failure promote pseudo phi.dot', 'w') as fd:
-            graph_sir_program(sir_program, file=fd)
-
-        exit(1)
-
+    promote_pseudo_phi_stdout = run_sir_program(sir_program, iter(stdin), "promote pseudo phi", file_name)
     check_expect_output(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi", sir_program, False)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
@@ -157,13 +150,42 @@ def run_case(file_name):
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
     output_stdout = run_program_with_input('./a.out', stdin)
     os.system("rm -f a.ll a.out")
-
-    # WHY DO I NEED THIS SUBPROCESS???
-    if output_stdout == ['']:
-        output_stdout = ''
-
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
-    verbose("Test", file_name, "passed")
+    verbose("Compiled program passesd")
+
+    cfg = SIRControlFlowGraph(sir_program.blocks)
+    constant_analysis = analyze_constants(cfg)
+    verbose("---SIRFOLD---")
+    SIRFold(sir_program, constant_analysis)
+    verbose('Running')
+    fold_output = run_sir_program(sir_program, iter(stdin), 'SIRFold', file_name)
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
+
+    check_expect_output(expected_stdout, fold_output, file_name, "SIRFold", sir_program, False)
+    verbose("---SIRPropagate---")
+    SIRPropagate(sir_program, constant_analysis)
+    verbose('Running')
+    prop_output = run_sir_program(sir_program, iter(stdin), 'SIRPropagate', file_name)
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
+    check_expect_output(expected_stdout, prop_output, file_name, "SIRPropagate", sir_program, False)
+
+    verbose("---SIRDSE---")
+    usedef = UseDefAnalysis.get_use_def_chains(cfg)
+    SIRDSE(usedef, cfg)
+    verbose('Running')
+    dse_output = run_sir_program(sir_program, iter(stdin), 'SIRDSE', file_name)
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
+    check_expect_output(expected_stdout, dse_output, file_name, "SIRDSE", sir_program, False)
+
+    verbose("---SELECT LLVM INSTRUCTIONS---")
+    select_llvm(sir_program, file_name, 'a.ll')
+    subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
+    output_stdout = run_program_with_input('./a.out', stdin)
+    os.system("rm -f a.ll a.out")
+    verbose("Compiled program passed")
 
 def run_regression_tests(dir, optimization_level):
     print('Running regression tests for dir:', dir)
