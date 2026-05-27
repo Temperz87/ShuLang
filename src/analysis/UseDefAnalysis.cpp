@@ -16,7 +16,7 @@ void UseDefAnalysis::walk(SIRBlock *block) {
 void UseDefAnalysis::visit(ReferenceNode *node) {
   auto lock = node->definition.lock();
   if (lock) {
-    usedefs[lock.get()].push_back(node);
+    uses_found.insert(lock.get());
   }
 }
 
@@ -48,6 +48,9 @@ void UseDefAnalysis::visit(CmpNode *node) {
 
 void UseDefAnalysis::visit(DefinitionNode *node) {
   node->binding->accept(this);
+  for (DefinitionNode* def : uses_found) {
+    usedefs[def].push_back(node);
+  }
 }
 
 void UseDefAnalysis::visit(PhiNode *node) {
@@ -60,6 +63,9 @@ void UseDefAnalysis::visit(PrintNode *node) { node->to_print->accept(this); }
 
 void UseDefAnalysis::visit(JumpIfElseNode *node) {
   node->condition->accept(this);
+  for (DefinitionNode* def : uses_found) {
+    usedefs[def].push_back(node);
+  }
 }
 
 UseDefInfo UseDefAnalysis::get_use_def_chains(const SIRControlFlowGraph &cfg) {

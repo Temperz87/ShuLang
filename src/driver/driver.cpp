@@ -128,15 +128,17 @@ int main(int argc, char** argv) {
         for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
             blocks.push_back(b.get());
         } 
+        
         sir::SIRControlFlowGraph cfg(blocks);
-        std::unordered_map<sir::DefinitionNode*, int> constants = analyze_constants(cfg);
+        UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
+        SCCPResults sccp = SIRSCCP(cfg, info);
 
         // Run optimizations
-        SIRPropagate(sir_program, constants);
-        SIRFold(sir_program, constants);
-        UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
-        SIRDSE(info, cfg);
+        SIRPropagate(sir_program, sccp.constants);
+        SIRFold(sir_program, sccp.constants);
         CFGSimplify(sir_program, cfg);
+        info = UseDefAnalysis::get_use_def_chains(cfg);
+        SIRDSE(info, cfg);
     }
 
     // std::cout << "-----SELECT LLVM INSUTRCTIONS-----" << std::endl;

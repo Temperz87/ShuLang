@@ -16,20 +16,6 @@ namespace sir {
             SIRBlock* main;
             std::vector<SIRBlock*> terminal_blocks;
 
-            // Adds both incoming and outgoing edges
-            // To the respective maps
-            void add_edge(SIRBlock* from, SIRBlock* to) {
-                if (outgoing_edges.contains(from))
-                    outgoing_edges.at(from).insert(to);
-                else 
-                    outgoing_edges.insert({from, std::unordered_set<SIRBlock*>({to})});
-
-                if (incoming_edges.contains(to))
-                    incoming_edges.at(to).insert(from);
-                else
-                    incoming_edges.insert({to, std::unordered_set<SIRBlock*>({from})});
-            }
-
         public:
             std::unordered_set<SIRBlock*> unreachable_blocks;
             SIRControlFlowGraph(const std::vector<SIRBlock*>& blocks) {
@@ -46,6 +32,20 @@ namespace sir {
                         add_edge(pred.get(), block);
                     }
                 }
+            }
+
+            // Adds both incoming and outgoing edges
+            // To the respective maps
+            void add_edge(SIRBlock* from, SIRBlock* to) {
+                if (outgoing_edges.contains(from))
+                    outgoing_edges.at(from).insert(to);
+                else 
+                    outgoing_edges.insert({from, std::unordered_set<SIRBlock*>({to})});
+
+                if (incoming_edges.contains(to))
+                    incoming_edges.at(to).insert(from);
+                else
+                    incoming_edges.insert({to, std::unordered_set<SIRBlock*>({from})});
             }
 
             void remove_edge(SIRBlock* from, SIRBlock* to) {

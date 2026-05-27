@@ -155,9 +155,10 @@ def run_case(file_name):
 
     verbose("---ANALYSIS---")
     cfg = SIRControlFlowGraph(sir_program.blocks)
-    constant_analysis = analyze_constants(cfg)
+    usedef = UseDefAnalysis.get_use_def_chains(cfg)
+    sccp = SIRSCCP(cfg, usedef)
     verbose("---SIRFOLD---")
-    SIRFold(sir_program, constant_analysis)
+    SIRFold(sir_program, sccp.constants)
     verbose('Running')
     fold_output = run_sir_program(sir_program, iter(stdin), 'SIRFold', file_name)
     if SHOULD_GRAPH_SIR:
@@ -165,7 +166,7 @@ def run_case(file_name):
 
     check_expect_output(expected_stdout, fold_output, file_name, "SIRFold", sir_program, False)
     verbose("---SIRPropagate---")
-    SIRPropagate(sir_program, constant_analysis)
+    SIRPropagate(sir_program, sccp.constants)
     verbose('Running')
     prop_output = run_sir_program(sir_program, iter(stdin), 'SIRPropagate', file_name)
     if SHOULD_GRAPH_SIR:
@@ -184,10 +185,10 @@ def run_case(file_name):
     verbose("---CFGSimplify---")
     CFGSimplify(sir_program, cfg)
     verbose('Running')
-    dse_output = run_sir_program(sir_program, iter(stdin), 'CFGSimplify', file_name)
+    cfgsimplify_output = run_sir_program(sir_program, iter(stdin), 'CFGSimplify', file_name)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
-    check_expect_output(expected_stdout, dse_output, file_name, "CFGSimplify", sir_program, False)
+    check_expect_output(expected_stdout, cfgsimplify_output, file_name, "CFGSimplify", sir_program, False)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')

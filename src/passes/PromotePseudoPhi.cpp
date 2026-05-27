@@ -47,7 +47,7 @@ class PhiPromotor : public SIRVisitor {
                     // Maybe an ancestor does
                     // So we insert a definition and pseudo phi node
                     std::shared_ptr<PseudoPhiNode> pseudo = std::make_shared<PseudoPhiNode>(requested, node->width);
-                    std::shared_ptr<DefinitionNode> def = std::make_shared<DefinitionNode>(gen_name(requested), pseudo);
+                    std::shared_ptr<DefinitionNode> def = std::make_shared<DefinitionNode>(block.get(), gen_name(requested), pseudo);
                     block->instructions.insert(block->instructions.begin(), def);
                     block->variable_to_ref.insert({requested, def});
                     redo_blocks.insert(block.get());
@@ -55,12 +55,13 @@ class PhiPromotor : public SIRVisitor {
                     candidates.push_back({block.get(), ref});
                 }
             }
-            std::shared_ptr<ValueNode> phi;
 
+            std::shared_ptr<ValueNode> phi;
             if (candidates.size() > 1)
                 phi = std::make_shared<PhiNode>(candidates, node->width);
             else
                 phi = candidates.at(0).second;
+            
             promoted_phi = phi;
         }
 

@@ -1,4 +1,5 @@
 #include "SIRCFG.hpp"
+#include "SIRVisitor.hpp"
 #include <Analysis.hpp>
 #include <SIRAST.hpp>
 #include <memory>
@@ -56,7 +57,7 @@ class CFGSimplifyVisitor : public SIRVisitor {
             for (shared_ptr<InstructionNode> instr : block->instructions) {
                 instr->accept(this);
                 if (new_dest != nullptr) {
-                    shared_ptr<JumpNode> jump = make_shared<JumpNode>(new_dest);
+                    shared_ptr<JumpNode> jump = make_shared<JumpNode>(block, new_dest);
                     instrs.push_back(jump);
                     new_dest = nullptr;
                 }
@@ -67,6 +68,13 @@ class CFGSimplifyVisitor : public SIRVisitor {
 
             block->instructions = std::move(instrs);
         }
+};
+
+class CFGMergerVisitor : public SIRVisitor {
+    private:
+    public:
+        bool did_work = false;
+
 };
 
 bool CFGSimplify(ProgramNode& program, const SIRControlFlowGraph& cfg) {

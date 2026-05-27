@@ -189,14 +189,12 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("candidates", &sir::PhiNode::candidates);
 
     py::class_<sir::DefinitionNode, sir::InstructionNode, std::shared_ptr<sir::DefinitionNode>>(m, "DefinitionNode")
-    .def(py::init<std::string, std::shared_ptr<sir::ValueNode>>())
     .def("get_usages", &sir::DefinitionNode::get_usages)
     .def_readwrite("identifier", &sir::DefinitionNode::identifier)
     .def_readwrite("width", &sir::DefinitionNode::width)
     .def_readwrite("binding", &sir::DefinitionNode::binding);
 
     py::class_<sir::PrintNode, sir::InstructionNode, std::shared_ptr<sir::PrintNode>>(m, "SIRPrintNode")
-    .def(py::init<std::shared_ptr<sir::ValueNode>, std::string>())
     .def("get_usages", &sir::PrintNode::get_usages)
     .def_readwrite("to_print", &sir::PrintNode::to_print)
     .def_readwrite("print_type", &sir::PrintNode::print_type);
@@ -205,12 +203,10 @@ PYBIND11_MODULE(shulang, m) {
     .def("get_usages", &sir::InputNode::get_usages);
 
     py::class_<sir::JumpNode, sir::InstructionNode, std::shared_ptr<sir::JumpNode>>(m, "JumpNode")
-    .def(py::init<std::shared_ptr<sir::SIRBlock>>())
     .def("get_usages", &sir::JumpNode::get_usages)
     .def_readwrite("destination", &sir::JumpNode::destination);
 
     py::class_<sir::JumpIfElseNode, sir::JumpNode, std::shared_ptr<sir::JumpIfElseNode>>(m, "JumpIfElseNode")
-    .def(py::init<std::shared_ptr<sir::SIRBlock>, std::shared_ptr<sir::SIRBlock>, std::shared_ptr<sir::ValueNode>>())
     .def("get_usages", &sir::JumpIfElseNode::get_usages)
     .def_readwrite("destination", &sir::JumpIfElseNode::destination)
     .def_readwrite("else_destination", &sir::JumpIfElseNode::else_destination)
@@ -246,9 +242,14 @@ PYBIND11_MODULE(shulang, m) {
     m.def("SIRFold", &SIRFold, "Perform constant folding on a SIR Program");
     m.def("SIRPropagate", &SIRPropagate, "Perform constant propagation on a SIR Program");
     m.def("CFGSimplify", &CFGSimplify, "Perform constant propagation on a SIR Program");
-    m.def("analyze_constants", &analyze_constants, "Returns a map of what definitions are constants", py::return_value_policy::reference);
+    m.def("SIRSCCP", &SIRSCCP, "Returns the results of the SCCP analysis", py::return_value_policy::reference);
 
     py::class_<UseDefInfo, std::shared_ptr<UseDefInfo>>(m, "UseDefInfo");
+    
+    py::class_<SCCPResults, std::shared_ptr<SCCPResults>>(m, "SCCPResults")
+    .def_readwrite("constants", &SCCPResults::constants)
+    .def_readwrite("reachable_edges", &SCCPResults::reachable_edges)
+    .def_readwrite("reachable_blocks", &SCCPResults::reachable_blocks);
 
     py::class_<UseDefAnalysis, std::shared_ptr<UseDefAnalysis>>(m, "UseDefAnalysis")
     .def_static("get_use_def_chains", UseDefAnalysis::get_use_def_chains);

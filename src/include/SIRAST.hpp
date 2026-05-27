@@ -20,7 +20,11 @@ namespace sir {
             virtual void accept(SIRVisitor* visitor) = 0;
     };
 
-    class InstructionNode : public SIRNode { };
+    class InstructionNode : public SIRNode { 
+        public:
+            SIRBlock* parent;
+            InstructionNode(SIRBlock* parent): parent(parent) { }
+    };
 
     class ValueNode : public SIRNode { 
         public:
@@ -35,8 +39,10 @@ namespace sir {
             std::string identifier;
             std::shared_ptr<ValueNode> binding;
             int width;
-            DefinitionNode(std::string identifier, std::shared_ptr<ValueNode> binding):
-                identifier(identifier), binding(binding), width(binding->width) { };
+            DefinitionNode(SIRBlock* parent,
+                           std::string identifier, 
+                           std::shared_ptr<ValueNode> binding):InstructionNode(parent),
+                identifier(identifier), binding(binding), width(binding->width) { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
@@ -114,8 +120,8 @@ namespace sir {
         public:
             std::shared_ptr<ValueNode> to_print;
             std::string print_type;
-            PrintNode(std::shared_ptr<ValueNode> to_print, std::string print_type):
-                to_print(to_print), print_type(print_type) { };
+            PrintNode(SIRBlock* parent, std::shared_ptr<ValueNode> to_print, std::string print_type):
+                InstructionNode(parent), to_print(to_print), print_type(print_type) { };
                 
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
@@ -133,7 +139,8 @@ namespace sir {
     class JumpNode : public InstructionNode {
         public:
             std::shared_ptr<SIRBlock> destination;
-            JumpNode(std::shared_ptr<SIRBlock> destination):destination(destination) { }
+            JumpNode(SIRBlock* parent, std::shared_ptr<SIRBlock> destination)
+                :InstructionNode(parent), destination(destination) { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
@@ -143,7 +150,10 @@ namespace sir {
         public:
             std::shared_ptr<SIRBlock> else_destination;
             std::shared_ptr<ValueNode> condition;
-            JumpIfElseNode(std::shared_ptr<SIRBlock> destination, std::shared_ptr<SIRBlock> else_destination, std::shared_ptr<ValueNode> condition):JumpNode(destination), else_destination(else_destination), condition(condition) { }
+            JumpIfElseNode(SIRBlock* parent, std::shared_ptr<SIRBlock> destination, 
+                                             std::shared_ptr<SIRBlock> else_destination, 
+                                             std::shared_ptr<ValueNode> condition)
+                                             :JumpNode(parent, destination), else_destination(else_destination), condition(condition) { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
@@ -169,7 +179,7 @@ namespace sir {
 
     class ExitNode : public InstructionNode {
         public:
-            ExitNode() { }
+            ExitNode(SIRBlock* parent):InstructionNode(parent) { }
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
