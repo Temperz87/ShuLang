@@ -35,6 +35,7 @@ $(PYTHONFILEPATH): $(OBJECTS) ./python_bindings/pybind11_stuff.o
 	$(CC) $(CPPFLAGS) -fPIC -fexceptions $< -c -o $@ 
 
 ./output/shuc: ./driver/driver.o
+	mkdir -p output
 	touch ./output/shuc
 	$(CC) $(CPPFLAGS) $(OBJECTS) ./driver/driver.o -fexceptions -o ./output/shuc
 
