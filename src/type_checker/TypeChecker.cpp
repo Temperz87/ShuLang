@@ -1,8 +1,8 @@
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
 #include <TypeChecker.hpp>
+#include <asm-generic/errno.h>
 #include <iostream>
-#include <stdexcept>
 
 using namespace shulang;
 
@@ -121,9 +121,31 @@ void TypeChecker::visitNode(CallNode* node) {
     node->type = function_types.at(node->function_name).second.at(0);
 }
 
-void TypeChecker::visitNode(IfNode* node) { 
-    descendIntoChildren(node);
+std::unordered_map<std::string, std::string> join(std::unordered_map<std::string, std::string> scope1, 
+          std::unordered_map<std::string, std::string> scope2) {
+        std::unordered_map<std::string, std::string> ret;
+        for (auto pair : scope1) {
+            if (scope2.contains(pair.first) && scope2[pair.first] == scope1[pair.first]) {
+                ret.insert(pair);
+            }
+        }
+
+        return ret;
+    }
+
+void TypeChecker::visitNode(IfNode* node) {
+    node->condition->accept(this);
     assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
+    auto before_scope = variable_types; 
+    node->then_block->accept(this);
+    auto then_scope = variable_types;
+    if (node->else_block != nullptr) {
+        variable_types = before_scope;
+        node->else_block->accept(this);
+        auto else_scope = variable_types;
+        variable_types = join(then_scope, else_scope);
+    }
+
 }
 
 void TypeChecker::visitNode(WhileNode* node) { 
