@@ -16,24 +16,6 @@ namespace sir {
             SIRBlock* main;
             std::vector<SIRBlock*> terminal_blocks;
 
-        public:
-            std::unordered_set<SIRBlock*> unreachable_blocks;
-            SIRControlFlowGraph(const std::vector<SIRBlock*>& blocks) {
-                for (SIRBlock* block : blocks) {
-                    if (block->name == "main") {
-                        main = block;
-                    }
-
-                    if (block->is_terminal) {
-                        terminal_blocks.push_back(block);
-                    }
-
-                    for (std::shared_ptr<SIRBlock> pred : block->predecesors) {
-                        add_edge(pred.get(), block);
-                    }
-                }
-            }
-
             // Adds both incoming and outgoing edges
             // To the respective maps
             void add_edge(SIRBlock* from, SIRBlock* to) {
@@ -48,17 +30,19 @@ namespace sir {
                     incoming_edges.insert({to, std::unordered_set<SIRBlock*>({from})});
             }
 
-            void remove_edge(SIRBlock* from, SIRBlock* to) {
-                incoming_edges.at(to).erase(from);
-                outgoing_edges.at(from).erase(to);
-                if (incoming_edges[to].size() == 0) {
-                    unreachable_blocks.insert(to);
-                    if (outgoing_edges.contains(to)) {
-                        std::vector<SIRBlock*> to_delete;
-                        std::unordered_set<SIRBlock*> previous = outgoing_edges[to];
-                        for (SIRBlock* childTo : previous) {
-                            remove_edge(to, childTo);
-                        }
+        public:
+            SIRControlFlowGraph(const std::vector<SIRBlock*>& blocks) {
+                for (SIRBlock* block : blocks) {
+                    if (block->name == "main") {
+                        main = block;
+                    }
+
+                    if (block->is_terminal) {
+                        terminal_blocks.push_back(block);
+                    }
+
+                    for (std::shared_ptr<SIRBlock> pred : block->predecesors) {
+                        add_edge(pred.get(), block);
                     }
                 }
             }

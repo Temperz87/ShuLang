@@ -8,7 +8,8 @@ OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
 		  Visitors/ComplexDetector.o Visitors/LLVMCodegenVisitor.o Visitors/ShuLangPrinter.o \
 		  Visitors/ShuLangVisitor.o \
 		  analysis/SIRSCCP.o analysis/KnownConstant.o analysis/UseDefAnalysis.o analysis/UseDefInfo.o \
-		  optimizations/SIRPropagateConstants.o optimizations/SIRFold.o optimizations/SIRDSE.o optimizations/CFGSimplify.o \
+		  optimizations/SIRPropagateConstants.o optimizations/SIRFold.o optimizations/SIRDSE.o \
+		  optimizations/CFGSimplify.o optimizations/CFGMerge.o \
 		  passes/Uniquification.o passes/ShortCircuitify.o passes/RemoveComplexOperands.o  \
 		  passes/SelectInstructions.o passes/PromotePseudoPhi.o passes/LLVMSelection.o
 

@@ -60,4 +60,4 @@ class SCCPResults {
 };
 
 SCCPResults SIRSCCP(const sir::SIRControlFlowGraph& cfg, UseDefInfo& usedefs);
-bool CFGSimplify(sir::ProgramNode& program, const sir::SIRControlFlowGraph& cfg);
+bool CFGSimplify(sir::ProgramNode& program, const sir::SIRControlFlowGraph& cfg, const SCCPResults& sccp);

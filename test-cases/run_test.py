@@ -151,7 +151,7 @@ def run_case(file_name):
     output_stdout = run_program_with_input('./a.out', stdin)
     os.system("rm -f a.ll a.out")
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
-    verbose("Compiled program passesd")
+    verbose("Unoptimized compiled program passed")
 
     verbose("---ANALYSIS---")
     cfg = SIRControlFlowGraph(sir_program.blocks)
@@ -173,7 +173,26 @@ def run_case(file_name):
         graph_sir_program(sir_program)
     check_expect_output(expected_stdout, prop_output, file_name, "SIRPropagate", sir_program, False)
 
+    verbose("---CFGSimplify---")
+    cfg = SIRControlFlowGraph(sir_program.blocks)
+    CFGSimplify(sir_program, cfg, sccp)
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
+    verbose('Running')
+    cfgsimplify_output = run_sir_program(sir_program, iter(stdin), 'CFGSimplify', file_name)
+    check_expect_output(expected_stdout, cfgsimplify_output, file_name, "CFGSimplify", sir_program, False)
+
+    verbose("---CFGMerge---")
+    cfg = SIRControlFlowGraph(sir_program.blocks)
+    CFGMerge(sir_program, cfg)
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
+    verbose('Running')
+    cfgmerge_output = run_sir_program(sir_program, iter(stdin), 'CFGMerge', file_name)
+    check_expect_output(expected_stdout, cfgmerge_output, file_name, "CFGMerge", sir_program, False)
+
     verbose("---SIRDSE---")
+    cfg = SIRControlFlowGraph(sir_program.blocks)
     usedef = UseDefAnalysis.get_use_def_chains(cfg)
     SIRDSE(usedef, cfg)
     verbose('Running')
@@ -181,14 +200,6 @@ def run_case(file_name):
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
     check_expect_output(expected_stdout, dse_output, file_name, "SIRDSE", sir_program, False)
-
-    verbose("---CFGSimplify---")
-    CFGSimplify(sir_program, cfg)
-    verbose('Running')
-    cfgsimplify_output = run_sir_program(sir_program, iter(stdin), 'CFGSimplify', file_name)
-    if SHOULD_GRAPH_SIR:
-        graph_sir_program(sir_program)
-    check_expect_output(expected_stdout, cfgsimplify_output, file_name, "CFGSimplify", sir_program, False)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')

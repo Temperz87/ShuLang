@@ -122,23 +122,54 @@ int main(int argc, char** argv) {
 
     // Optimizations
     if (optimization_level) {
-        // TODO: Some form of iteration
-        // Rebuild analysis
-        std::vector<sir::SIRBlock*> blocks;
-        for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
-            blocks.push_back(b.get());
-        } 
-        
-        sir::SIRControlFlowGraph cfg(blocks);
-        UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
-        SCCPResults sccp = SIRSCCP(cfg, info);
+        // TODO: some better form of queueing optimizations
+        bool did_work;
+        do {
+            did_work = false;
 
-        // Run optimizations
-        SIRPropagate(sir_program, sccp.constants);
-        SIRFold(sir_program, sccp.constants);
-        CFGSimplify(sir_program, cfg);
-        info = UseDefAnalysis::get_use_def_chains(cfg);
-        SIRDSE(info, cfg);
+            // Rebuild analysis
+            std::vector<sir::SIRBlock*> blocks;
+            for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
+                blocks.push_back(b.get());
+            } 
+            
+            sir::SIRControlFlowGraph cfg(blocks);
+            UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
+            SCCPResults sccp = SIRSCCP(cfg, info);
+
+            // Run optimizations
+            SIRPropagate(sir_program, sccp.constants);
+            SIRFold(sir_program, sccp.constants);
+            cfg = sir::SIRControlFlowGraph(blocks);
+            did_work |= CFGSimplify(sir_program, cfg, sccp);
+            info = UseDefAnalysis::get_use_def_chains(cfg);
+            
+            // CFGSimplify invalidates the CFG
+            // hence we rebuild it here!
+            if (did_work) {
+                blocks.clear();
+                for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
+                    blocks.push_back(b.get());
+                } 
+
+                cfg = sir::SIRControlFlowGraph(blocks);
+            }
+
+            bool cfg_merged = CFGMerge(sir_program, cfg);
+            did_work |= cfg_merged;
+            if(cfg_merged) {
+                blocks.clear();
+                for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
+                    blocks.push_back(b.get());
+                } 
+
+                cfg = sir::SIRControlFlowGraph(blocks);
+            }
+
+            info = UseDefAnalysis::get_use_def_chains(cfg);
+            bool dse = SIRDSE(info, cfg);
+            did_work |= dse;
+        } while (did_work);
     }
 
     // std::cout << "-----SELECT LLVM INSUTRCTIONS-----" << std::endl;
