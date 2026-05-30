@@ -1,7 +1,11 @@
 CC = clang++
-CPPFLAGS = -Iinclude -MMD -g -Wall -pedantic $(shell llvm-config --libs) -std=c++20
+COMMONCPPFLAGS = -Iinclude -MMD -Wall -pedantic $(shell llvm-config --libs) -std=c++20
+RELEASEFLAGS = -O3
+DEBUGFLAGS = -g -pg
 PYTHONFLAGS = -O3 -Wall -fPIC $(shell python3 -m pybind11 --includes) -Iinclude -std=c++20
 RM = rm
+
+CPPFLAGS ?= $(COMMON_CPPFLAGS)
 
 OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
 		  ast/shulang_ast.o ast/sir_ast.o \
@@ -18,8 +22,6 @@ PYTHONFILEPATH = ./output/shulang$(shell python3-config --extension-suffix)
 DRIVER = ./driver/driver.o
 
 DEPS := $(OBJECTS:.o=.d) ./driver/driver.d ./python_bindings/pybind11_stuff.d
-
-.PHONY: build clean
 
 ./driver/driver.o: $(OBJECTS)
 	$(CC) $(CPPFLAGS) ./driver/driver.cpp -c -o ./driver/driver.o
@@ -40,7 +42,16 @@ $(PYTHONFILEPATH): $(OBJECTS) ./python_bindings/pybind11_stuff.o
 	touch ./output/shuc
 	$(CC) $(CPPFLAGS) $(OBJECTS) ./driver/driver.o -fexceptions -o ./output/shuc
 
-build: ./output/shuc $(PYTHONFILEPATH)
+
+.PHONY: build build-debug clean
+
+build:
+	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(RELEASEFLAGS)" all
+
+build-debug:
+	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(DEBUGFLAGS)" all
+
+all: ./output/shuc $(PYTHONFILEPATH)
 
 clean:
 	$(RM) -f ./output/*
