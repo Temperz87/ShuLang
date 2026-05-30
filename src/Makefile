@@ -2,6 +2,7 @@ CC = clang++
 COMMONCPPFLAGS = -Iinclude -MMD -Wall -pedantic $(shell llvm-config --libs) -std=c++20
 RELEASEFLAGS = -O3
 DEBUGFLAGS = -g -pg
+ASANFLAGS = -fsanitize=address -fno-omit-frame-pointer
 PYTHONFLAGS = -O3 -Wall -fPIC $(shell python3 -m pybind11 --includes) -Iinclude -std=c++20
 RM = rm
 
@@ -50,6 +51,9 @@ build:
 
 build-debug:
 	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(DEBUGFLAGS)" all
+
+build-asan:
+	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(DEBUGFLAGS) $(ASANFLAGS)" all
 
 all: ./output/shuc $(PYTHONFILEPATH)
 
