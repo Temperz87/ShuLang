@@ -1,7 +1,7 @@
 CC = clang++
 COMMONCPPFLAGS = -Iinclude -MMD -Wall -pedantic $(shell llvm-config --libs) -std=c++20
 RELEASEFLAGS = -O3
-DEBUGFLAGS = -g -pg
+DEBUGFLAGS = -g -pg -O0
 ASANFLAGS = -fsanitize=address -fno-omit-frame-pointer
 PYTHONFLAGS = -O3 -Wall -fPIC $(shell python3 -m pybind11 --includes) -Iinclude -std=c++20
 RM = rm
