@@ -71,6 +71,19 @@ class FoldVisitor : public SIRVisitor {
                     lastValue = make_shared<ImmediateNode>(finalVal, node->width);
                 }
             }
+            else if (lhs.has_value()  || rhs.has_value()) {
+                shared_ptr<ValueNode> constant_value = (lhs.has_value())? lhs.value() : rhs.value();
+                shared_ptr<ValueNode> nonconstant_value = (lhs.has_value())? node->rhs : node->lhs;
+                auto val = KnownConstant::GetIntValue(constant_value.get());
+                if (!val.has_value()) {
+                    return;
+                }
+
+                int integer_value = val.value();
+                if (integer_value == 0) {
+                    lastValue = nonconstant_value;
+                }
+            }
         }
 
         void visit(SubNode* node) override {
@@ -86,6 +99,12 @@ class FoldVisitor : public SIRVisitor {
                     lastValue = make_shared<ImmediateNode>(finalVal, node->width);
                 }
             }
+            else if(rhs.has_value()) {
+                optional<int> rhs_val = KnownConstant::GetIntValue(rhs.value().get());
+                if (rhs_val.has_value() && rhs_val.value() == 0) {
+                    lastValue = node->lhs;
+                }
+            }
         }
 
         void visit(MultNode* node) override {
@@ -99,6 +118,22 @@ class FoldVisitor : public SIRVisitor {
                 if (lhs_val.has_value() && rhs_val.has_value()) {
                     int finalVal = lhs_val.value() * rhs_val.value();
                     lastValue = make_shared<ImmediateNode>(finalVal, node->width);
+                }
+            }
+            else if (lhs.has_value()  || rhs.has_value()) {
+                shared_ptr<ValueNode> constant_value = (lhs.has_value())? lhs.value() : rhs.value();
+                shared_ptr<ValueNode> nonconstant_value = (lhs.has_value())? node->rhs : node->lhs;
+                auto val = KnownConstant::GetIntValue(constant_value.get());
+                if (!val.has_value()) {
+                    return;
+                }
+
+                int integer_value = val.value();
+                if (integer_value == 0) {
+                    lastValue = make_shared<ImmediateNode>(0, node->width);
+                }
+                else if (integer_value == 1) {
+                    lastValue = nonconstant_value;
                 }
             }
         }
@@ -139,6 +174,21 @@ class FoldVisitor : public SIRVisitor {
                     }
 
                     lastValue = make_shared<ImmediateNode>(ret, node->width);
+                }
+            }
+            else if (lhs.has_value()) {
+                optional<int> lhs_val = KnownConstant::GetIntValue(lhs.value().get());
+                if (lhs_val.has_value()) {
+                    if (node->op == "and") {
+                        if (lhs_val.value() == 0) {
+                            lastValue = rhs;
+                        }
+                    }
+                    else if (node->op == "or") {
+                        if  (lhs_val.value() == 1) {
+                            lastValue = rhs;
+                        }
+                    }
                 }
             }
         }
