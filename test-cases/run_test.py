@@ -157,9 +157,7 @@ def run_case(file_name):
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
     verbose("Unoptimized compiled program passed")
 
-
     verbose("---Optimization O1 pipeline---")
-
     did_work = True
     while did_work:
         did_work = False
@@ -202,7 +200,6 @@ def run_regression_tests(dir, optimization_level):
     files = sorted([file for file in os.listdir(dir) if file.endswith('.sl')])
     total_files = len(files)
     ran_files = 0
-
     files_changed = []
     for file in files:
         if not file.endswith('.sl'):
@@ -276,9 +273,9 @@ if __name__ == '__main__':
             max_optimization = 1
             for i in range(0, max_optimization + 1):
                 print('Testing optimization level:', i)
-                run_regression_tests('binding_and_arithmatic_tests', i)
-                run_regression_tests('if_tests', i)
-                run_regression_tests('input_tests', i)
+                run_regression_tests('binding-and-arithmatic-tests', i)
+                run_regression_tests('if-tests', i)
+                run_regression_tests('input-tests', i)
                 run_regression_tests('select-tests', i)
                 run_regression_tests('while-tests', i)
         elif arg == '--graph-sir':
