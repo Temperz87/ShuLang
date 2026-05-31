@@ -65,6 +65,17 @@ def try_type_check(ast, file_name, pass_name):
             graph_ast(ast, file=fd)
 
 
+def run_sir_pass(sir_program, pass_name: str, pass_func, expected_stdout, stdin, file_name):
+    verbose(f"---{pass_name}---")
+    ret = pass_func(sir_program)
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
+
+    verbose('Running')
+    output = run_sir_program(sir_program, iter(stdin), pass_name, file_name)
+    check_expect_output(expected_stdout, output, file_name, pass_name, sir_program, False)
+    return ret
+
 def run_case(file_name):
     if not os.path.exists(file_name + ".exp"):
         print("\nCould not find", file_name + '.exp', "Please add it")
@@ -136,14 +147,7 @@ def run_case(file_name):
     # select_stdout = run_sir_program(sir_program)
     # compare_stdout(expected_stdout, select_stdout, file_name, "select SIR instructions")
 
-    verbose("---PROMOTE PSEUDO PHI---")
-    promote_pseudo_phi(sir_program)
-    # print_sir_ast(sir_program)
-    if SHOULD_GRAPH_SIR:
-        graph_sir_program(sir_program)
-    verbose("Running")
-    promote_pseudo_phi_stdout = run_sir_program(sir_program, iter(stdin), "promote pseudo phi", file_name)
-    check_expect_output(expected_stdout, promote_pseudo_phi_stdout, file_name, "promote pseudo phi", sir_program, False)
+    run_sir_pass(sir_program, 'PROMOTE PSEUDO PHI', promote_pseudo_phi, expected_stdout, stdin, file_name)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
@@ -153,53 +157,36 @@ def run_case(file_name):
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
     verbose("Unoptimized compiled program passed")
 
-    verbose("---ANALYSIS---")
-    cfg = SIRControlFlowGraph(sir_program.blocks)
-    usedef = UseDefAnalysis.get_use_def_chains(cfg)
-    sccp = SIRSCCP(cfg, usedef)
-    verbose("---SIRFOLD---")
-    SIRFold(sir_program, sccp.constants)
-    verbose('Running')
-    fold_output = run_sir_program(sir_program, iter(stdin), 'SIRFold', file_name)
-    if SHOULD_GRAPH_SIR:
-        graph_sir_program(sir_program)
 
-    check_expect_output(expected_stdout, fold_output, file_name, "SIRFold", sir_program, False)
-    verbose("---SIRPropagate---")
-    SIRPropagate(sir_program, sccp.constants)
-    verbose('Running')
-    prop_output = run_sir_program(sir_program, iter(stdin), 'SIRPropagate', file_name)
-    if SHOULD_GRAPH_SIR:
-        graph_sir_program(sir_program)
-    check_expect_output(expected_stdout, prop_output, file_name, "SIRPropagate", sir_program, False)
+    verbose("---Optimization O1 pipeline---")
 
-    verbose("---CFGSimplify---")
-    cfg = SIRControlFlowGraph(sir_program.blocks)
-    CFGSimplify(sir_program, cfg, sccp)
-    if SHOULD_GRAPH_SIR:
-        graph_sir_program(sir_program)
-    verbose('Running')
-    cfgsimplify_output = run_sir_program(sir_program, iter(stdin), 'CFGSimplify', file_name)
-    check_expect_output(expected_stdout, cfgsimplify_output, file_name, "CFGSimplify", sir_program, False)
+    did_work = True
+    while did_work:
+        did_work = False
+        
+        verbose("---Initial ANALYSIS---")
+        cfg = SIRControlFlowGraph(sir_program.blocks)
+        usedef = UseDefAnalysis.get_use_def_chains(cfg)
+        sccp = SIRSCCP(cfg, usedef)
+    
+        fold_pass = lambda x: SIRFold(x, sccp.constants)
+        run_sir_pass(sir_program, 'SIRFold', fold_pass, expected_stdout, stdin, file_name)
 
-    verbose("---CFGMerge---")
-    cfg = SIRControlFlowGraph(sir_program.blocks)
-    CFGMerge(sir_program, cfg)
-    if SHOULD_GRAPH_SIR:
-        graph_sir_program(sir_program)
-    verbose('Running')
-    cfgmerge_output = run_sir_program(sir_program, iter(stdin), 'CFGMerge', file_name)
-    check_expect_output(expected_stdout, cfgmerge_output, file_name, "CFGMerge", sir_program, False)
+        prop_pass = lambda x: SIRPropagate(x, sccp.constants)
+        run_sir_pass(sir_program, 'SIRFold', prop_pass, expected_stdout, stdin, file_name)
 
-    verbose("---SIRDSE---")
-    cfg = SIRControlFlowGraph(sir_program.blocks)
-    usedef = UseDefAnalysis.get_use_def_chains(cfg)
-    SIRDSE(usedef, cfg)
-    verbose('Running')
-    dse_output = run_sir_program(sir_program, iter(stdin), 'SIRDSE', file_name)
-    if SHOULD_GRAPH_SIR:
-        graph_sir_program(sir_program)
-    check_expect_output(expected_stdout, dse_output, file_name, "SIRDSE", sir_program, False)
+        cfg = SIRControlFlowGraph(sir_program.blocks)
+        cfg_simplify_pass = lambda x: CFGSimplify(x, cfg, sccp)
+        did_work |= run_sir_pass(sir_program, 'CFGSimplify', cfg_simplify_pass, expected_stdout, stdin, file_name)
+
+        cfg = SIRControlFlowGraph(sir_program.blocks)
+        cfg_merge_pass = lambda x: CFGMerge(x, cfg)
+        did_work |= run_sir_pass(sir_program, 'CFGMerge', cfg_merge_pass, expected_stdout, stdin, file_name)
+
+        cfg = SIRControlFlowGraph(sir_program.blocks)
+        usedef = UseDefAnalysis.get_use_def_chains(cfg)
+        dse_pass = lambda x: SIRDSE(usedef, cfg)
+        did_work |= run_sir_pass(sir_program, 'SIRDSE', dse_pass, expected_stdout, stdin, file_name)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
