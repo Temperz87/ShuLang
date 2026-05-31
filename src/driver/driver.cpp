@@ -140,12 +140,10 @@ int main(int argc, char** argv) {
             // Run optimizations
             SIRPropagate(sir_program, sccp.constants);
             SIRFold(sir_program, sccp.constants);
-            cfg = sir::SIRControlFlowGraph(blocks);
             did_work |= CFGSimplify(sir_program, cfg, sccp);
-            info = UseDefAnalysis::get_use_def_chains(cfg);
             
-            // CFGSimplify invalidates the CFG
-            // hence we rebuild it here!
+            // CFGSimplify invalidates the CFG and usedef analysis
+            // hence we rebuild them here!
             if (did_work) {
                 blocks.clear();
                 for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
@@ -153,11 +151,12 @@ int main(int argc, char** argv) {
                 } 
 
                 cfg = sir::SIRControlFlowGraph(blocks);
+                info = UseDefAnalysis::get_use_def_chains(cfg);
             }
 
             bool cfg_merged = CFGMerge(sir_program, cfg);
             did_work |= cfg_merged;
-            if(cfg_merged) {
+            if (cfg_merged) {
                 blocks.clear();
                 for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
                     blocks.push_back(b.get());

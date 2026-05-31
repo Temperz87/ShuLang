@@ -3,6 +3,7 @@
 #include <Analysis.hpp>
 #include <SIRAST.hpp>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 using namespace sir;
@@ -10,7 +11,6 @@ using namespace std;
 
 class CFGSimplifyVisitor : public SIRVisitor {
     private:
-        const SIRControlFlowGraph& cfg;
         const SCCPResults& sccp_results;
         std::shared_ptr<SIRBlock> new_dest = nullptr;
         std::shared_ptr<SIRBlock> current_block;
@@ -18,8 +18,7 @@ class CFGSimplifyVisitor : public SIRVisitor {
     public:
         bool did_work = false;
 
-        CFGSimplifyVisitor(const SIRControlFlowGraph& cfg, const SCCPResults& sccp_results)
-            :cfg(cfg), sccp_results(sccp_results) { }
+        CFGSimplifyVisitor(const SCCPResults& sccp_results):sccp_results(sccp_results) { }
 
         void visit(DefinitionNode* def) override {
             // Neccesary to visit phi nodes
@@ -29,16 +28,12 @@ class CFGSimplifyVisitor : public SIRVisitor {
         void visit(PhiNode* phi) override {
             std::vector<std::pair<SIRBlock*, std::shared_ptr<ValueNode>>> new_candidates;
             for (auto pair : phi->candidates) {
-                if (!sccp_results.reachable_edges.contains(pair.first) || !sccp_results.reachable_edges.at(pair.first).contains(current_block.get())) {
-                    // If the edge from the current block to the candidate block doesn't exist
-                    // Then we remove the phi candidate by not pushing it into new_candidates
-                    did_work = true;
-                }
-                else {
+                if (sccp_results.reachable_edges.contains(pair.first) && sccp_results.reachable_edges.at(pair.first).contains(current_block.get())) {
                     new_candidates.push_back(pair);
                 }
             }
 
+            did_work = new_candidates.size() != phi->candidates.size();
             phi->candidates = std::move(new_candidates);
         }
 
@@ -48,8 +43,6 @@ class CFGSimplifyVisitor : public SIRVisitor {
                 did_work = true;
                 bool goto_then = (node->destination.get() == *reachable.begin()); 
                 new_dest = goto_then? node->destination : node->else_destination;
-                std::shared_ptr<SIRBlock> not_going_to = goto_then? node->else_destination : node->destination;
-                not_going_to->predecesors.erase(current_block);
             }
         }
 
@@ -74,14 +67,23 @@ class CFGSimplifyVisitor : public SIRVisitor {
 
 bool CFGSimplify(ProgramNode& program, const SIRControlFlowGraph& cfg, const SCCPResults& results) {
     vector<shared_ptr<SIRBlock>> reachable;
-    CFGSimplifyVisitor visitor(cfg, results);
+    CFGSimplifyVisitor visitor(results);
     for (shared_ptr<SIRBlock> b : program.blocks) {
         if (results.reachable_blocks.contains(b.get())) {
             reachable.push_back(b);
             visitor.walk(b);
+            unordered_set<SIRBlock*> new_predecesors;
+            for (SIRBlock* pred : b->predecesors) {
+                if (results.reachable_edges.contains(pred)) {
+                    new_predecesors.insert(pred);
+                }
+            }
+
+            b->predecesors = std::move(new_predecesors);
         }
     }
 
+    bool did_work = visitor.did_work || program.blocks.size() != reachable.size();
     program.blocks = std::move(reachable);
-    return visitor.did_work;
+    return did_work;
 }

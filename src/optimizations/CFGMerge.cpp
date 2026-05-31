@@ -3,6 +3,7 @@
 #include <Analysis.hpp>
 #include <SIRAST.hpp>
 #include <deque>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -12,44 +13,107 @@ using namespace std;
 
 class PhiRedirectVisitor : public SIRVisitor {
     private:
-        bool was_phi = false;
+        SIRBlock* current_block;
         const unordered_map<SIRBlock*, SIRBlock*>& redirect;
-
+        std::shared_ptr<ValueNode> replace_phi_with = nullptr;
 
     public:
-        PhiRedirectVisitor(const unordered_map<SIRBlock*, SIRBlock*>& redirect):redirect(redirect) { }
+        bool was_phi = false;
+        bool was_replaced = false;
+        PhiRedirectVisitor(SIRBlock* current_block, const unordered_map<SIRBlock*, SIRBlock*>& redirect)
+            :current_block(current_block), redirect(redirect) { }
 
         void visit(DefinitionNode* node) override {
+            // std::cout << "Visiting def node for " << current_block->name << std::endl;
             node->binding->accept(this);
+            if (replace_phi_with != nullptr) {
+                node->binding = std::move(replace_phi_with);
+            }
+        }
+
+        void visit(ReferenceNode* node) override {
+            // std::cout << "\tGot referencenode!" << std::endl;
         }
 
         void visit(PhiNode* node) override {
             was_phi = true;
+            // std::cout << "\tGot phi!" << std::endl;
             for (auto& pair : node->candidates) {
                 SIRBlock* candidate_block = pair.first;
                 while (redirect.contains(candidate_block)) {
+                    // std::cout << "Redirecting " << candidate_block->name << " to " << redirect.at(candidate_block)->name << std::endl;
                     candidate_block = redirect.at(candidate_block);
                     pair.first = candidate_block;
                 }
+
+                if (candidate_block == current_block) {
+                    // std::cout << "Replacing phi node!" << std::endl;
+                    replace_phi_with = pair.second;
+                    was_replaced = true;
+                    break;
+                }
+
             }
         }
 
         static void walk(SIRBlock* b, const unordered_map<SIRBlock*, SIRBlock*>& redirect) {
-            PhiRedirectVisitor visitor(redirect);
+            PhiRedirectVisitor visitor(b, redirect);
+            visitor.current_block = b;
             auto iter = b->instructions.begin();
             do {
                 visitor.was_phi = false;
                 (*iter)->accept(&visitor);
                 std::advance(iter, 1);
-            } while (visitor.was_phi);
+            } while (visitor.was_phi && iter != b->instructions.end());
+
         }
 
 };
 
-void merge(SIRBlock* big_block, SIRBlock* to_subsume) {
-    auto last_instruction = std::prev(big_block->instructions.end());
-    big_block->instructions.erase(last_instruction);
-    big_block->instructions.insert(last_instruction, to_subsume->instructions.begin(), to_subsume->instructions.end());
+void merge(SIRBlock* big_block, SIRBlock* to_subsume, const unordered_set<SIRBlock*>& subsume_next, const unordered_map<SIRBlock*, SIRBlock*>& mergable) {
+    // std::cout << "Merging " << to_subsume->name << " into " << big_block->name << std::endl;
+
+    // First, remove final jump
+    big_block->instructions.erase(std::prev(big_block->instructions.end()));
+
+    // Add phi nodes to beginning
+    // or replace them with concrete values
+    PhiRedirectVisitor visitor(big_block, mergable);
+    auto it = to_subsume->instructions.begin();
+    while (it != to_subsume->instructions.end()) {
+        shared_ptr<InstructionNode> instruction = *it;
+        instruction->accept(&visitor);
+        if (visitor.was_phi) {
+            visitor.was_phi = false;
+
+            if (visitor.was_replaced) {
+                // Here the phi node was replaced with a value
+                // as it used big block as the only live edge
+                // hence we place it at the end of the instructions
+                big_block->instructions.push_back(instruction);
+                visitor.was_replaced = false;
+            }
+            else {
+                big_block->instructions.insert(big_block->instructions.begin(), instruction);
+            }
+            ++it;
+        }
+        else {
+            break;
+        }
+    }
+
+    // Add rest of instructions to end of block
+    if (it != to_subsume->instructions.end()) {
+        big_block->instructions.insert(big_block->instructions.end(), to_subsume->instructions.begin(), to_subsume->instructions.end());
+    }
+
+    
+    // Update predecesors
+    for (SIRBlock* next : subsume_next) {
+        next->predecesors.erase(to_subsume);
+        next->predecesors.insert(big_block);
+    }
 }
 
 bool CFGMerge(ProgramNode& program, const SIRControlFlowGraph& cfg) {
@@ -69,22 +133,21 @@ bool CFGMerge(ProgramNode& program, const SIRControlFlowGraph& cfg) {
             forwards.push_back(outgoing);
         }
         
+        // If the destination has only one predecsor
+        // and our block has only one succesor
+        // THEN we can merge the two blocks together
         auto outgoing = cfg.get_outgoing(b);
         if (outgoing.size() != 1) {
             continue;
         }
 
-        // If the destination has only one predecsor
-        // and our block has only one succesor
-        // THEN we can merge the two blocks together
         SIRBlock* dest = *outgoing.begin();
         if (cfg.get_incoming(dest).size() != 1) {
             continue;
         }
 
-        mergable.insert({dest, b});
+        mergable[dest] = b;
     }
-
 
     deque<SIRBlock*> backwards(terminals.begin(), terminals.end());
     seen.clear();
@@ -103,22 +166,38 @@ bool CFGMerge(ProgramNode& program, const SIRControlFlowGraph& cfg) {
         }
 
         if (mergable.contains(subsumable)) {
-            merge(mergable[subsumable], subsumable);
+            merge(mergable[subsumable], subsumable, cfg.get_outgoing(subsumable), mergable);
             did_work = true;
-
-            for (auto iter = program.blocks.begin(); iter != program.blocks.end(); std::advance(iter, 1)) {
-                if ((*iter).get() == subsumable) {
-                    program.blocks.erase(iter);
-                    break;
-                }
-            }
         }
     }
 
-    for (shared_ptr<SIRBlock> b : program.blocks) {
-        PhiRedirectVisitor::walk(b.get(), mergable);
+    vector<shared_ptr<SIRBlock>> unmerged_blocks;
+    for (shared_ptr<SIRBlock> block : program.blocks) {
+        if (!mergable.contains(block.get())) {
+            // std::cout << "not free block " << block->name << std::endl;
+            unmerged_blocks.push_back(block);
+            std::unordered_set<SIRBlock*> new_predecessors;
+            for (SIRBlock* b : block->predecesors) {
+                while (mergable.contains(b)) {
+                    b = mergable[b];
+                }
+
+                new_predecessors.insert(b);
+            }
+
+            block->predecesors = std::move(new_predecessors);
+        }
     }
-    
+
+    did_work |= program.blocks.size() != unmerged_blocks.size();
+    if (did_work) {
+        program.blocks = std::move(unmerged_blocks);
+
+        // Have to walk all blocks on more time to make sure we redirected all phi nodes
+        for (shared_ptr<SIRBlock> block : program.blocks) {
+            PhiRedirectVisitor::walk(block.get(), mergable);
+        }
+    }
 
     return did_work;
 }

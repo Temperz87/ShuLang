@@ -1,4 +1,4 @@
-#include "SIRCFG.hpp"
+#include <SIRCFG.hpp>
 #include <Analysis.hpp>
 #include <SIRAST.hpp>
 #include <memory>
@@ -47,7 +47,7 @@ class DSEVisitor : public SIRVisitor {
         }
 };
 
-bool SIRDSE(UseDefInfo usedefs, const SIRControlFlowGraph& cfg) {
+bool SIRDSE(const UseDefInfo& usedefs, const SIRControlFlowGraph& cfg) {
     // Walk CFG backwards
     // Removes need for fixpoint iteration
     DSEVisitor visitor(usedefs);
@@ -63,7 +63,7 @@ bool SIRDSE(UseDefInfo usedefs, const SIRControlFlowGraph& cfg) {
         next.pop_front();
         visitor.walk(incoming);
         for (SIRBlock* new_block : cfg.get_incoming(incoming)) {
-            if  (handled.contains(new_block)) {
+            if (handled.contains(new_block)) {
                 continue;
             }
 

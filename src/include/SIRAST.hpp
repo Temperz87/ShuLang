@@ -187,7 +187,7 @@ namespace sir {
 
     class SIRBlock {
         public:
-            std::unordered_set<std::shared_ptr<SIRBlock>> predecesors;
+            std::unordered_set<SIRBlock*> predecesors;
             std::unordered_map<std::string, std::shared_ptr<DefinitionNode>> variable_to_ref;
             std::vector<std::shared_ptr<InstructionNode>> instructions;
             std::string name;

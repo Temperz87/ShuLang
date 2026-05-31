@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <SIRAST.hpp>
 #include <unordered_map>
 #include <unordered_set>
@@ -41,8 +40,8 @@ namespace sir {
                         terminal_blocks.push_back(block);
                     }
 
-                    for (std::shared_ptr<SIRBlock> pred : block->predecesors) {
-                        add_edge(pred.get(), block);
+                    for (SIRBlock* pred : block->predecesors) {
+                        add_edge(pred, block);
                     }
                 }
             }

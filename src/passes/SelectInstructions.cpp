@@ -175,8 +175,8 @@ class SLTranslator : public ShuLangVisitor {
             std::shared_ptr<sir::JumpIfElseNode> if_else = std::make_shared<sir::JumpIfElseNode>(current_block.get(), then_block, else_block, completed.top());
             current_block->instructions.push_back(if_else);
             mark_block_reachable(then_block);
-            then_block->predecesors.insert(current_block);
-            else_block->predecesors.insert(current_block);
+            then_block->predecesors.insert(current_block.get());
+            else_block->predecesors.insert(current_block.get());
             mark_block_reachable(else_block);
             
             // True block
@@ -186,7 +186,7 @@ class SLTranslator : public ShuLangVisitor {
             std::shared_ptr<sir::ReferenceNode> ref_true = std::make_shared<sir::ReferenceNode>(def_true, def_true->width);
             current_block->instructions.push_back(def_true);
             current_block->instructions.push_back(std::make_shared<sir::JumpNode>(current_block.get(), select_cont));
-            select_cont->predecesors.insert(current_block);
+            select_cont->predecesors.insert(current_block.get());
             mark_block_reachable(select_cont);
             candidates.push_back({current_block.get(), ref_true});
             completed.pop();
@@ -198,7 +198,7 @@ class SLTranslator : public ShuLangVisitor {
             std::shared_ptr<sir::ReferenceNode> ref_false = std::make_shared<sir::ReferenceNode>(def_false, def_false->width);
             current_block->instructions.push_back(def_false);
             current_block->instructions.push_back(std::make_shared<sir::JumpNode>(current_block.get(), select_cont));
-            select_cont->predecesors.insert(current_block);
+            select_cont->predecesors.insert(current_block.get());
             candidates.push_back({current_block.get(), ref_false});
             completed.pop();
 
@@ -255,9 +255,9 @@ class SLTranslator : public ShuLangVisitor {
 
             node->condition->accept(this);
             mark_block_reachable(then_block);
-            then_block->predecesors.insert(current_block);
+            then_block->predecesors.insert(current_block.get());
             mark_block_reachable(else_destination);
-            else_destination->predecesors.insert(current_block);
+            else_destination->predecesors.insert(current_block.get());
             std::shared_ptr<sir::JumpIfElseNode> if_else = std::make_shared<sir::JumpIfElseNode>(current_block.get(), then_block, else_destination, completed.top());
             completed.pop();
             current_block->instructions.push_back(if_else);
@@ -267,7 +267,7 @@ class SLTranslator : public ShuLangVisitor {
             node->then_block->accept(this);
             if (current_block != continuation) {
                 current_block->instructions.push_back(std::make_shared<sir::JumpNode>(current_block.get(), continuation));
-                continuation->predecesors.insert(current_block);
+                continuation->predecesors.insert(current_block.get());
                 mark_block_reachable(continuation);
             }
 
@@ -277,7 +277,7 @@ class SLTranslator : public ShuLangVisitor {
                 node->else_block->accept(this);
                 if (current_block != continuation) {
                     current_block->instructions.push_back(std::make_shared<sir::JumpNode>(current_block.get(), continuation));
-                    continuation->predecesors.insert(current_block);
+                    continuation->predecesors.insert(current_block.get());
                     mark_block_reachable(continuation);
                 }
             }
@@ -296,7 +296,7 @@ class SLTranslator : public ShuLangVisitor {
             // Translate loop condition
             std::shared_ptr<sir::JumpNode> jump = std::make_shared<sir::JumpNode>(current_block.get(), loop_condition);
             current_block->instructions.push_back(jump);
-            loop_condition->predecesors.insert(current_block);
+            loop_condition->predecesors.insert(current_block.get());
             mark_block_reachable(loop_condition);   
             current_block = loop_condition;
 
@@ -307,9 +307,9 @@ class SLTranslator : public ShuLangVisitor {
             std::shared_ptr<sir::JumpIfElseNode> jump_cond_body = std::make_shared<sir::JumpIfElseNode>(current_block.get(), loop_body, loop_continuation, completed.top());
             current_block->instructions.push_back(jump_cond_body);
             completed.pop();
-            loop_body->predecesors.insert(current_block);
+            loop_body->predecesors.insert(current_block.get());
             mark_block_reachable(loop_body);
-            loop_continuation->predecesors.insert(current_block);
+            loop_continuation->predecesors.insert(current_block.get());
             mark_block_reachable(loop_continuation);
 
             // Translate loop body
@@ -318,7 +318,7 @@ class SLTranslator : public ShuLangVisitor {
             node->body->accept(this);
             jump = std::make_shared<sir::JumpNode>(current_block.get(), loop_condition);
             current_block->instructions.push_back(jump);
-            loop_condition->predecesors.insert(current_block);
+            loop_condition->predecesors.insert(current_block.get());
             
             // Loop done, insert all instructions after loop
             current_block = loop_continuation;
