@@ -164,7 +164,7 @@ def run_case(file_name):
     while did_work:
         did_work = False
         
-        verbose("---Initial ANALYSIS---")
+        verbose("---Initial Analysis---")
         cfg = SIRControlFlowGraph(sir_program.blocks)
         usedef = UseDefAnalysis.get_use_def_chains(cfg)
         sccp = SIRSCCP(cfg, usedef)
