@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
         std::chrono::time_point compile_end = std::chrono::high_resolution_clock::now();
         long total = std::chrono::duration_cast<std::chrono::microseconds>(
             compile_end - compile_start).count();
-        std::cout << "Total compilation time: " << total << " microseconds\n";
+        std::cout << "Total compilation time: " << total << " micro seconds\n";
 }
 
     return 0;

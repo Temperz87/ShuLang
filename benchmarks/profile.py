@@ -1,13 +1,41 @@
 import os
+import re
 import sys
 import subprocess
 import time
 
+# Return a dict containing the pass timing data
+def parse_timings(text):
+    results = {}
+    for line in text.splitlines():
+        # I love regex
+        m = re.match(r"^(.*?):\s+(\d+)", line)
+        if m:
+            name = m.group(1).strip()
+
+            # Okay so this might be wrong?
+            # As in it's making an int 
+            #   when it should be making a float
+            value = int(m.group(2))
+            results[name] = value
+
+    return results
+
+def format_timings(timings):
+    ls = []
+    for k,v in timings.items():
+        if k == "Optimization iterations":
+            ls.append(f"{k}: {int(v)}")
+        else:
+            ls.append(f"{k}: {v:.1f}μs")
+
+    return '- ' + '\n- '.join(ls)
+
 def one_time(command):
     start = time.perf_counter_ns()
-    subprocess.run(command, shell=True)
+    proc = subprocess.run(command, shell=True, capture_output=True, encoding='utf-8')
     end = time.perf_counter_ns()
-    return (end - start) // 1000
+    return (end - start) // 1000, proc.stdout
 
 def run_and_time(file_name, extension, max_iterations):
     command = f'./{file_name}{extension} > /dev/null'
@@ -16,18 +44,31 @@ def run_and_time(file_name, extension, max_iterations):
 
     total = 0
     for _ in range(max_iterations):
-        total += one_time(command)
+        total += one_time(command)[0]
+
     return total / max_iterations
 
 def compile(cc, file, output_file, flags, max_iterations):
-    command = f'{cc} {file} {flags} -o {output_file} > /dev/null'
-    total = 0
-    for _ in range(max_iterations):
-        total += one_time(command)
-
     command = f'{cc} {file} {flags} -o {output_file}'
-    output = subprocess.run(command, shell=True, capture_output=True, encoding='utf-8')
-    return total / max_iterations, output.stdout
+    total = 0
+    timings = None
+    for _ in range(max_iterations):
+        new_time, out = one_time(command)
+        total += new_time
+        out = parse_timings(out)
+        if timings == None:
+            timings = out
+        else:
+            for k,v in out.items():
+                timings[k] += v
+    
+
+    for k,v in out.items():
+        timings[k] /= max_iterations
+        
+    command = f'{cc} {file} {flags} -o {output_file}'
+    formatted = format_timings(timings)
+    return total / max_iterations, format_timings(timings)
 
 def benchmark(shuc_path, file_name, max_iterations=100, out_file=None):
     fd = None
@@ -40,7 +81,6 @@ def benchmark(shuc_path, file_name, max_iterations=100, out_file=None):
     print('# Report for', file_name, file=out_stream)
     print('Times determined by running each measure part', max_iterations,\
           'times then taking the average')
-    print('\nNote that individual pass timings are NOT averaged out')
 
     unopt_flags = '-O0'
     opt_flags = '-O1'
@@ -62,9 +102,9 @@ def benchmark(shuc_path, file_name, max_iterations=100, out_file=None):
     print(f'| shuc -O1 | {(shuc_opt + opt_unopt):.1f}μs | {(shuc_opt + opt_opt):.1f}μs | {(shuc_opt + opt_o2):.1f}μs |', file=out_stream)
 
     print('\nshuc -O0 pass timings', file=out_stream)
-    print('-', unopt_compile_timings.replace('\n', '\n- ')[0:-2], file=out_stream)
-    print('shuc -O1 pass timings', file=out_stream)
-    print('-', opt_compile_timings.replace('\n', '\n- ')[0:-2], file=out_stream)
+    print(unopt_compile_timings, file=out_stream)
+    print('\nshuc -O1 pass timings', file=out_stream)
+    print(opt_compile_timings, file=out_stream)
 
     print('## EXECUTION TIME', file=out_stream)
     print('|  | clang -O0 | clang -O1 | clang -O2 |', file=out_stream)
