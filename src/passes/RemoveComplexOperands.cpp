@@ -84,13 +84,18 @@ class target_complex : public ShuLangVisitor {
         }
 
         void visitNode(BodyNode* node) override {
+            auto last_insert_position = insert_position;
+            auto last_program_nodes = program_nodes;
             program_nodes = &node->nodes;
             insert_position = 0;
             updated_inserted = false;
-            for (ShuLangNode* node : node->children()) {
-                node->accept(this);
+            for (ShuLangNode* child : node->children()) {
+                child->accept(this);
                 insert_position += 1;
             }
+
+            insert_position = last_insert_position;
+            program_nodes = last_program_nodes;
         }
 
         void visitNode(ProgramNode* node) override {
