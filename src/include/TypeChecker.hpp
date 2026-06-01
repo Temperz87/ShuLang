@@ -5,7 +5,9 @@
 
 class TypeChecker : public ShuLangVisitor {
     private:
-        std::unordered_map<std::string, std::string> variable_types;
+        // We'll need random access to walk the scopes
+        // Hence a vector and not a deque
+        std::vector<std::unordered_map<std::string, std::string>> scope_stack = { {} };
         std::unordered_map<std::string, std::pair<int, std::vector<std::string>>> function_types = {
             {"print", {1, {"Void", "Any"}}},
             {"read_input", {0, {"Integer"}}},

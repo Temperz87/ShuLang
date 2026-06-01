@@ -3,6 +3,7 @@
 #include <TypeChecker.hpp>
 #include <asm-generic/errno.h>
 #include <iostream>
+#include <string>
 
 using namespace shulang;
 
@@ -20,7 +21,7 @@ void TypeChecker::assert_same(std::string expected, std::string actual, std::str
 
 void TypeChecker::visitNode(BindingNode* node) { 
     if (node->type != "Inferred") {
-        variable_types.insert({node->identifier, node->type});
+        scope_stack.back().insert({node->identifier, node->type});
     }
 
     descendIntoChildren(node);
@@ -31,7 +32,7 @@ void TypeChecker::visitNode(BindingNode* node) {
         }
 
         node->type = node->value->type;
-        variable_types.insert({node->identifier, node->type});
+        scope_stack.back().insert({node->identifier, node->type});
     }
     else {
         assert_same(node->type, node->value->type, "Variable " + node->identifier + " was bound to a value of the wrong type");
@@ -39,12 +40,18 @@ void TypeChecker::visitNode(BindingNode* node) {
 }
         
 void TypeChecker::visitNode(VariableReferenceNode* node) {
-    if (!variable_types.contains(node->identifier)) {
+    node->type = "";
+    for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
+        if (it->contains(node->identifier)) {
+            node->type = it->at(node->identifier);
+            break;
+        }
+    }
+
+    if (node->type.empty()) {
         std::cout << "ShuC: " << node->identifier << " was used before it was declared!" << std::endl;
         exit(1);
     }
-
-    node->type = variable_types.at(node->identifier);
 }
 
 void TypeChecker::visitNode(OperatorApplicationNode* node) { 
@@ -136,19 +143,33 @@ std::unordered_map<std::string, std::string> join(std::unordered_map<std::string
 void TypeChecker::visitNode(IfNode* node) {
     node->condition->accept(this);
     assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
-    auto before_scope = variable_types; 
-    node->then_block->accept(this);
-    auto then_scope = variable_types;
-    if (node->else_block != nullptr) {
-        variable_types = before_scope;
-        node->else_block->accept(this);
-        auto else_scope = variable_types;
-        variable_types = join(then_scope, else_scope);
-    }
 
+    // Descend into then clause
+    auto before_scope = scope_stack.back(); 
+    scope_stack.push_back({});
+    node->then_block->accept(this);
+    auto then_scope = scope_stack.back();
+    scope_stack.pop_back();
+
+    // If there is an else block, descend into it
+    auto new_scope = then_scope;
+    if (node->else_block != nullptr) {
+        scope_stack.push_back({});
+        node->else_block->accept(this);
+        auto else_scope = scope_stack.back();
+        scope_stack.pop_back();
+
+        // and a variable is defined in both the then and else block
+        // the variables in both blocks become usable in the next scope
+        auto new_scope = join(then_scope, else_scope);
+        scope_stack.push_back(new_scope);
+    }
 }
 
 void TypeChecker::visitNode(WhileNode* node) { 
-    descendIntoChildren(node);
+    node->condition->accept(this);
+    scope_stack.push_back({});
+    node->body->accept(this);
+    scope_stack.pop_back();
     assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
 }
