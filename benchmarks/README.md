@@ -1,6 +1,6 @@
 # Benchmarks
 Currently these benchmarks are limited and WIP, however that will change in the future. These benchmarks are generated using the [profile.py](./profile.py) script in this directory. The script compiles the program:
-- With shuc without ptimizations
+- With shuc without optimizations
 - With shuc with optimizations
 
 Then runs the two compiled binaries through clang on optmization levels zero, one, and two. The statistics reported are:
