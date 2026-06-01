@@ -79,6 +79,10 @@ def benchmark(shuc_path, file_name, out_file=None):
         subprocess.run(f'rm -f {file_name}{suffix}.out', shell=True)
 
 if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        print('Usage: python3 profile.py $path_to_shuc $sl_file_to_benchmark')
+        exit(0)
+
     shuc_path = sys.argv[1]
     file_name = sys.argv[2]
     benchmark(shuc_path, file_name, None)
