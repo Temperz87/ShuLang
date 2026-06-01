@@ -1,33 +1,38 @@
 #include <Analysis.hpp>
-#include <SIRAST.hpp>
-#include <ShuLangAST.hpp>
-#include <ShuLangPrinter.hpp>
+#include <chrono>
 #include <fstream>
+#include <iostream>
 #include <LLVMCodegenVisitor.hpp>
 #include <LLVMSelection.hpp>
-#include <iostream>
 #include <memory>
 #include <ostream>
 #include <parser.hpp>
 #include <PromotePseudoPhi.hpp>
-#include <vector>
-#include <SIROptimizations.hpp>
-#include <SIRCFG.hpp>
-#include <ShuLangPasses.hpp>
 #include <SelectInstructions.hpp>
+#include <SIRAST.hpp>
+#include <SIRCFG.hpp>
+#include <ShuLangAST.hpp>
+#include <ShuLangPasses.hpp>
+#include <SIROptimizations.hpp>
 #include <tokenizer.hpp>
 #include <TypeChecker.hpp>
+#include <vector>
 
 static std::string output_file = "a.ll";
 static int optimization_level = 1;
+static bool print_timings = false;
 
 std::string process_arguments(int argc, char** argv) {
+    bool warned_multiple_files = false;
     int to_compile_idx = -1;
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
         if (arg == "-o") {
             i += 1;
             output_file = std::string(argv[i]);
+        }
+        else if (arg == "--timings") {
+            print_timings = true;
         }
         else {
             if (arg[0] == '-' && arg[1] == 'O') {
@@ -39,8 +44,11 @@ std::string process_arguments(int argc, char** argv) {
                 to_compile_idx = i;
             }
             else {
-                std::cout << "ShuC: warning: it seems like multiple files have been passed in for compilation. ShuC doesn't support this right now, so only the first file:" << 
-                std::endl << "\t" << argv[i] << std::endl << "Will be compiled." << std::endl;
+                if (!warned_multiple_files) {
+                    std::cout << "ShuC: warning: it seems like multiple files have been passed in for compilation. ShuC doesn't support this right now, so only the first file:" << 
+                    std::endl << "\t" << argv[i] << std::endl << "Will be compiled." << std::endl;
+                    warned_multiple_files = true;
+                }
             }
         }
     }
@@ -53,9 +61,21 @@ std::string process_arguments(int argc, char** argv) {
     return std::string(argv[to_compile_idx]);
 }
 
+void time_phase(const std::string& name, auto fn) {
+    if (!print_timings) {
+        fn();
+        return;
+    }
+
+    std::chrono::time_point start = std::chrono::high_resolution_clock::now();
+    fn();
+    std::chrono::time_point end = std::chrono::high_resolution_clock::now();
+    long time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << name << ": " << time << " micro seconds\n";
+};
+
 int main(int argc, char** argv) {
     std::string filename = process_arguments(argc, argv);
-    
     std::ifstream myfile;
     myfile.open(filename);
     if (!myfile.is_open()) {
@@ -63,118 +83,127 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+    std::chrono::time_point compile_start = std::chrono::high_resolution_clock::now();
+
     // std::cout << "-----TOKENIZATION-----" << std::endl;
     std::vector<token> token_list;
-    tokenize(myfile, token_list);
+    time_phase("Tokenization", [&]() {
+        tokenize(myfile, token_list);
+    });    
     myfile.close();
-
-
-    // for (int i = 0; i < tokens; i++) {  
-    //     token t = token_list.at(i);
-    //     std::string ty;
-    //     token_type_to_string(ty, t.type);
-    //     std::cout << "(" << t.value << ", " << ty << ")" << std::endl;
-    // }
-
 
     // std::cout << "-----PARSING-----" << std::endl;
     // Recursive descent parsing
-    std::unique_ptr<shulang::ProgramNode> program = begin_parse(token_list, argv[1]);
-    // ShuLangPrinter().walk(program.get());
+    std::unique_ptr<shulang::ProgramNode> program;
+    time_phase("Parsing", [&]() {
+        program = begin_parse(token_list, argv[1]);
+    });
+
 
     // std::cout << "-----TYPE CHECKING-----" << std::endl;
     // We only type check one time
     // Because if all the compiler tests pass
     // There won't be any type issues at runtime
-    TypeChecker tyc;
-    program->accept(&tyc);
-
-    // std::cout << "-----UNIQUIFICATION-----" << std::endl;
-    // If I do somethingl ike
-    // bind x to 5 bind x to 6
-    // that becomes bind x.0 to 5 bind x.1 to 6
-    // every variable gets a unique name
-    // uniquify(program.get());
-    // ShuLangPrinter().walk(program.get());
-
+    time_phase("Type Checking", [&]() {
+        TypeChecker tyc;
+        program->accept(&tyc);
+    });
 
     // std::cout << "-----SHORT CIRCUIT-IFICATION-----" << std::endl;
     // And with a complex rhs become
     //  if (lhs) rhs else false
     // Or's similarly become
     //  if (lhs) true else rhs
-    short_circuitify(program.get());
-
+    time_phase("Short Circuitify", [&]() { short_circuitify(program.get()); });
+    
     // std::cout << "-----REMOVE COMPLEX OPERANDS-----" << std::endl;
     // Say I do bind x to (1 + 2) + (3 + 4)
     // that gets changed to bind tmp0 to 1 + 2 bind tmp1 to 3 + 4 bind x to tmp0 + tmp1
-    // this makes going into ShuIR easier
-    remove_complex_operands(program.get());
-    // ShuLangPrinter().walk(program.get());
+    // this makes going into SIR easier
+    time_phase("Remove Complex Operands", [&]() { remove_complex_operands(program.get()); });    // ShuLangPrinter().walk(program.get());
 
     // std::cout << "-----SELECT SIR INSTRUCTIONS-----" << std::endl;
     // Lowering to SSA and creating pseudo phi nodes
-    sir::ProgramNode sir_program = select_SIR_instructions(program.get());
+    sir::ProgramNode sir_program; 
+    time_phase("SIR Instruction Selection", [&]() {
+        sir_program = select_SIR_instructions(program.get());
+    });
 
     // std::cout << "-----PROMOTE PHI-----" << std::endl;
     // Making the pseudo phi nodes PhiNodes
-    promote_pseudo_phi(&sir_program);
-
+    time_phase("Promote Phi", [&]() { promote_pseudo_phi(&sir_program); });
     // Optimizations
+    
     if (optimization_level) {
-        // TODO: some better form of queueing optimizations
-        bool did_work;
-        do {
-            did_work = false;
+        int optimazation_iterations = 0;
+        time_phase("Optimizations", [&]() {
+            // TODO: some better form of queueing optimizations
+            bool did_work;
+            do {
+                optimazation_iterations +=  1;
+                did_work = false;
 
-            // Rebuild analysis
-            std::vector<sir::SIRBlock*> blocks;
-            for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
-                blocks.push_back(b.get());
-            } 
-            
-            sir::SIRControlFlowGraph cfg(blocks);
-            UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
-            SCCPResults sccp = SIRSCCP(cfg, info);
-
-            // Run optimizations
-            SIRPropagate(sir_program, sccp.constants);
-            SIRFold(sir_program, sccp.constants);
-            did_work |= CFGSimplify(sir_program, cfg, sccp);
-            
-            // CFGSimplify invalidates the CFG and usedef analysis
-            // hence we rebuild them here!
-            if (did_work) {
-                blocks.clear();
+                // Rebuild analysis
+                std::vector<sir::SIRBlock*> blocks;
                 for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
                     blocks.push_back(b.get());
                 } 
 
-                cfg = sir::SIRControlFlowGraph(blocks);
+                sir::SIRControlFlowGraph cfg(blocks);
+                UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
+                SCCPResults sccp = SIRSCCP(cfg, info);
+
+                // Run optimizations
+                SIRPropagate(sir_program, sccp.constants);
+                SIRFold(sir_program, sccp.constants);
+                did_work |= CFGSimplify(sir_program, cfg, sccp);
+
+                // CFGSimplify invalidates the CFG and usedef analysis
+                // hence we rebuild them here!
+                if (did_work) {
+                    blocks.clear();
+                    for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
+                        blocks.push_back(b.get());
+                    } 
+
+                    cfg = sir::SIRControlFlowGraph(blocks);
+                    info = UseDefAnalysis::get_use_def_chains(cfg);
+                }
+
+                bool cfg_merged = CFGMerge(sir_program, cfg);
+                did_work |= cfg_merged;
+                if (cfg_merged) {
+                    blocks.clear();
+                    for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
+                        blocks.push_back(b.get());
+                    } 
+
+                    cfg = sir::SIRControlFlowGraph(blocks);
+                }
+
                 info = UseDefAnalysis::get_use_def_chains(cfg);
-            }
+                bool dse = SIRDSE(info, cfg);
+                did_work |= dse;
+            } while (did_work);
+        });
 
-            bool cfg_merged = CFGMerge(sir_program, cfg);
-            did_work |= cfg_merged;
-            if (cfg_merged) {
-                blocks.clear();
-                for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
-                    blocks.push_back(b.get());
-                } 
-
-                cfg = sir::SIRControlFlowGraph(blocks);
-            }
-
-            info = UseDefAnalysis::get_use_def_chains(cfg);
-            bool dse = SIRDSE(info, cfg);
-            did_work |= dse;
-        } while (did_work);
+        if (print_timings) {
+            std::cout << "Optimization iterations: " << optimazation_iterations << "\n";
+        }
     }
 
-    // std::cout << "-----SELECT LLVM INSUTRCTIONS-----" << std::endl;
+    // std::cout << "-----LLVM CODE GENERATION-----" << std::endl;
     // Emitting LLVM
-    // Later on we'll also tell LLVM to do some optimizations
-    // e.g. alloca promotion
-    select_llvm_instructions(&sir_program, std::string(argv[1]), output_file);
+    time_phase("LLVM Codegen", [&]() {
+        select_llvm_instructions(&sir_program, std::string(argv[1]), output_file);
+    });    
+
+    if (print_timings) {
+        std::chrono::time_point compile_end = std::chrono::high_resolution_clock::now();
+        long total = std::chrono::duration_cast<std::chrono::microseconds>(
+            compile_end - compile_start).count();
+        std::cout << "Total compilation time: " << total << " microseconds\n";
+}
+
     return 0;
 }
