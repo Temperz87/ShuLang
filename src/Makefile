@@ -1,8 +1,9 @@
 CC = clang++
 COMMONCPPFLAGS = -Iinclude -MMD -Wall -pedantic $(shell llvm-config --libs) -std=c++20
 RELEASEFLAGS = -O3
-DEBUGFLAGS = -g -pg -O0
+DEBUGFLAGS = -g -O0
 ASANFLAGS = -fsanitize=address -fno-omit-frame-pointer
+PROFILEFlags = -O3 -g -pg --coverage
 PYTHONFLAGS = -O3 -Wall -fPIC $(shell python3 -m pybind11 --includes) -Iinclude -std=c++20
 RM = rm
 
@@ -49,11 +50,14 @@ $(PYTHONFILEPATH): $(OBJECTS) ./python_bindings/pybind11_stuff.o
 build:
 	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(RELEASEFLAGS)" all
 
+build-asan:
+	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(DEBUGFLAGS) $(ASANFLAGS)" all
+
 build-debug:
 	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(DEBUGFLAGS)" all
 
-build-asan:
-	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(DEBUGFLAGS) $(ASANFLAGS)" all
+build-profile:
+	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(PROFILEFlags)" all
 
 all: ./output/shuc $(PYTHONFILEPATH)
 
