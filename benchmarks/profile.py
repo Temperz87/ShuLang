@@ -12,10 +12,6 @@ def parse_timings(text):
         m = re.match(r"^(.*?):\s+(\d+)", line)
         if m:
             name = m.group(1).strip()
-
-            # Okay so this might be wrong?
-            # As in it's making an int 
-            #   when it should be making a float
             value = int(m.group(2))
             results[name] = value
 
