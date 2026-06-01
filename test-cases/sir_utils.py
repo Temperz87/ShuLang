@@ -218,7 +218,7 @@ def _run_sir_program(program_node, stdin):
             if len(list(stdin)) != 0:
                 print("\nAll input was not consumed!")
                 print("There's probably a problem with an optimization...")
-                raise RuntimeError
+                raise RuntimeError()
             
             return ret
             
@@ -230,5 +230,6 @@ def run_sir_program(sir_program, stdin, pass_name, file_name):
         print('Encountered error while running program for file\n\t' + str(file_name))
         with open(f'./failure {pass_name}.dot', 'w') as fd:
             graph_sir_program(sir_program, file=fd)
-        exit(1)
+
+        raise
     
