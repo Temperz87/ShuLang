@@ -40,14 +40,12 @@ class PhiRedirectVisitor : public SIRVisitor {
             // std::cout << "\tGot phi!" << std::endl;
             for (auto& pair : node->candidates) {
                 SIRBlock* candidate_block = pair.first;
-                while (redirect.contains(candidate_block)) {
-                    // std::cout << "Redirecting " << candidate_block->name << " to " << redirect.at(candidate_block)->name << std::endl;
+                while (redirect.contains(candidate_block) && candidate_block != current_block) {
                     candidate_block = redirect.at(candidate_block);
                     pair.first = candidate_block;
                 }
 
                 if (candidate_block == current_block) {
-                    // std::cout << "Replacing phi node!" << std::endl;
                     replace_phi_with = pair.second;
                     was_replaced = true;
                     break;
@@ -65,7 +63,6 @@ class PhiRedirectVisitor : public SIRVisitor {
                 (*iter)->accept(&visitor);
                 std::advance(iter, 1);
             } while (visitor.was_phi && iter != b->instructions.end());
-
         }
 
 };
@@ -85,7 +82,6 @@ void merge(SIRBlock* big_block, SIRBlock* to_subsume, const unordered_set<SIRBlo
         instruction->accept(&visitor);
         if (visitor.was_phi) {
             visitor.was_phi = false;
-
             if (visitor.was_replaced) {
                 // Here the phi node was replaced with a value
                 // as it used big block as the only live edge
@@ -96,6 +92,7 @@ void merge(SIRBlock* big_block, SIRBlock* to_subsume, const unordered_set<SIRBlo
             else {
                 big_block->instructions.insert(big_block->instructions.begin(), instruction);
             }
+            
             ++it;
         }
         else {
@@ -105,7 +102,7 @@ void merge(SIRBlock* big_block, SIRBlock* to_subsume, const unordered_set<SIRBlo
 
     // Add rest of instructions to end of block
     if (it != to_subsume->instructions.end()) {
-        big_block->instructions.insert(big_block->instructions.end(), to_subsume->instructions.begin(), to_subsume->instructions.end());
+        big_block->instructions.insert(big_block->instructions.end(), it, to_subsume->instructions.end());
     }
 
     
@@ -142,7 +139,7 @@ bool CFGMerge(ProgramNode& program, const SIRControlFlowGraph& cfg) {
         }
 
         SIRBlock* dest = *outgoing.begin();
-        if (cfg.get_incoming(dest).size() != 1) {
+        if (dest->predecesors.size() != 1) {
             continue;
         }
 
@@ -156,7 +153,7 @@ bool CFGMerge(ProgramNode& program, const SIRControlFlowGraph& cfg) {
     while (!backwards.empty()) {
         SIRBlock* subsumable = backwards.front();
         backwards.pop_front();
-        for (SIRBlock* incoming : cfg.get_incoming(subsumable)) {
+        for (SIRBlock* incoming : subsumable->predecesors) {
             if (seen.contains(incoming)) {
                 continue;
             }
