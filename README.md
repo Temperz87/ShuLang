@@ -149,5 +149,21 @@ However, do note that stores in the form of `x = read_input()` will NOT be optim
 ## Optimization pipelining
 Something to note is that a lot of these optimizations rely on analysis like use define chains, constant values, and a control flow graph. However, some of the optimizations will also invalidate said analysis and require them to be rebuilt. Also, performing some optimizations might make redoing previous optmizations have new results, hence shuc does fixed point iteration by redoing ALL optmization passes everytime an optimization in the pipeline changes the program. While this is very inefficient anda LLVM style pass manager would be far better, this is still a great start.
 
+## Benchmarking
+I have a couple [benchmarks](benchmarks) setup already, but I probably should add more. In general what we see is:
+- The compiler always does 2 iterations for optimizations
+- Tokenization is comically SLOW
+    - So I wrote a tokenizer that works (not one that's optimal), meaning that there's a lot of string operations going on which is slow!
+- Optimizations sped up LLVM code generation by approximately the amount of time the optimizations itself took
+    - This means that performing optimizations has a negligible compile time cost as the cost is paying for itself
+- "shuc -O1" sped up clang's compile time as well
+    - This is in part due to clang tokenize/parse the file separately, and with passes like CFG Merge and CFG Simplify shuc dramatically removes that cost
+- Compile times for clang notably did not increase between "clang -O1" and "clang -O2"
+
+
+All of this to say shuc generates really good quality LLVM IR, as compile times and run times are fast.
+
 ## What's next?
-For adding even more optimizations the logical next step is to add [loop invariant code motion](https://en.wikipedia.org/wiki/Loop-invariant_code_motion) and [loop unrolling](https://en.wikipedia.org/wiki/Loop_unrolling). Another direction to take the optimizer is getting closerto LLVM's passmanager, where I only rerun optimizations on what changed instead of the entire program. A more pressing issue however would be to start profiling the compiler, which is what I plan to do and have started doing. Surprisingly enough, the tokenizer is what takes the most amount of time in the compiler, however this makes sense when one considers that the tokenizer is the greatest source of file I/O. 
+For adding even more optimizations the logical next step is to add [loop invariant code motion](https://en.wikipedia.org/wiki/Loop-invariant_code_motion) and [loop unrolling](https://en.wikipedia.org/wiki/Loop_unrolling). Another direction to take the optimizer is getting closer to LLVM's passmanager, where I only rerun optimizations on what changed instead of the entire program. 
+
+Right now all ShuLang has are simple arithmetic operatations, if statements, and loops. So let's add lambda's to make this language interesting!
