@@ -1,9 +1,7 @@
-#pragma once
-
-#include "ShuLangAST.hpp"
+#include <ShuLangAST.hpp>
 #include <memory>
-#include "tokenizer.hpp"
+#include <tokenizer.hpp>
 #include <vector>
 
-// TODO: DOCUMENTATION
-std::unique_ptr<shulang::ProgramNode> begin_parse(std::vector<token> tokenlist, std::string fileToParse);
+// Given a list of tokens, and a source file name for error message purposes, produce a ShuLang AST
+std::unique_ptr<shulang::ProgramNode> begin_parse(std::vector<token>& tokenlist, const std::string& fileToParse);

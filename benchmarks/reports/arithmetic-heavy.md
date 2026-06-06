@@ -3,34 +3,34 @@ Times determined by running each measure part 100 times then taking the average
 ## COMPILATION TIMING
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 55163.8μs | 56698.3μs | 56132.4μs |
-| shuc -O1 | 49179.7μs | 50853.2μs | 50677.8μs |
+| shuc -O0 | 56850.3μs | 56943.6μs | 57751.2μs |
+| shuc -O1 | 52410.8μs | 53082.6μs | 52899.2μs |
 
 shuc -O0 pass timings
-- Tokenization: 85.0μs
-- Parsing: 24.3μs
-- Type Checking: 24.6μs
-- Short Circuitify: 8.8μs
-- Remove Complex Operands: 2.4μs
-- SIR Instruction Selection: 18.1μs
-- Promote Phi: 13.5μs
-- LLVM Codegen: 386.2μs
-- Total compilation time: 590.1μs
+- Tokenization: 82.8μs
+- Parsing: 18.9μs
+- Type Checking: 27.6μs
+- Short Circuitify: 9.6μs
+- Remove Complex Operands: 3.0μs
+- SIR Instruction Selection: 23.2μs
+- Promote Phi: 14.7μs
+- LLVM Codegen: 424.9μs
+- Total compilation time: 633.0μs
 
 shuc -O1 pass timings
-- Tokenization: 52.4μs
-- Parsing: 16.2μs
-- Type Checking: 15.7μs
-- Short Circuitify: 5.8μs
-- Remove Complex Operands: 1.6μs
-- SIR Instruction Selection: 11.9μs
-- Promote Phi: 8.9μs
-- Optimizations: 54.0μs
-- Optimization iterations: 2.0
-- LLVM Codegen: 251.6μs
-- Total compilation time: 437.5μs
+- Tokenization: 58.0μs
+- Parsing: 15.7μs
+- Type Checking: 22.6μs
+- Short Circuitify: 7.7μs
+- Remove Complex Operands: 2.4μs
+- SIR Instruction Selection: 19.0μs
+- Promote Phi: 12.2μs
+- Optimizations: 58.7μs
+- Optimization iterations: 2
+- LLVM Codegen: 358.0μs
+- Total compilation time: 579.9μs
 ## EXECUTION TIME
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 95725.7μs | 2643.9μs | 2685.4μs |
-| shuc -O1 | 95615.9μs | 2614.2μs | 2621.9μs |
+| shuc -O0 | 96430.1μs | 2561.7μs | 2526.8μs |
+| shuc -O1 | 96113.1μs | 2513.9μs | 2540.1μs |

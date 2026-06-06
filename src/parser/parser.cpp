@@ -1,7 +1,6 @@
 #include <ShuLangAST.hpp>
 #include <cassert>
 #include <iostream>
-#include <iterator.hpp>
 #include <memory>
 #include <parser.hpp>
 #include <set>
@@ -13,7 +12,9 @@
 using namespace shulang;
 
 // Handwritten recursive descent parser
-static Iterator<token> iter;
+// static Iterator<token> iter;
+static std::vector<token>::iterator it;
+static std::vector<token>::iterator end;
 static token currenttoken;
 static std::string filename;
 std::shared_ptr<ValueNode> parse_prefix_operator();
@@ -41,24 +42,21 @@ const std::unordered_map<std::string, int> operator_precedences = {
     {">=", 3}
 };
 
-bool advance() {
-    if (iter.empty())
-        return false;
-
-    iter.advance();
-    
-    // if (!iter.empty())
-        // std::cout << "Iterator now at " << currenttoken.value << std::endl;
-    // else
-        // std::cout << "Iterator now empty" << std::endl;
-
-    iter.get(currenttoken);
-    return true;
-}
 
 void parse_error(std::string msg) {
-    std::cout << msg << std::endl << "\tWhile at token " << currenttoken.value << std::endl << "At " << filename << ":" << currenttoken.line << ":" << currenttoken.col_start << std::endl; 
+    std::cout << "ShuC:" << msg << std::endl << "\tWhile at token " << currenttoken.value << std::endl << "At " << filename << ":" << currenttoken.line << ":" << currenttoken.col_start << std::endl; 
     exit(1);
+}
+
+void advance() {
+    if (it == end) {
+        parse_error("Unexpcted end of file");
+    }
+
+    ++it;
+    if (it != end) {
+        currenttoken = *it;
+    }
 }
 
 void assert_strings_equal(std::string actual, std::string expected) {
@@ -297,13 +295,15 @@ std::shared_ptr<StatementNode> parse_statement() {
     return nullptr;
 }
 
-std::unique_ptr<ProgramNode> begin_parse(std::vector<token> tokenlist, std::string fileToParse) {
+std::unique_ptr<ProgramNode> begin_parse(std::vector<token>& tokenlist, const std::string& fileToParse) {
     filename = fileToParse;
-    iter = Iterator<token>(tokenlist);
-    iter.get(currenttoken);
+    it = tokenlist.begin();
+    end = tokenlist.end();
+    currenttoken = *it;
     std::unique_ptr<ProgramNode> program = std::make_unique<ProgramNode>();
-    while (!iter.empty()) {
+    while (it != end) {
         program->nodes.push_back(parse_statement());
     }
+    
     return program;
 }
