@@ -2,6 +2,8 @@
 src/output/*
 *.d
 *.o
+*.gcno
+*.gcda
 src/compile_commands.json
 src/.cache/*
 test-cases/shulang.cpython-3*-x86_64-linux-gnu.so
