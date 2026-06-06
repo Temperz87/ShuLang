@@ -37,7 +37,12 @@ class PhiRedirectVisitor : public SIRVisitor {
 
         void visit(PhiNode* node) override {
             was_phi = true;
-            // std::cout << "\tGot phi!" << std::endl;
+            if (node->candidates.size() == 1) {
+                replace_phi_with = node->candidates.at(0).second;
+                was_replaced = true;
+                return;
+            }
+
             for (auto& pair : node->candidates) {
                 SIRBlock* candidate_block = pair.first;
                 while (redirect.contains(candidate_block) && candidate_block != current_block) {
