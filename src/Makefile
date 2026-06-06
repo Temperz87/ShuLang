@@ -25,6 +25,10 @@ DRIVER = ./driver/driver.o
 
 DEPS := $(OBJECTS:.o=.d) ./driver/driver.d ./python_bindings/pybind11_stuff.d
 
+COVS := $(OBJECTS:.o=.gcno) $(OBJECTS:.o=.gcda) \
+		./driver/driver.gcno ./driver/driver.gcda \
+		./python_bindings/pybind11_stuff.gcno ./python_bindings/pybind11_stuff.gcda
+
 ./driver/driver.o: $(OBJECTS)
 	$(CC) $(CPPFLAGS) ./driver/driver.cpp -c -o ./driver/driver.o
 
