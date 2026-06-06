@@ -72,17 +72,7 @@ const std::unordered_set<std::string_view> values = {
     "true"
 };
 
-
-bool string_in_array(const std::string tok, const char** arr, int arr_len) {
-    for (int i = 0; i < arr_len; i++) {
-        if (tok == arr[i]) {
-            return true;
-        }
-    }
-    return false;
-};
-
-bool is_integer(std::string tok) {
+bool is_integer(const std::string& tok) {
     for (int i = 0; i < tok.size(); i++) {
         if (!isdigit(tok.at(i)))
             return false;
