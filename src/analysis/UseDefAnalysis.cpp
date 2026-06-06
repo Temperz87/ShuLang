@@ -59,7 +59,12 @@ void UseDefAnalysis::visit(PhiNode *node) {
   }
 }
 
-void UseDefAnalysis::visit(PrintNode *node) { node->to_print->accept(this); }
+void UseDefAnalysis::visit(PrintNode *node) { 
+  node->to_print->accept(this);
+  for (DefinitionNode* def : uses_found) {
+    usedefs[def].push_back(node);
+ }
+}
 
 void UseDefAnalysis::visit(JumpIfElseNode *node) {
   node->condition->accept(this);
