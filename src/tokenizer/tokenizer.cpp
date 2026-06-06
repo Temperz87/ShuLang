@@ -1,17 +1,16 @@
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 #include <tokenizer.hpp>
-
-#define ARR_SIZE(x) (sizeof(x) / sizeof(char*))
 
 // Who would've known that without regex
 // This guy would be fairly complex?
 // (not me)
 
-// Infix stuff
-const char* operators[] = {
+// Infix operators
+const std::unordered_set<std::string_view> operators = {
     "+",
     "-",
     "*",
@@ -21,7 +20,7 @@ const char* operators[] = {
     ">",
     ">=",
     ":",
-    "=", 
+    "=",
     "!=",
     "not",
     "and",
@@ -29,34 +28,31 @@ const char* operators[] = {
     "xor"
 };
 
-const char* keyword[] = {
+// ShuLang reserved words
+const std::unordered_set<std::string_view> keywords = {
     "else",
     "fix",
     "in",
     "return",
-    "syscall",
     "to",
-    "update",
 };
 
-const char* statements[] = {
+// Top level statements
+const std::unordered_set<std::string_view> statements = {
     "bind",
     "if",
     "while"
 };
 
-// Just like the {} and () stuff
-// Might add comas here
-const char* punctuators[] = {
+const std::unordered_set<std::string_view> punctuators = {
     "{",
     "}",
     "(",
     ")"
 };
 
-
-// Primitives
-const char* types[] = {
+// Value types
+const std::unordered_set<std::string_view> types = {
     "->",
     "Boolean",
     "Character",
@@ -64,16 +60,16 @@ const char* types[] = {
     "String"
 };
 
-const char* whitespace[] = {
+const std::unordered_set<std::string_view> whitespace = {
     " ",
     "\t",
     "\n"
 };
 
-const char* values[] = {
+const std::unordered_set<std::string_view> values = {
     "false",
     "lambda",
-    "true",
+    "true"
 };
 
 
@@ -94,35 +90,32 @@ bool is_integer(std::string tok) {
     return true;
 } 
 
-token_type determine_type(std::string tok) {
-    // Having the manually set the size isn't ideal
-    // If someone knows a better solution please tell me
+token_type determine_type(const std::string& tok) {
+    if (tok.empty()) {
+        std::cout << "ShuC: Unexpected end of file" << std::endl;
+        exit(1);
+    }
 
-    if (tok.size() == 0) {
-        // TODO: Throw an error
-        return UNKNOWN;
-    }
-    else if (string_in_array(tok, keyword, ARR_SIZE(keyword)))
+    if (keywords.contains(tok))
         return KEYWORD;
-    else if (string_in_array(tok, operators, ARR_SIZE(operators)))
+    else if (operators.contains(tok))
         return OPERATOR;
-    else if (string_in_array(tok, punctuators, ARR_SIZE(punctuators)))
+    else if (punctuators.contains(tok))
         return PUNCTUATOR;
-    else if (string_in_array(tok, statements, ARR_SIZE(statements))) {
+    else if (statements.contains(tok))
         return STATEMENT;
-    }
-    else if (string_in_array(tok, types, ARR_SIZE(types)))
+    else if (types.contains(tok))
         return TYPE;
-    else if (string_in_array(tok, values, ARR_SIZE(values)))
-            return VALUE;
-    else if (string_in_array(tok, whitespace, ARR_SIZE(whitespace)))
+    else if (values.contains(tok))
+        return VALUE;
+    else if (whitespace.contains(tok))
         return WHITESPACE;
     else if (is_integer(tok))
         return INTEGER;
-    else if (!isalpha(tok.at(0)))
+    else if (!std::isalpha(static_cast<unsigned char>(tok[0])))
         return UNKNOWN;
-    else 
-        return IDENTIFIER;
+
+    return IDENTIFIER;
 }
 
 // Debug function
@@ -159,7 +152,7 @@ void token_type_to_string(std::string& str, token_type ty) {
         }
 }
 
-token get_token(std::string str, int start, int end, int line) {
+token get_token(const std::string& str, int start, int end, int line) {
     token t;
     t.value = str;
     t.type = determine_type(t.value);
@@ -185,7 +178,7 @@ bool isterminal(char c) {
 
 // When we've hit a whitespace
 // This function gets called to toss tokens into the list
-int add_tokens(std::vector<char> tokenizing, std::vector<token>& token_list, int col, int line) {
+int add_tokens(const std::vector<char>& tokenizing, std::vector<token>& token_list, int col, int line) {
     int created = 0;
     int next_token_start = 0;
     for (int i = 0; i < tokenizing.size(); i++) {
