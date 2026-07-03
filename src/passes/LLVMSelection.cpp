@@ -40,7 +40,7 @@ void codegen_function(LLVMCodegenVisitor& visitor, std::shared_ptr<FunctionDefin
             return_type = Type::getInt32Ty(context);
         }
         else {
-            return_type = Type::getIntNTy(context, function->return_width);
+            return_type = LLVMCodegenVisitor::SIR_to_llvm_type(context, function->return_width);
         }
 
         FunctionType* function_type
@@ -61,15 +61,18 @@ void codegen_function(LLVMCodegenVisitor& visitor, std::shared_ptr<FunctionDefin
     }
 
     // Add exit block
-    // needed for main
-    // TODO: Don't give main special treatment
-    //  Have SIR place the return node
-    if (function->name == "main") {
-        llvm_function->addFnAttr(Attribute::NoUnwind);
+    // needed for main and void functions
+    if (function->name == "main" || function->return_width == 0) {
         BasicBlock* bb = BasicBlock::Create(context, "exit", llvm_function);
         visitor.blocks.insert({"exit", bb});
         builder.SetInsertPoint(bb);
-        builder.CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
+        if (function->name == "main") {
+            llvm_function->addFnAttr(Attribute::NoUnwind);
+            builder.CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
+        }
+        else {
+            builder.CreateRetVoid();
+        }
     }
 
     for (std::shared_ptr<SIRBlock> block : function->blocks) {
@@ -114,40 +117,6 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
         codegen.reset();
         codegen_function(codegen, function, context, builder, module);
     }
-
-    // FunctionType* main_ty = FunctionType::get(Type::getInt32Ty(context), false);
-    // Function* main_function = Function::Create(main_ty, Function::ExternalLinkage, "main", module);
-    // main_function->addFnAttr(Attribute::NoUnwind);
-    
-    // std::unique_ptr<LLVMCodegenVisitor> visitor = std::make_unique<LLVMCodegenVisitor>(context, builder.get(), &module);
-
-    // for (std::shared_ptr<SIRBlock> block : node->blocks) {
-    //     BasicBlock* bb;
-    //     if (block->name == "main") {
-    //         bb = BasicBlock::Create(context, "entry", main_function);
-    //     }
-    //     else {
-    //         bb = BasicBlock::Create(context, block->name, main_function);            
-    //     }
-    //     visitor->blocks.insert({block->name, bb});
-    // }
-
-    // // Add exit block
-    // // Notably adding this block the entry block
-    // // As if I don't entry doesn't get run first
-    // BasicBlock* bb = BasicBlock::Create(context, "exit", main_function);
-    // visitor->blocks.insert({"exit", bb});
-    // builder->SetInsertPoint(bb);
-    // builder->CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
-
-
-    // for (std::shared_ptr<SIRBlock> block : node->blocks) {
-    //     builder->SetInsertPoint(visitor->blocks.at(block->name));
-    //     visitor->walk(block.get());
-    // }
-    // visitor->fix_phi();
-
-    // verifyFunction(*main_function);
 
     std::error_code code;
     raw_fd_ostream fd(output, code);

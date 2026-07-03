@@ -57,7 +57,8 @@ const std::unordered_set<std::string_view> types = {
     "Boolean",
     "Character",
     "Integer",
-    "String"
+    "String",
+    "Void"
 };
 
 const std::unordered_set<std::string_view> whitespace = {

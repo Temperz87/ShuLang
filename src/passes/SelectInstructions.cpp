@@ -352,8 +352,15 @@ class SLTranslator : public ShuLangVisitor {
             current_block = loop_body;
             continuation = nullptr;
             node->body->accept(this);
-            jump = std::make_shared<sir::JumpNode>(current_block.get(), loop_condition);
-            current_block->instructions.push_back(jump);
+
+            // This might not be an infinite loop because:
+            //  1. Branching behavior in the loop!
+            //  2. Condition might jump straight to continuation
+            if (!current_block->is_terminal) {
+                jump = std::make_shared<sir::JumpNode>(current_block.get(), loop_condition);
+                current_block->instructions.push_back(jump);
+            }
+
             loop_condition->predecesors.insert(current_block.get());
             
             // Loop done, insert all instructions after loop

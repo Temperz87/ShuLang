@@ -10,10 +10,12 @@ class TypeChecker : public ShuLangVisitor {
         // Hence a vector and not a deque
         std::vector<std::unordered_map<std::string, std::string>> scope_stack = { {} };
         std::deque<std::string> return_type_stack = { };
+        bool caught_return = false;
         std::unordered_map<std::string, std::pair<int, std::vector<std::string>>> function_types = {
             {"print", {1, {"Void", "Any"}}},
             {"read_input", {0, {"Integer"}}},
         };
+        
         void assert_same(std::string expected, std::string actual, std::string error_msg);
 
     public: 

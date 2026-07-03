@@ -154,8 +154,11 @@ void TypeChecker::visitNode(IfNode* node) {
     // If there is an else block, descend into it
     auto new_scope = then_scope;
     if (node->else_block != nullptr) {
+        bool then_returns = caught_return;
+        caught_return = false;
         scope_stack.push_back({});
         node->else_block->accept(this);
+        caught_return &= then_returns;
         auto else_scope = scope_stack.back();
         scope_stack.pop_back();
 
@@ -172,9 +175,19 @@ void TypeChecker::visitNode(WhileNode* node) {
     node->body->accept(this);
     scope_stack.pop_back();
     assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
+    caught_return = false;
 }
 
 void TypeChecker::visitNode(FunctionNode* node) {
+    bool previous_caught_return = false;
+    caught_return = false;
+
+    // For now, we don't box captured variables
+    // Hence we need to do this to make sure inner functions don't reference outer ones
+    // (rip global variables)
+    auto previous_scope_stack = std::move(scope_stack);
+    scope_stack.clear();
+
     // Add function signature into function_types
     // Do it now to allow for recursion
     std::vector<std::string> types;
@@ -191,23 +204,23 @@ void TypeChecker::visitNode(FunctionNode* node) {
 
     return_type_stack.push_front(node->return_type);
     node->body->accept(this);
-    if (node->return_type == "Inferred") {
-        node->return_type = return_type_stack.front();
+    if (!caught_return && node->return_type != "Void") {
+        std::cout << "ShuC: not all branches for function:\n\t"
+                  << node->name << "\nreturn a value" << std::endl; 
+        exit(1);
     }
 
+    caught_return = previous_caught_return;
     return_type_stack.pop_front();
-    scope_stack.pop_back();
+    scope_stack = std::move(previous_scope_stack);
 }
 
 void TypeChecker::visitNode(ReturnNode* node) {
+    caught_return = true;
     node->return_value->accept(this);
     if (return_type_stack.empty()) {
         std::cout << "ShuC: return statement outside of a function!" << std::endl;
         exit(1);
-    }
-
-    if (return_type_stack.front() == "Inferred") {
-        return_type_stack.front() = node->return_value->type;
     }
 
     assert_same(return_type_stack.front(),

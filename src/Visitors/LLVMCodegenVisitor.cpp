@@ -23,6 +23,15 @@
 
 using namespace sir;
 
+llvm::Type* LLVMCodegenVisitor::SIR_to_llvm_type(llvm::LLVMContext& c, int width) {
+    switch (width) {
+        case 0:
+            return llvm::Type::getVoidTy(c);
+        default:
+            return llvm::Type::getIntNTy(c, width);
+    }
+}
+
 llvm::Value* LLVMCodegenVisitor::visit(ImmediateNode* node) {
     llvm::IntegerType* ty = llvm::Type::getIntNTy(context, node->width);
     return llvm::ConstantInt::getSigned(ty, node->number);
@@ -152,6 +161,7 @@ llvm::Value* LLVMCodegenVisitor::visit(PrintNode* node) {
         std::cout << "Unsupported print type: " << node->print_type << std::endl;
         exit(2);
     }
+    
     return this->builder->CreateCall(module->getFunction("printf"), args);
 }
 
@@ -180,11 +190,11 @@ llvm::Value* LLVMCodegenVisitor::visit(CallNode* node) {
     if (auto lock = node->function.lock()) {
         std::vector<llvm::Type*> paramTypes;
         for (auto param : lock->parameters) {
-            paramTypes.push_back(llvm::Type::getIntNTy(context, param->width));
+            paramTypes.push_back(SIR_to_llvm_type(context, param->width));
         }
 
         llvm::FunctionType* callee_type
-             = llvm::FunctionType::get(llvm::Type::getIntNTy(context, lock->return_width), 
+             = llvm::FunctionType::get(SIR_to_llvm_type(context, lock->return_width), 
                                        paramTypes, false);
         std::vector<llvm::Value*> arguments;
         for (auto arg : node->arguments) {
@@ -195,7 +205,7 @@ llvm::Value* LLVMCodegenVisitor::visit(CallNode* node) {
         return this->builder->CreateCall(callee, arguments);
     }
     else {
-        throw std::runtime_error("ShuC: LLVMCOdegenVisitor::visit(CallNode* node) function shared_ptr is null! Please report the bug");
+        throw std::runtime_error("ShuC: LLVMCodegenVisitor::visit(CallNode* node) function shared_ptr is null! Please report the bug");
         exit(1);
     }
 }

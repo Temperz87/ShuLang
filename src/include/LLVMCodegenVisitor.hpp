@@ -67,5 +67,7 @@ namespace sir {
             void walk(SIRBlock* block);
             void fix_phi();
             void reset();
+
+        static llvm::Type* SIR_to_llvm_type(llvm::LLVMContext& c, int width);
     };
 }
