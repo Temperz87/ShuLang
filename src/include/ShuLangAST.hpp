@@ -147,6 +147,25 @@ namespace shulang {
       void accept(ShuLangVisitor *visitor) override;
   };
 
+  class FunctionNode : public StatementNode {
+    public:
+      std::string return_type;
+      std::string name;
+
+      // List of pairs {identifier, type}
+      std::vector<std::pair<std::string, std::string>> parameters;
+      std::shared_ptr<BodyNode> body;
+      std::vector<ShuLangNode*> children() override;
+      void accept(ShuLangVisitor *visitor) override;
+  };
+
+  class ReturnNode : public StatementNode {
+    public:
+      std::shared_ptr<ValueNode> return_value;
+      std::vector<ShuLangNode*> children() override;
+      void accept(ShuLangVisitor *visitor) override;
+  };
+
   class ProgramNode : public BodyNode {
     public:
       void accept(ShuLangVisitor *visitor) override;

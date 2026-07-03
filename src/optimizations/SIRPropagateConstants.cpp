@@ -1,4 +1,5 @@
 #include <SIRAST.hpp>
+#include <stdexcept>
 
 using namespace sir;
 using namespace std;
@@ -83,8 +84,9 @@ class PropagationVisitor : public SIRVisitor {
 };
 
 void SIRPropagate(sir::ProgramNode& node, unordered_map<DefinitionNode*, int>& constants) {
-    PropagationVisitor visitor(constants);
-    for (shared_ptr<SIRBlock> block : node.blocks) {
-        visitor.walk(block.get());
-    }
+    throw std::runtime_error("TODO: Implement SCCP");
+    // PropagationVisitor visitor(constants);
+    // for (shared_ptr<SIRBlock> block : node.blocks) {
+        // visitor.walk(block.get());
+    // }
 }

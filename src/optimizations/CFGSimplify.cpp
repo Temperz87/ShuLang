@@ -3,6 +3,7 @@
 #include <Analysis.hpp>
 #include <SIRAST.hpp>
 #include <memory>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 
@@ -66,24 +67,25 @@ class CFGSimplifyVisitor : public SIRVisitor {
 };
 
 bool CFGSimplify(ProgramNode& program, const SIRControlFlowGraph& cfg, const SCCPResults& results) {
-    vector<shared_ptr<SIRBlock>> reachable;
-    CFGSimplifyVisitor visitor(results);
-    for (shared_ptr<SIRBlock> b : program.blocks) {
-        if (results.reachable_blocks.contains(b.get())) {
-            reachable.push_back(b);
-            visitor.walk(b);
-            unordered_set<SIRBlock*> new_predecesors;
-            for (SIRBlock* pred : b->predecesors) {
-                if (results.reachable_edges.contains(pred)) {
-                    new_predecesors.insert(pred);
-                }
-            }
+    throw std::runtime_error("TODO: Implement CFGSimplify");
+    // vector<shared_ptr<SIRBlock>> reachable;
+    // CFGSimplifyVisitor visitor(results);
+    // for (shared_ptr<SIRBlock> b : program.blocks) {
+    //     if (results.reachable_blocks.contains(b.get())) {
+    //         reachable.push_back(b);
+    //         visitor.walk(b);
+    //         unordered_set<SIRBlock*> new_predecesors;
+    //         for (SIRBlock* pred : b->predecesors) {
+    //             if (results.reachable_edges.contains(pred)) {
+    //                 new_predecesors.insert(pred);
+    //             }
+    //         }
 
-            b->predecesors = std::move(new_predecesors);
-        }
-    }
+    //         b->predecesors = std::move(new_predecesors);
+    //     }
+    // }
 
-    bool did_work = visitor.did_work || program.blocks.size() != reachable.size();
-    program.blocks = std::move(reachable);
-    return did_work;
+    // bool did_work = visitor.did_work || program.blocks.size() != reachable.size();
+    // program.blocks = std::move(reachable);
+    // return did_work;
 }

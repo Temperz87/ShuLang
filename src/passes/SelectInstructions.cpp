@@ -3,7 +3,6 @@
 #include <ShuLangVisitor.hpp>
 #include <SIRAST.hpp>
 #include <ShuLangVisitor.hpp>
-#include <llvm/IR/Metadata.h>
 #include <memory>
 #include <stack>
 #include <string>
@@ -23,9 +22,10 @@ class SLTranslator : public ShuLangVisitor {
         // Stores the next blocks and where to go afterwards
         std::shared_ptr<sir::SIRBlock> continuation = nullptr;
 
-        // Node tells us which body node the current block corresponds to
-        // So we don't accidentally egress too soon
-        // (e.g. an if statement that only contains a nested if statement)
+        // Book keeping
+        std::shared_ptr<sir::FunctionDefinitionNode> current_function;
+        std::shared_ptr<sir::SIRBlock> current_block;
+        bool need_to_write_exit = true;
 
         std::string gen_name(std::string name) {
             static int counter = 0;
@@ -34,7 +34,7 @@ class SLTranslator : public ShuLangVisitor {
 
         void mark_block_reachable(std::shared_ptr<sir::SIRBlock> block) {
             if (!have_reached.contains(block.get())) {
-                reachable_blocks.push_back(block);
+                current_function->blocks.push_back(block);
                 have_reached.insert(block.get());
             }
         }
@@ -44,18 +44,25 @@ class SLTranslator : public ShuLangVisitor {
                 return 32;
             else if (type == "Boolean")
                 return 1;
+            else if (type == "Void")
+                return 0;
             return -1;
         }
 
     public:
-        // List of blocks that are reachable 
-        std::shared_ptr<sir::SIRBlock> current_block;
-        std::vector<std::shared_ptr<sir::SIRBlock>> reachable_blocks;
-        bool need_to_write_exit = true;
+        std::vector<std::shared_ptr<sir::FunctionDefinitionNode>> functions;
 
-        SLTranslator(std::string initial_block_name) { 
-            current_block = std::make_shared<sir::SIRBlock>(initial_block_name);
-            reachable_blocks.push_back(current_block);
+        SLTranslator(std::string function_name, std::string type, 
+                     std::vector<std::shared_ptr<sir::DefinitionNode>>& parameters) { 
+            current_function = std::make_shared<sir::FunctionDefinitionNode>(type_to_width(type), function_name);
+            functions.push_back(current_function);
+            current_function->parameters = std::move(parameters);
+            current_block = std::make_shared<sir::SIRBlock>("entry");
+            for (auto param : current_function->parameters) {
+                current_block->variable_to_ref[param->identifier] = param;
+            }
+
+            current_function->blocks.push_back(current_block);
             have_reached.insert(current_block.get());
         };
     
@@ -83,14 +90,20 @@ class SLTranslator : public ShuLangVisitor {
             descendIntoChildren(node);
             std::string identifier = node->identifier;
             int width = type_to_width(node->type);
+            std::shared_ptr<sir::DefinitionNode> definition;
             if (!current_block->variable_to_ref.contains(identifier)) {
+                // If we couldn't find the definition
+                // then we have to create a pseudo phi node
+                // for PromotePseudoPhi to cleanup later
                 std::shared_ptr<sir::PseudoPhiNode> phi = std::make_shared<sir::PseudoPhiNode>(identifier, width);
-                std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(current_block.get(), gen_name(identifier), phi);
-                current_block->instructions.insert(current_block->instructions.begin(), def);
-                current_block->variable_to_ref[identifier] = def;
+                definition = std::make_shared<sir::DefinitionNode>(current_block.get(), gen_name(identifier), phi);
+                current_block->instructions.insert(current_block->instructions.begin(), definition);
+                current_block->variable_to_ref[identifier] = definition;
             }
-
-            std::shared_ptr<sir::DefinitionNode> definition = current_block->variable_to_ref.at(node->identifier);
+            else {
+                definition = current_block->variable_to_ref.at(node->identifier);
+            }
+            
             std::shared_ptr<sir::ReferenceNode> ref = std::make_shared<sir::ReferenceNode>(definition, width);
             completed.push(ref);
         }
@@ -215,12 +228,14 @@ class SLTranslator : public ShuLangVisitor {
         }
 
         void visitNode(CallNode* node) override {
-            descendIntoChildren(node);
+            // Handle intrinsics
             if (node->function_name == "print") {
+                descendIntoChildren(node);
                 std::shared_ptr<sir::PrintNode> print = 
                     std::make_shared<sir::PrintNode>(current_block.get(), completed.top(), node->arguments.at(0)->type);
                 completed.pop();
                 current_block->instructions.push_back(print);
+                return;
             }
             else if (node->function_name == "read_input") {
                 std::shared_ptr<sir::InputNode> input = std::make_shared<sir::InputNode>();
@@ -228,9 +243,28 @@ class SLTranslator : public ShuLangVisitor {
                     std::make_shared<sir::DefinitionNode>(current_block.get(), gen_name("input_result"), input);
                 completed.push(std::make_shared<sir::ReferenceNode>(def, def->width));
                 current_block->instructions.push_back(def);
+                return;
             }
-            // TODO: every function call is an intrinsic right now
-            //  However that won't always be the case
+
+            // Handle user defined functions
+            for (auto function : functions) {
+                if (function->name != node->function_name) {
+                    continue;
+                }
+
+                std::shared_ptr<sir::CallNode> call = std::make_shared<sir::CallNode>(function);
+                for (auto argument : node->arguments) {
+                    argument->accept(this);
+                    call->arguments.push_back(completed.top());
+                    completed.pop();
+                }
+
+                std::shared_ptr<sir::DefinitionNode> def = 
+                    std::make_shared<sir::DefinitionNode>(current_block.get(), gen_name(function->name), call);
+                completed.push(std::make_shared<sir::ReferenceNode>(def, def->width));
+                current_block->instructions.push_back(def);
+                return;
+            }
         }
 
         void visitNode(shulang::IfNode* node) override {
@@ -265,7 +299,9 @@ class SLTranslator : public ShuLangVisitor {
             // Visit then block
             current_block = then_block;
             node->then_block->accept(this);
-            if (current_block != continuation) {
+
+            // is_terminal check is there for early returns
+            if (current_block != continuation && !current_block->is_terminal) {
                 current_block->instructions.push_back(std::make_shared<sir::JumpNode>(current_block.get(), continuation));
                 continuation->predecesors.insert(current_block.get());
                 mark_block_reachable(continuation);
@@ -275,7 +311,7 @@ class SLTranslator : public ShuLangVisitor {
             if (node->else_block != nullptr) {
                 current_block = else_destination;
                 node->else_block->accept(this);
-                if (current_block != continuation) {
+                if (current_block != continuation && !current_block->is_terminal) {
                     current_block->instructions.push_back(std::make_shared<sir::JumpNode>(current_block.get(), continuation));
                     continuation->predecesors.insert(current_block.get());
                     mark_block_reachable(continuation);
@@ -325,18 +361,55 @@ class SLTranslator : public ShuLangVisitor {
             continuation = previous_continuation;
         }
 
+        void visitNode(shulang::FunctionNode* node) override {
+            std::vector<std::shared_ptr<sir::DefinitionNode>> parameters;
+            for (auto param : node->parameters) {
+                std::shared_ptr<sir::DefinitionNode> def 
+                    = std::make_shared<sir::DefinitionNode>(param.first, type_to_width(param.second));
+                parameters.push_back(def);
+
+            }
+
+            SLTranslator inner(node->name, node->return_type, parameters);
+            node->body->accept(&inner);
+            if (inner.need_to_write_exit) {
+                inner.current_block->instructions.push_back(std::make_shared<sir::ExitNode>(inner.current_block.get()));
+                inner.current_block->is_terminal = true;
+            }
+
+
+            functions.insert(functions.end(), inner.functions.begin(), inner.functions.end());
+        }
+
+        void visitNode(shulang::ReturnNode* node) override {
+            node->return_value->accept(this);
+            std::shared_ptr<sir::ReturnNode> return_node 
+                = std::make_shared<sir::ReturnNode>(current_block.get(), completed.top());
+            current_block->instructions.push_back(return_node);
+            current_block->is_terminal = true;
+            need_to_write_exit = false;
+        }
+
+        void visitNode(ProgramNode* node) override {
+            for (auto child : node->nodes) {
+                child->accept(this);
+            }
+
+            if (this->need_to_write_exit) {
+                this->current_block->instructions.push_back(std::make_shared<sir::ExitNode>(this->current_block.get()));
+                this->current_block->is_terminal = true;
+            }
+        }
+
 };
 
 // TODO: There's potentially undefined behavior here
 sir::ProgramNode select_SIR_instructions(shulang::ProgramNode* sl_program) {
-    SLTranslator translator = SLTranslator("main");
+    std::vector<std::shared_ptr<sir::DefinitionNode>> parameters;
+    SLTranslator translator = SLTranslator("main", "Void", parameters);
     sl_program->accept(&translator);
-    if (translator.need_to_write_exit) {
-        translator.current_block->instructions.push_back(std::make_shared<sir::ExitNode>(translator.current_block.get()));
-        translator.current_block->is_terminal = true;
-    }
 
     sir::ProgramNode node = sir::ProgramNode();
-    node.blocks = std::move(translator.reachable_blocks);
+    node.functions = std::move(translator.functions);
     return node;
 }

@@ -1,4 +1,6 @@
 #include <Analysis.hpp>
+#include <deque>
+#include <memory>
 #include <SIRAST.hpp>
 #include <SIRCFG.hpp>
 #include <SIRVisitor.hpp>

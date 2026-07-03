@@ -1,7 +1,7 @@
-#include "LLVMCodegenVisitor.hpp"
+#include <LLVMCodegenVisitor.hpp>
 #include <iostream>
 #include <SIRAST.hpp>
-#include "llvm/IR/IRBuilder.h"
+#include <llvm/IR/IRBuilder.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/IR/BasicBlock.h>
@@ -19,6 +19,7 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Alignment.h>
+#include <stdexcept>
 
 using namespace sir;
 
@@ -175,15 +176,36 @@ llvm::Value* LLVMCodegenVisitor::visit(InputNode* node) {
     this->builder->CreateCall(module->getFunction("scanf"), args);
     return this->builder->CreateLoad(llvm::Type::getInt32Ty(context), ptr);
 }
+llvm::Value* LLVMCodegenVisitor::visit(CallNode* node) {
+    if (auto lock = node->function.lock()) {
+        std::vector<llvm::Type*> paramTypes;
+        for (auto param : lock->parameters) {
+            paramTypes.push_back(llvm::Type::getIntNTy(context, param->width));
+        }
+
+        llvm::FunctionType* callee_type
+             = llvm::FunctionType::get(llvm::Type::getIntNTy(context, lock->return_width), 
+                                       paramTypes, false);
+        std::vector<llvm::Value*> arguments;
+        for (auto arg : node->arguments) {
+            arguments.push_back(arg->accept(this));
+        }
+
+        llvm::FunctionCallee callee = module->getOrInsertFunction(lock->name, callee_type);
+        return this->builder->CreateCall(callee, arguments);
+    }
+    else {
+        throw std::runtime_error("ShuC: LLVMCOdegenVisitor::visit(CallNode* node) function shared_ptr is null! Please report the bug");
+        exit(1);
+    }
+}
 
 llvm::Value* LLVMCodegenVisitor::visit(ExitNode* node) {
     return this->builder->CreateBr(blocks.at("exit"));
 }
 
-// Yeah I can probably delete this
-// But save it for the intermission
-llvm::Value* LLVMCodegenVisitor::visit(ProgramNode* node) {
-    return nullptr;
+llvm::Value* LLVMCodegenVisitor::visit(ReturnNode* node) {
+    return this->builder->CreateRet(node->return_value->accept(this));
 }
 
 void LLVMCodegenVisitor::walk(SIRBlock* block) {
@@ -199,4 +221,9 @@ void LLVMCodegenVisitor::fix_phi() {
             phi->addIncoming(candidate.second->accept(this), blocks.at(candidate.first->name));
         }
     }
+}
+
+void LLVMCodegenVisitor::reset() {
+    blocks.clear();
+    bindings.clear();
 }

@@ -2,7 +2,6 @@
 #include <SIRCFG.hpp>
 #include <LLVMCodegenVisitor.hpp>
 #include "llvm/IR/IRBuilder.h"
-#include <deque>
 #include <iostream>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
@@ -22,16 +21,72 @@
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Alignment.h>
 #include <llvm/Support/raw_ostream.h>
+#include <memory>
 #include <system_error>
-#include <unordered_set>
 
+using namespace llvm;
 using namespace sir;
 
-void select_llvm_instructions(ProgramNode* node, std::string source_filename, std::string output) {
-    using namespace llvm;
+void codegen_function(LLVMCodegenVisitor& visitor, std::shared_ptr<FunctionDefinitionNode> function, LLVMContext& context, IRBuilder<NoFolder>& builder, Module& module) {
+    Function* llvm_function = module.getFunction(function->name);
+    if (llvm_function == nullptr) {
+        std::vector<Type*> paramTypes;
+        for (auto param : function->parameters) {
+            paramTypes.push_back(Type::getIntNTy(context, param->width));
+        }
 
+        Type* return_type;
+        if (function->name == "main") {
+            return_type = Type::getInt32Ty(context);
+        }
+        else {
+            return_type = Type::getIntNTy(context, function->return_width);
+        }
+
+        FunctionType* function_type
+            = FunctionType::get(return_type, paramTypes, false);
+
+        GlobalValue::LinkageTypes linkage = function->name == "main"? GlobalValue::ExternalLinkage : GlobalValue::InternalLinkage;
+        llvm_function = Function::Create(function_type, linkage, function->name, module);
+    }
+
+    for (int i = 0; i < function->parameters.size(); i++) {
+        auto param = function->parameters[i];
+        visitor.bindings[param->identifier] = llvm_function->getArg(i);
+    }
+
+    for (std::shared_ptr<SIRBlock> block : function->blocks) {
+        BasicBlock* bb = BasicBlock::Create(context, block->name, llvm_function);            
+        visitor.blocks.insert({block->name, bb});
+    }
+
+    // Add exit block
+    // needed for main
+    // TODO: Don't give main special treatment
+    //  Have SIR place the return node
+    if (function->name == "main") {
+        llvm_function->addFnAttr(Attribute::NoUnwind);
+        BasicBlock* bb = BasicBlock::Create(context, "exit", llvm_function);
+        visitor.blocks.insert({"exit", bb});
+        builder.SetInsertPoint(bb);
+        builder.CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
+    }
+
+    for (std::shared_ptr<SIRBlock> block : function->blocks) {
+        builder.SetInsertPoint(visitor.blocks.at(block->name));
+        visitor.walk(block.get());
+    }
+
+    visitor.fix_phi();
+    if (verifyFunction(*llvm_function, &errs())) {
+        std::cout << "ShuC: Error while compiling program\n\tPlease report the bug" << std::endl;
+        exit(1);
+    }
+}
+
+void select_llvm_instructions(ProgramNode* node, std::string source_filename, std::string output) {
     LLVMContext context;
-    std::unique_ptr<IRBuilder<llvm::NoFolder>> builder = std::make_unique<IRBuilder<NoFolder>>(context);
+    IRBuilder<NoFolder> builder(context);
     Module module("Module", context);
     module.setTargetTriple(Triple("x86_64-pc-linux-gnu"));
     module.setSourceFileName(StringRef(source_filename));
@@ -44,53 +99,65 @@ void select_llvm_instructions(ProgramNode* node, std::string source_filename, st
     Function::Create(scanf_ty, Function::ExternalLinkage, "scanf", module);
 
     // Add %d format
-    builder->CreateGlobalString(StringRef("%d\n"), "printf_integer_format", 0, &module);
+    builder.CreateGlobalString(StringRef("%d\n"), "printf_integer_format", 0, &module);
     // Add "true\n" format
-    builder->CreateGlobalString(StringRef("true\n"), "printf_true_format", 0, &module);
+    builder.CreateGlobalString(StringRef("true\n"), "printf_true_format", 0, &module);
     // Add "false\n" format
-    builder->CreateGlobalString(StringRef("false\n"), "printf_false_format", 0, &module);
+    builder.CreateGlobalString(StringRef("false\n"), "printf_false_format", 0, &module);
     
     // Add " %d" format
-    builder->CreateGlobalString(StringRef(" %d"), "scanf_integer_format", 0, &module);
+    builder.CreateGlobalString(StringRef(" %d"), "scanf_integer_format", 0, &module);
     
-    // Add main function
-    FunctionType* main_ty = FunctionType::get(Type::getInt32Ty(context), false);
-    Function* main_function = Function::Create(main_ty, Function::ExternalLinkage, "main", module);
-    main_function->addFnAttr(llvm::Attribute::NoUnwind);
-    
-    std::unique_ptr<LLVMCodegenVisitor> visitor = std::make_unique<LLVMCodegenVisitor>(context, builder.get(), &module);
-
-    for (std::shared_ptr<SIRBlock> block : node->blocks) {
-        BasicBlock* bb;
-        if (block->name == "main") {
-            bb = BasicBlock::Create(context, "entry", main_function);
-        }
-        else {
-            bb = BasicBlock::Create(context, block->name, main_function);            
-        }
-        visitor->blocks.insert({block->name, bb});
+    // Translate functions
+    LLVMCodegenVisitor codegen(context, &builder, &module);
+    for (std::shared_ptr<FunctionDefinitionNode> function : node->functions) {
+        codegen.reset();
+        codegen_function(codegen, function, context, builder, module);
     }
 
-    // Add exit block
-    // Notably adding this block the entry block
-    // As if I don't entry doesn't get run first
-    llvm::BasicBlock* bb = llvm::BasicBlock::Create(context, "exit", main_function);
-    visitor->blocks.insert({"exit", bb});
-    builder->SetInsertPoint(bb);
-    builder->CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
+    // FunctionType* main_ty = FunctionType::get(Type::getInt32Ty(context), false);
+    // Function* main_function = Function::Create(main_ty, Function::ExternalLinkage, "main", module);
+    // main_function->addFnAttr(Attribute::NoUnwind);
+    
+    // std::unique_ptr<LLVMCodegenVisitor> visitor = std::make_unique<LLVMCodegenVisitor>(context, builder.get(), &module);
+
+    // for (std::shared_ptr<SIRBlock> block : node->blocks) {
+    //     BasicBlock* bb;
+    //     if (block->name == "main") {
+    //         bb = BasicBlock::Create(context, "entry", main_function);
+    //     }
+    //     else {
+    //         bb = BasicBlock::Create(context, block->name, main_function);            
+    //     }
+    //     visitor->blocks.insert({block->name, bb});
+    // }
+
+    // // Add exit block
+    // // Notably adding this block the entry block
+    // // As if I don't entry doesn't get run first
+    // BasicBlock* bb = BasicBlock::Create(context, "exit", main_function);
+    // visitor->blocks.insert({"exit", bb});
+    // builder->SetInsertPoint(bb);
+    // builder->CreateRet(ConstantInt::getSigned(Type::getInt32Ty(context), 0));
 
 
-    for (std::shared_ptr<SIRBlock> block : node->blocks) {
-        builder->SetInsertPoint(visitor->blocks.at(block->name));
-        visitor->walk(block.get());
-    }
-    visitor->fix_phi();
+    // for (std::shared_ptr<SIRBlock> block : node->blocks) {
+    //     builder->SetInsertPoint(visitor->blocks.at(block->name));
+    //     visitor->walk(block.get());
+    // }
+    // visitor->fix_phi();
 
-    verifyFunction(*main_function);
+    // verifyFunction(*main_function);
 
-    // TODO: Check error code
     std::error_code code;
     raw_fd_ostream fd(output, code);
+    if (code) {
+        std::cout << "ShuC: Error when writing to file " << output;
+        std::cout << "\n\tIs it open in another program?";
+        std::cout << "\n\tDo I have permission to open and write to it?" << std::endl;
+        exit(1);
+    }
+
     module.print(fd, nullptr);
     fd.close();
 }

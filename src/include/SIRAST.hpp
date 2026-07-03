@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SIRVisitor.hpp"
+#include <SIRVisitor.hpp>
 #include <LLVMCodegenVisitor.hpp>
 #include <llvm/IR/Value.h>
 #include <memory>
@@ -15,6 +15,8 @@ namespace sir {
             // So I'm pulling the yoink and twist on it
             // Thanks unnamed company :3
             virtual ~SIRNode() = default;
+
+            // TODO: properly implement this function
             virtual std::vector<std::string> get_usages();
             virtual llvm::Value* accept(LLVMCodegenVisitor* visitor) = 0;
             virtual void accept(SIRVisitor* visitor) = 0;
@@ -24,6 +26,21 @@ namespace sir {
         public:
             SIRBlock* parent;
             InstructionNode(SIRBlock* parent): parent(parent) { }
+    };
+
+    class FunctionDefinitionNode : public SIRNode {
+        public:
+            // A width of 0 represents a void function
+            int return_width;
+            std::string name;
+            FunctionDefinitionNode(int return_width, std::string name): return_width(return_width),
+                name(name) { }
+
+            std::vector<std::shared_ptr<DefinitionNode>> parameters;
+            std::vector<std::shared_ptr<SIRBlock>> blocks;
+            std::vector<std::string> get_usages() override;
+            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
     class ValueNode : public SIRNode { 
@@ -37,12 +54,18 @@ namespace sir {
     class DefinitionNode : public InstructionNode {
         public:
             std::string identifier;
+            bool is_parameter;
             std::shared_ptr<ValueNode> binding;
             int width;
             DefinitionNode(SIRBlock* parent,
                            std::string identifier, 
                            std::shared_ptr<ValueNode> binding):InstructionNode(parent),
-                identifier(identifier), binding(binding), width(binding->width) { }
+                identifier(identifier), is_parameter(true), binding(binding), width(binding->width) { }
+
+            
+            DefinitionNode(std::string identifier, int width):InstructionNode(nullptr), 
+                identifier(identifier), is_parameter(true), binding(nullptr), width(width) { }
+
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
@@ -136,6 +159,18 @@ namespace sir {
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
+    class CallNode : public ValueNode {
+        public:
+            std::weak_ptr<FunctionDefinitionNode> function;
+            std::vector<std::shared_ptr<ValueNode>> arguments;
+            CallNode(std::shared_ptr<FunctionDefinitionNode> function):ValueNode(function->return_width),
+                function(function) { };
+
+            std::vector<std::string> get_usages() override;
+            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
+    };
+
     class JumpNode : public InstructionNode {
         public:
             std::shared_ptr<SIRBlock> destination;
@@ -185,6 +220,16 @@ namespace sir {
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
     };
 
+    class ReturnNode : public InstructionNode {
+        public:
+            std::shared_ptr<ValueNode> return_value;
+            ReturnNode(SIRBlock* parent, std::shared_ptr<ValueNode> return_value)
+                :InstructionNode(parent), return_value(return_value) { }
+            std::vector<std::string> get_usages() override;
+            llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
+            void accept(SIRVisitor* visitor) override {  visitor->visit(this); };
+    };
+
     class SIRBlock {
         public:
             std::unordered_set<SIRBlock*> predecesors;
@@ -195,9 +240,10 @@ namespace sir {
             SIRBlock(std::string name);
     };
 
+
     class ProgramNode : public SIRNode {
         public:
-            std::vector<std::shared_ptr<SIRBlock>> blocks;
+            std::vector<std::shared_ptr<FunctionDefinitionNode>> functions;
             std::vector<std::string> get_usages() override;
             llvm::Value* accept(LLVMCodegenVisitor* visitor) override;
             void accept(SIRVisitor* visitor) override {  visitor->visit(this); };

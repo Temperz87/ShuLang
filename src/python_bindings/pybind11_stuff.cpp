@@ -113,6 +113,19 @@ PYBIND11_MODULE(shulang, m) {
     .def_readwrite("condition", &shulang::WhileNode::condition)
     .def_readwrite("body", &shulang::WhileNode::body);
 
+    // FunctionNode
+    py::class_<shulang::FunctionNode, shulang::ShuLangNode, std::shared_ptr<shulang::FunctionNode>>(m, "FunctionNode")
+    .def("children", &shulang::FunctionNode::children)
+    .def_readwrite("name", &shulang::FunctionNode::name)
+    .def_readwrite("parameters", &shulang::FunctionNode::parameters)
+    .def_readwrite("body", &shulang::FunctionNode::body)
+    .def_readwrite("return_type", &shulang::FunctionNode::return_type);
+
+    // ReturnNode
+    py::class_<shulang::ReturnNode, shulang::ShuLangNode, std::shared_ptr<shulang::ReturnNode>>(m, "ReturnNode")
+    .def("children", &shulang::ReturnNode::children)
+    .def_readwrite("return_value", &shulang::ReturnNode::return_value);
+
     // BodyNode
     py::class_<shulang::BodyNode, shulang::ShuLangNode, std::shared_ptr<shulang::BodyNode>>(m, "BodyNode")
     .def("children", &shulang::BodyNode::children)
@@ -202,6 +215,15 @@ PYBIND11_MODULE(shulang, m) {
     py::class_<sir::InputNode, sir::ValueNode, std::shared_ptr<sir::InputNode>>(m, "SIRInputNode")
     .def("get_usages", &sir::InputNode::get_usages);
 
+    py::class_<sir::CallNode, sir::ValueNode, std::shared_ptr<sir::CallNode>>(m, "SIRCallNode")
+    .def_readwrite("arguments", &sir::CallNode::arguments)
+    .def_property("function", [](const sir::CallNode& self) {
+            return self.function.lock();
+        },
+        [](sir::ReferenceNode& self, std::shared_ptr<sir::DefinitionNode> def) {
+            self.definition = def;
+        }, py::return_value_policy::reference);
+
     py::class_<sir::JumpNode, sir::InstructionNode, std::shared_ptr<sir::JumpNode>>(m, "JumpNode")
     .def("get_usages", &sir::JumpNode::get_usages)
     .def_readwrite("destination", &sir::JumpNode::destination);
@@ -223,9 +245,20 @@ PYBIND11_MODULE(shulang, m) {
     py::class_<sir::ExitNode, sir::InstructionNode, std::shared_ptr<sir::ExitNode>>(m, "ExitNode")
     .def("get_usages", &sir::ExitNode::get_usages);
 
+    py::class_<sir::FunctionDefinitionNode, sir::SIRNode, std::shared_ptr<sir::FunctionDefinitionNode>>(m, "FunctionDefinitionNode")
+    .def("get_usages", &sir::FunctionDefinitionNode::get_usages)
+    .def_readwrite("blocks", &sir::FunctionDefinitionNode::blocks)
+    .def_readwrite("name", &sir::FunctionDefinitionNode::name)
+    .def_readwrite("parameters", &sir::FunctionDefinitionNode::parameters)
+    .def_readwrite("return_width", &sir::FunctionDefinitionNode::return_width);
+
+    py::class_<sir::ReturnNode, sir::InstructionNode, std::shared_ptr<sir::ReturnNode>>(m, "SIRReturnNode")
+    .def("get_usages", &sir::ReturnNode::get_usages)
+    .def_readwrite("return_value", &sir::ReturnNode::return_value);
+
     py::class_<sir::ProgramNode, sir::SIRNode, std::shared_ptr<sir::ProgramNode>>(m, "SIRProgramNode")
     .def("get_usages", &sir::ProgramNode::get_usages)
-    .def_readwrite("blocks", &sir::ProgramNode::blocks);
+    .def_readwrite("functions", &sir::ProgramNode::functions);
 
     // passes
     m.def("parse_file", &parse_file, "Given a file returns an AST");

@@ -1,5 +1,6 @@
 #include <SIRVisitor.hpp>
 #include <SIRAST.hpp>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -138,17 +139,38 @@ llvm::Value* ExitNode::accept(LLVMCodegenVisitor* visitor) {
     return visitor->visit(this);
 }
 
+std::vector<std::string> CallNode::get_usages() {
+    std::vector<std::string> ret;
+    return ret;
+}
+
+llvm::Value* CallNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->visit(this);
+}
+
+std::vector<std::string> FunctionDefinitionNode::get_usages() {
+    std::vector<std::string> ret;
+    return ret;
+}
+
+llvm::Value* FunctionDefinitionNode::accept(LLVMCodegenVisitor* visitor) {
+    throw std::runtime_error("Tried to codegen a FunctionDefinitionNode");
+}
+
+std::vector<std::string> ReturnNode::get_usages() {
+    std::vector<std::string> ret;
+    return ret;
+}
+
+llvm::Value* ReturnNode::accept(LLVMCodegenVisitor* visitor) {
+    return visitor->visit(this);
+}
+
 std::vector<std::string> ProgramNode::get_usages() {
     std::vector<std::string> ret;
-    for (std::shared_ptr<SIRBlock> block : blocks) {
-        for (std::shared_ptr<InstructionNode> node : block->instructions) {
-            std::vector<std::string> usages = node->get_usages();
-            ret.insert(ret.end(), usages.begin(), usages.end());
-        }
-    }
     return ret;
 }
 
 llvm::Value* ProgramNode::accept(LLVMCodegenVisitor* visitor) {
-    return visitor->visit(this);
+    throw std::runtime_error("Tried to codegen a FunctionDefinitionNode");
 }

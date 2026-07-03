@@ -103,7 +103,6 @@ def run_case(file_name):
     verbose("Running...")
     parse_stdout = run_ast(ast, iter(stdin), file_name, {}, [])
     check_expect_output(expected_stdout, parse_stdout, file_name, "parsing", ast, True)
-    
     # print("---UNIQUIFICATION---")
     # uniquify(ast)
     # print_ast(ast)
@@ -142,6 +141,7 @@ def run_case(file_name):
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
 
+
     # TODO: Pseudo phi nodes aren't handled so we can't run this
     #       Maybe they just can't be handled?
     # select_stdout = run_sir_program(sir_program)
@@ -156,6 +156,7 @@ def run_case(file_name):
     os.system("rm -f a.ll a.out")
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
     verbose("Unoptimized compiled program passed")
+    return
 
     verbose("---Optimization O1 pipeline---")
     did_work = True

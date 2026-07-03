@@ -44,7 +44,7 @@ const std::unordered_map<std::string, int> operator_precedences = {
 
 
 void parse_error(std::string msg) {
-    std::cout << "ShuC:" << msg << std::endl << "\tWhile at token " << currenttoken.value << std::endl << "At " << filename << ":" << currenttoken.line << ":" << currenttoken.col_start << std::endl; 
+    std::cout << "ShuC: " << msg << std::endl << "\tWhile at token " << currenttoken.value << std::endl << "At " << filename << ":" << currenttoken.line << ":" << currenttoken.col_start << std::endl; 
     exit(1);
 }
 
@@ -240,14 +240,54 @@ std::shared_ptr<BodyNode> parse_body() {
     return ret;
 }
 
+std::shared_ptr<FunctionNode> parse_function(const std::string& name) {
+    auto ret = std::make_shared<FunctionNode>();
+    ret->name = name;
+    assert_at_value("(");
+    advance();
+    while (currenttoken.value != ")") {
+        if (currenttoken.type != IDENTIFIER)
+            parse_error("Expected parameter name");
+
+        std::string param_name = currenttoken.value;
+        std::string param_type;
+        advance();
+        assert_at_value(":");
+        parse_type_annot(param_type);
+        ret->parameters.push_back({param_name, param_type});
+        if (currenttoken.value == ",") {
+            advance();
+        }
+        else if (currenttoken.value != ")") {
+            parse_error("Expected ',' or ')' in parameter list");
+        }
+    }
+
+    advance();
+    assert_at_value("->");
+    advance();
+    parse_type(ret->return_type);
+    assert_at_value("in");
+    advance();
+    ret->body = parse_body();
+    return ret;
+}
+
 std::shared_ptr<StatementNode> parse_statement() {
     if (currenttoken.value == "bind") {
         advance();
         std::string identifier;
         if (currenttoken.type != IDENTIFIER)
             parse_error("Expected a valid identifier");
+        
         identifier = currenttoken.value;
         advance();
+
+        // Shorthand function declaration
+        if (currenttoken.value == "(") {
+            return parse_function(identifier);
+        }
+
         std::string type;
         if (currenttoken.value == ":")
             parse_type_annot(type);
@@ -281,6 +321,19 @@ std::shared_ptr<StatementNode> parse_statement() {
         std::shared_ptr<ValueNode> cond = parse_complex_value();
         ret->condition = std::make_shared<BeginNode>(cond);
         ret->body = parse_body();
+        return ret;
+    }
+    else if (currenttoken.value == "return") {
+        advance();
+        std::shared_ptr<ReturnNode> ret = std::make_shared<ReturnNode>();
+        if (currenttoken.type == INTEGER || currenttoken.type == VALUE 
+                                         || currenttoken.type == IDENTIFIER) {
+            ret->return_value = parse_complex_value();
+        }
+        else {
+            ret->return_value = nullptr;
+        }
+
         return ret;
     }
     else if (currenttoken.type == IDENTIFIER) {

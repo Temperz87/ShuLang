@@ -119,87 +119,88 @@ void merge(SIRBlock* big_block, SIRBlock* to_subsume, const unordered_set<SIRBlo
 }
 
 bool CFGMerge(ProgramNode& program, const SIRControlFlowGraph& cfg) {
-    unordered_map<SIRBlock*, SIRBlock*> mergable;
-    auto terminals = cfg.get_terminals();
-    deque<SIRBlock*> forwards = { cfg.get_main() };
-    unordered_set<SIRBlock*> seen = { cfg.get_main() };
-    while (!forwards.empty()) {
-        SIRBlock* b = forwards.front();
-        forwards.pop_front();
-        for (SIRBlock* outgoing : cfg.get_outgoing(b)) {
-            if (seen.contains(outgoing)) {
-                continue;
-            }
+    throw std::runtime_error("TODO: Implement CFGMerge");
+    // unordered_map<SIRBlock*, SIRBlock*> mergable;
+    // auto terminals = cfg.get_terminals();
+    // deque<SIRBlock*> forwards = { cfg.get_main() };
+    // unordered_set<SIRBlock*> seen = { cfg.get_main() };
+    // while (!forwards.empty()) {
+    //     SIRBlock* b = forwards.front();
+    //     forwards.pop_front();
+    //     for (SIRBlock* outgoing : cfg.get_outgoing(b)) {
+    //         if (seen.contains(outgoing)) {
+    //             continue;
+    //         }
 
-            seen.insert(outgoing);
-            forwards.push_back(outgoing);
-        }
+    //         seen.insert(outgoing);
+    //         forwards.push_back(outgoing);
+    //     }
         
-        // If the destination has only one predecsor
-        // and our block has only one succesor
-        // THEN we can merge the two blocks together
-        auto outgoing = cfg.get_outgoing(b);
-        if (outgoing.size() != 1) {
-            continue;
-        }
+    //     // If the destination has only one predecsor
+    //     // and our block has only one succesor
+    //     // THEN we can merge the two blocks together
+    //     auto outgoing = cfg.get_outgoing(b);
+    //     if (outgoing.size() != 1) {
+    //         continue;
+    //     }
 
-        SIRBlock* dest = *outgoing.begin();
-        if (dest->predecesors.size() != 1) {
-            continue;
-        }
+    //     SIRBlock* dest = *outgoing.begin();
+    //     if (dest->predecesors.size() != 1) {
+    //         continue;
+    //     }
 
-        mergable[dest] = b;
-    }
+    //     mergable[dest] = b;
+    // }
 
-    deque<SIRBlock*> backwards(terminals.begin(), terminals.end());
-    seen.clear();
-    seen.insert(backwards.begin(), backwards.end());
-    bool did_work = false;
-    while (!backwards.empty()) {
-        SIRBlock* subsumable = backwards.front();
-        backwards.pop_front();
-        for (SIRBlock* incoming : subsumable->predecesors) {
-            if (seen.contains(incoming)) {
-                continue;
-            }
+    // deque<SIRBlock*> backwards(terminals.begin(), terminals.end());
+    // seen.clear();
+    // seen.insert(backwards.begin(), backwards.end());
+    // bool did_work = false;
+    // while (!backwards.empty()) {
+    //     SIRBlock* subsumable = backwards.front();
+    //     backwards.pop_front();
+    //     for (SIRBlock* incoming : subsumable->predecesors) {
+    //         if (seen.contains(incoming)) {
+    //             continue;
+    //         }
 
-            seen.insert(incoming);
-            backwards.push_back(incoming);
-        }
+    //         seen.insert(incoming);
+    //         backwards.push_back(incoming);
+    //     }
 
-        if (mergable.contains(subsumable)) {
-            merge(mergable[subsumable], subsumable, cfg.get_outgoing(subsumable), mergable);
-            did_work = true;
-        }
-    }
+    //     if (mergable.contains(subsumable)) {
+    //         merge(mergable[subsumable], subsumable, cfg.get_outgoing(subsumable), mergable);
+    //         did_work = true;
+    //     }
+    // }
 
-    vector<shared_ptr<SIRBlock>> unmerged_blocks;
-    for (shared_ptr<SIRBlock> block : program.blocks) {
-        if (!mergable.contains(block.get())) {
-            // std::cout << "not free block " << block->name << std::endl;
-            unmerged_blocks.push_back(block);
-            std::unordered_set<SIRBlock*> new_predecessors;
-            for (SIRBlock* b : block->predecesors) {
-                while (mergable.contains(b)) {
-                    b = mergable[b];
-                }
+    // vector<shared_ptr<SIRBlock>> unmerged_blocks;
+    // for (shared_ptr<SIRBlock> block : program.blocks) {
+    //     if (!mergable.contains(block.get())) {
+    //         // std::cout << "not free block " << block->name << std::endl;
+    //         unmerged_blocks.push_back(block);
+    //         std::unordered_set<SIRBlock*> new_predecessors;
+    //         for (SIRBlock* b : block->predecesors) {
+    //             while (mergable.contains(b)) {
+    //                 b = mergable[b];
+    //             }
 
-                new_predecessors.insert(b);
-            }
+    //             new_predecessors.insert(b);
+    //         }
 
-            block->predecesors = std::move(new_predecessors);
-        }
-    }
+    //         block->predecesors = std::move(new_predecessors);
+    //     }
+    // }
 
-    did_work |= program.blocks.size() != unmerged_blocks.size();
-    if (did_work) {
-        program.blocks = std::move(unmerged_blocks);
+    // did_work |= program.blocks.size() != unmerged_blocks.size();
+    // if (did_work) {
+    //     program.blocks = std::move(unmerged_blocks);
 
-        // Have to walk all blocks on more time to make sure we redirected all phi nodes
-        for (shared_ptr<SIRBlock> block : program.blocks) {
-            PhiRedirectVisitor::walk(block.get(), mergable);
-        }
-    }
+    //     // Have to walk all blocks on more time to make sure we redirected all phi nodes
+    //     for (shared_ptr<SIRBlock> block : program.blocks) {
+    //         PhiRedirectVisitor::walk(block.get(), mergable);
+    //     }
+    // }
 
-    return did_work;
+    // return did_work;
 }

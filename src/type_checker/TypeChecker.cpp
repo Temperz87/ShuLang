@@ -173,3 +173,44 @@ void TypeChecker::visitNode(WhileNode* node) {
     scope_stack.pop_back();
     assert_same("Boolean", node->condition->type, "Unexpected type for condition of if statement");
 }
+
+void TypeChecker::visitNode(FunctionNode* node) {
+    // Add function signature into function_types
+    // Do it now to allow for recursion
+    std::vector<std::string> types;
+    types.push_back(node->return_type);
+    for (auto param : node->parameters)
+        types.push_back(param.second);
+
+    function_types[node->name] = {node->parameters.size(), types};
+    
+    // Create new scope and insert parameters
+    scope_stack.push_back({});
+    for (auto param : node->parameters)
+        scope_stack.back().insert(param);
+
+    return_type_stack.push_front(node->return_type);
+    node->body->accept(this);
+    if (node->return_type == "Inferred") {
+        node->return_type = return_type_stack.front();
+    }
+
+    return_type_stack.pop_front();
+    scope_stack.pop_back();
+}
+
+void TypeChecker::visitNode(ReturnNode* node) {
+    node->return_value->accept(this);
+    if (return_type_stack.empty()) {
+        std::cout << "ShuC: return statement outside of a function!" << std::endl;
+        exit(1);
+    }
+
+    if (return_type_stack.front() == "Inferred") {
+        return_type_stack.front() = node->return_value->type;
+    }
+
+    assert_same(return_type_stack.front(),
+                  node->return_value->type,
+               "Return value had the wrong type");
+}

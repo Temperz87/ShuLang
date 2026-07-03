@@ -1,10 +1,13 @@
 #include <Analysis.hpp>
+#include <deque>
+#include <memory>
 #include <SIRVisitor.hpp>
 #include <SIRCFG.hpp>
 #include <SIRAST.hpp>
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 using namespace sir;
 using namespace std;

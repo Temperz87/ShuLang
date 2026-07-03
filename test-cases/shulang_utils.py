@@ -2,6 +2,9 @@ from shulang import *
 from shared_utils import *
 from sys import stdout
 
+def run_ast(node, stdin, file_name, env, stdout):
+    pass
+
 def print_ast(node : ASTNode, indentation = 0, file=stdout):
     print_indentation(indentation, file=file)
     match node:
@@ -107,6 +110,28 @@ def graph_ast(node, parent='', file=stdout):
             parent = graph_this_stuff("body", 1, my_node, file=file)
             for child in node.body.nodes:
                 graph_ast(child, parent, file=file)
+        case FunctionNode():
+            param_names = [x + ' : ' + y for x,y in node.parameters]
+            func_name = node.name + '(' + ', '.join(param_names) + ')'
+            my_node = graph_this_stuff(func_name + ' -> ' + node.return_type \
+                                                 , 1, parent, file=file)
+            for child in node.body.nodes:
+                graph_ast(child, my_node, file=file)
+        case ReturnNode():
+            my_node = graph_this_stuff('return', 1, parent, file=file)
+            graph_ast(node.return_value, my_node, file=file)
+
+
+def get_function_value(func_node, arguments, env, stdin, file_name, stdout):
+    # extend env
+    func_env = env.copy()
+    for (name, _), value in zip(func_node.parameters, arguments):
+        func_env[name] = get_value(value, env, stdin, file_name, stdout)
+
+    for node in func_node.body.nodes:
+        ret = run_ast(node, stdin, file_name, func_env, stdout)
+        if ret != None:
+            return ret
 
 
 def get_value(node, env, stdin, file_name, stdout):
@@ -117,9 +142,9 @@ def get_value(node, env, stdin, file_name, stdout):
             return node.value
         case VariableReferenceNode():
             if node.identifier not in env:
-                print(node.identifier, "was not found!")
-                print("\tIn env:", env)
-                exit(1)
+                exception_message = node.identifier, "was not found!" + \
+                                    "\n\tIn env: " + str(env)
+                raise Exception(exception_message)
             return env[node.identifier]
         case OperatorApplicationNode():
             match node.op:
@@ -189,14 +214,19 @@ def get_value(node, env, stdin, file_name, stdout):
                 return get_value(node.true_value, env, stdin, file_name, stdout)
             return get_value(node.false_value, env, stdin, file_name, stdout)
         case CallNode():
-            match node.function_name:
-                case 'read_input':  
-                    new_input = next(stdin, None)
-                    if new_input == None:
-                        print('Not enough inputs to stdin were provided for test:', file_name, stdout)
-                        print('Either create ' + file_name + '.in or add more inputs')
-                        exit(1)
-                    return int(new_input) 
+            if node.function_name == 'read_input':  
+                new_input = next(stdin, None)
+                if new_input == None:
+                    print('Not enough inputs to stdin were provided for test:', file_name, stdout)
+                    print('Either create ' + file_name + '.in or add more inputs')
+                    exit(1)
+                
+                return int(new_input) 
+            elif node.function_name in env:
+                func = env[node.function_name]
+                return get_function_value(func, node.arguments, env, stdin, file_name, stdout)
+            else:
+                raise Exception('Unrecognized function: ' + node.function_name)
 
 def run_ast(node, stdin, file_name, env, stdout):
     match node:
@@ -224,21 +254,36 @@ def run_ast(node, stdin, file_name, env, stdout):
                         exit(1)
                     return int(new_input)                    
                 case _:
-                    print('Unrecognized function:', node.function_name)
-                    print('\tI am returning None for this call')
-                    return None
+                    if node.function_name in env:
+                        func = env[node.function_name]
+                        return get_function_value(func, node.arguments, env, stdin, file_name, stdout)
+                    else:
+                        raise Exception('Unrecognized function:', node.function_name)
+                    
         case IfNode():
             path = get_value(node.condition, env, stdin, file_name, stdout)
             if path:
                 for x in node.then_block.nodes:
-                    run_ast(x, stdin, file_name, env, stdout)
+                    ret = run_ast(x, stdin, file_name, env, stdout)
+                    if ret != None:
+                        return ret
             elif node.else_block != None:
                 for x in node.else_block.nodes:
-                    run_ast(x, stdin, file_name, env, stdout)
+                    ret = run_ast(x, stdin, file_name, env, stdout)
+                    if ret != None:
+                        return ret
         case WhileNode():
             path = get_value(node.condition, env, stdin, file_name, stdout)
             while get_value(node.condition, env, stdin, file_name, stdout):
                 for x in node.body.nodes:
-                    run_ast(x, stdin, file_name, env, stdout)
+                    ret = run_ast(x, stdin, file_name, env, stdout)
+                    if ret != None:
+                        return ret
+        case FunctionNode():
+            env[node.name] = node
+        case ReturnNode():
+            # We could validate that we are in a function context
+            # But the type checker already does that
+            return get_value(node.return_value, env, stdin, file_name, stdout)
         case _:
-            print("run_ast: unhandled " + node)
+            raise Exception("run_ast unhandled: " + node)

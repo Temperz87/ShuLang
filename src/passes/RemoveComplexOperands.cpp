@@ -98,6 +98,13 @@ class target_complex : public ShuLangVisitor {
             program_nodes = last_program_nodes;
         }
 
+        void visitNode(ReturnNode* node) override {
+            descendIntoChildren(node);
+            if (ComplexDetector::IsComplex(node->return_value.get())) {
+                node->return_value = generate_binding(node->return_value);
+            }
+        }
+
         void visitNode(ProgramNode* node) override {
             visitNode(static_cast<BodyNode*>(node));
         }

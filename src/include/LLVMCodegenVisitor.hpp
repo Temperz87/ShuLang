@@ -1,6 +1,7 @@
 #pragma once
 
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
@@ -23,10 +24,11 @@ namespace sir {
     class PhiNode;
     class PrintNode;
     class InputNode;
+    class CallNode;
     class JumpNode;
     class JumpIfElseNode;
     class ExitNode;
-    class ProgramNode;
+    class ReturnNode;
     class SIRBlock;
 
     class LLVMCodegenVisitor {
@@ -34,11 +36,10 @@ namespace sir {
             llvm::LLVMContext& context;
             llvm::IRBuilder<llvm::NoFolder>* builder;
             llvm::Module* module;
-            std::unordered_map<std::string, llvm::Value*> bindings;
-
             std::vector<std::pair<llvm::PHINode*, std::vector<std::pair<SIRBlock*, std::shared_ptr<ValueNode>>>>> redo_phi;
 
         public:
+            std::unordered_map<std::string, llvm::Value*> bindings;
             std::unordered_map<std::string, llvm::BasicBlock*> blocks;
             
             LLVMCodegenVisitor(llvm::LLVMContext& ctx,
@@ -57,13 +58,14 @@ namespace sir {
             llvm::Value* visit(PhiNode* node);
             llvm::Value* visit(PrintNode* node);
             llvm::Value* visit(InputNode* node);
+            llvm::Value* visit(CallNode* node);
             llvm::Value* visit(JumpNode* node);
             llvm::Value* visit(JumpIfElseNode* node);
             llvm::Value* visit(ExitNode* node);
-            llvm::Value* visit(ProgramNode* node);
+            llvm::Value* visit(ReturnNode* node);
 
             void walk(SIRBlock* block);
-
             void fix_phi();
+            void reset();
     };
 }

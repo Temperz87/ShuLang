@@ -1,6 +1,17 @@
 from shulang import *
 from shared_utils import *
 
+def width_to_type(width : int):
+    match width:
+        case 32:
+            return 'i32'
+        case 0:
+            return 'void'
+        case 1:
+            return 'boolean'
+        case _:
+            return 'unknown_type'
+
 def stringify_value(node):
     match node:
         case ImmediateNode():
@@ -27,9 +38,21 @@ def stringify_value(node):
                              " (" + stringify_value(node.false_value) + ")"
         case SIRInputNode():
             return 'read_input()'
+        case SIRCallNode():
+            ret = node.function.name + '('
+            coma = False
+            for arg in node.arguments:
+                if not coma:
+                    coma = True
+                else:
+                    ret += ', '          
+                ret += stringify_value(arg)
+            
+            ret += ')'
+            return ret
         case _:
-            print("Unknown value", node)
-            exit(1)
+            raise Exception("stringify_value: Unknown value " + str(node))
+            
 
 
 def get_sir_graph_string(instruction):
@@ -44,15 +67,34 @@ def get_sir_graph_string(instruction):
             return 'jump to ' + instruction.destination.name
         case ExitNode():
             return 'exit'
+        case SIRReturnNode():
+            return 'return ' + stringify_value(instruction.return_value)
+        case _:
+            raise RuntimeError("Umimplemented SIR graph string: " + str(instruction))
+        
 
-def graph_sir_program(program_node, file=stdout):
-    print("digraph SIRProgram {", file=file)
+def graph_function(function, file=stdout):
     jumpnodes = []
-    for block in program_node.blocks:
-        print_indentation(1, file=file)
+    print_indentation(1, file=file)
+    print("subgraph cluster_" + function.name + " {", file=file)
+    print_indentation(2, file=file)
+    function_label = width_to_type(function.return_width) + ' ' + function.name + '('
+    comma = False
+    for param in function.parameters:
+        if not comma:
+            comma = True
+        else:
+            function_label += ', '
+
+        function_label += width_to_type(param.width) + ' %' + param.identifier
+    
+    function_label += ")"
+    print('label = "' + function_label + '";', file=file)
+    for block in function.blocks:
+        print_indentation(2, file=file)
         print("subgraph cluster_" + block.name + " {", file=file)
 
-        print_indentation(2, file=file)
+        print_indentation(3, file=file)
         print('label = "' + block.name + '";', file=file)
 
         if len(block.instructions) == 0:
@@ -64,9 +106,10 @@ def graph_sir_program(program_node, file=stdout):
         for instruction in block.instructions:
             # For our first instruction
             if current == None:
-                current = graph_this_stuff(get_sir_graph_string(instruction), 2, current, name='first_' + block.name, file=file)
+                current = graph_this_stuff(get_sir_graph_string(instruction), 3, current, name=function.name + '_first_' + block.name, file=file)
             else:
-                current = graph_this_stuff(get_sir_graph_string(instruction), 2, current, file=file)
+                current = graph_this_stuff(get_sir_graph_string(instruction), 3, current, file=file)
+
             match instruction:
                 case JumpIfElseNode():
                     jumpnodes.append((current, instruction.destination.name))
@@ -74,13 +117,21 @@ def graph_sir_program(program_node, file=stdout):
                 case JumpNode():
                     jumpnodes.append((current, instruction.destination.name))
 
-        print_indentation(1, file=file)
+        print_indentation(2, file=file)
         print('}', file=file)
 
     for source, destination in jumpnodes:
-        print_indentation(1, file=file)
-        print(source + ' -> first_' + destination, file=file)
+        print_indentation(2, file=file)
+        print(source + ' -> ' + function.name + '_first_' + destination, file=file)
 
+    print_indentation(1, file=file)
+    print('}', file=file)
+
+def graph_sir_program(program, file=stdout):
+    print("digraph SIRProgram {", file=file)
+    for function in program.functions:
+        graph_function(function, file)
+    
     print("}", file=file)
 
 
@@ -109,7 +160,13 @@ def print_sir_ast(node, indentation = 0, file=stdout):
             print("Unknown definition", node)
             exit(1)
 
-def get_sir_value(node, last_block, env, stdin):
+
+def run_sir_function(function, env, functions, stdout, stdin):
+    pass
+
+def get_sir_value(node, last_block, env, functions, stdout, stdin):
+    if env == None:
+        raise RuntimeError("ENV IS NONE!!")
     match node:
         case ImmediateNode():
             return node.number
@@ -122,26 +179,26 @@ def get_sir_value(node, last_block, env, stdin):
         case PhiNode():
             for block, val in node.candidates:
                 if block.name == last_block.name:
-                    return get_sir_value(val, last_block, env, stdin)
+                    return get_sir_value(val, last_block, env, functions, stdout, stdin)
         case SelectNode():
-            if get_sir_value(node.condition, last_block, env, stdin):
-                return get_sir_value(node.true_value, last_block, env, stdin)
-            return get_sir_value(node.false_value, last_block, env, stdin)
+            if get_sir_value(node.condition, last_block, env, functions, stdout, stdin):
+                return get_sir_value(node.true_value, last_block, env, functions, stdout, stdin)
+            return get_sir_value(node.false_value, last_block, env, functions, stdout, stdin)
         case AddNode():
-            lhs = get_sir_value(node.lhs, last_block, env, stdin)
-            rhs = get_sir_value(node.rhs, last_block, env, stdin)
+            lhs = get_sir_value(node.lhs, last_block, env, functions, stdout, stdin)
+            rhs = get_sir_value(node.rhs, last_block, env, functions, stdout, stdin)
             return lhs + rhs
         case SubNode():
-            lhs = get_sir_value(node.lhs, last_block, env, stdin)
-            rhs = get_sir_value(node.rhs, last_block, env, stdin)
+            lhs = get_sir_value(node.lhs, last_block, env, functions, stdout, stdin)
+            rhs = get_sir_value(node.rhs, last_block, env, functions, stdout, stdin)
             return lhs - rhs
         case MultNode():
-            lhs = get_sir_value(node.lhs, last_block, env, stdin)
-            rhs = get_sir_value(node.rhs, last_block, env, stdin)
+            lhs = get_sir_value(node.lhs, last_block, env, functions, stdout, stdin)
+            rhs = get_sir_value(node.rhs, last_block, env, functions, stdout, stdin)
             return lhs * rhs
         case CmpNode():
-            lhs = get_sir_value(node.lhs, last_block, env, stdin)
-            rhs = get_sir_value(node.rhs, last_block, env, stdin)
+            lhs = get_sir_value(node.lhs, last_block, env, functions, stdout, stdin)
+            rhs = get_sir_value(node.rhs, last_block, env, functions, stdout, stdin)
             match node.op:
                 case "<":
                     ret = lhs < rhs
@@ -166,19 +223,30 @@ def get_sir_value(node, last_block, env, stdin):
                 return 1
             return 0
         case SIRInputNode():
-            # Can't fail at this point as it would've done so already on parsing
-            return int(next(stdin))
-        case _:
-            print("Unsupported sir value:", node)
-            exit(2)
+            new_input = next(stdin, None)
+            if new_input == None:
+                print('Not enough input to stdin were provided for the test case', stdout)
+                print('\tThis means that an input node got duplicated')
+                exit(1)
 
-def run_sir_block(block, blocks, last_block, env, stdout, stdin):
+            return int(new_input)
+        case SIRCallNode():
+            # Create a new env, so we don't scoop up variables
+            function_env = {}
+            for arg, param in zip(node.arguments, node.function.parameters):
+                function_env[param.identifier] = get_sir_value(arg, last_block, env, functions, stdout, stdin)
+            
+            return run_sir_function(node.function, function_env, functions, stdout, stdin)
+        case _:
+            raise Exception("Unsupported sir value: " + str(node))
+
+def run_sir_block(block, blocks, last_block, env, functions, stdout, stdin):
     for instruction in block.instructions:
         match instruction:
             case ExitNode():
                 break
             case SIRPrintNode():
-                val = get_sir_value(instruction.to_print, last_block, env, stdin)
+                val = get_sir_value(instruction.to_print, last_block, env, functions, stdout, stdin)
                 match instruction.print_type:
                     case 'Integer':
                         verbose(val)
@@ -196,25 +264,37 @@ def run_sir_block(block, blocks, last_block, env, stdout, stdin):
                         print("Unsupported print type found in a SIRPrintNode:", instruction.print_type)
                 
             case DefinitionNode():
-                val = get_sir_value(instruction.binding, last_block, env, stdin)
+                val = get_sir_value(instruction.binding, last_block, env, functions, stdout, stdin)
                 env[instruction.identifier] = val
                 for k, v in block.variable_to_ref.items():
                     if v in env:
                         env[k] = env[v]
             case JumpIfElseNode():
-                val = get_sir_value(instruction.condition, last_block, env, stdin)
+                val = get_sir_value(instruction.condition, last_block, env, functions, stdout, stdin)
                 if val:
-                    return run_sir_block(instruction.destination, blocks, block, env, stdout, stdin)
+                    return run_sir_block(instruction.destination, blocks, block, env, functions, stdout, stdin)
                 else:
-                    return run_sir_block(instruction.else_destination, blocks, block, env, stdout, stdin)
+                    return run_sir_block(instruction.else_destination, blocks, block, env, functions, stdout, stdin)
             case JumpNode():
-                return run_sir_block(instruction.destination, blocks, block, env, stdout, stdin)
+                return run_sir_block(instruction.destination, blocks, block, env, functions, stdout, stdin)
+            case SIRReturnNode():
+                return get_sir_value(instruction.return_value, last_block, env, functions, stdout, stdin)
+            
     return stdout
 
+def run_sir_function(function, env, functions, stdout, stdin):
+    for block in function.blocks:
+        if block.name == 'entry':
+            return run_sir_block(block, function.blocks, None, env, functions, stdout, stdin)
+
 def _run_sir_program(program_node, stdin):
-    for block in program_node.blocks:
-        if block.name == 'main':
-            ret = run_sir_block(block, program_node.blocks, "", {}, [], stdin)
+    functions = {}
+    for function in program_node.functions:
+        functions[function.name] = function
+
+    for function in program_node.functions:
+        if function.name == 'main':
+            ret = run_sir_function(function, {}, functions, [], stdin)
             if len(list(stdin)) != 0:
                 print("\nAll input was not consumed!")
                 print("There's probably a problem with an optimization...")
@@ -224,8 +304,7 @@ def _run_sir_program(program_node, stdin):
             
 def run_sir_program(sir_program, stdin, pass_name, file_name):
     try:
-        ret = _run_sir_program(sir_program, iter(stdin))
-        return ret
+        return _run_sir_program(sir_program, iter(stdin))
     except:
         print('Encountered error while running program for file\n\t' + str(file_name))
         with open(f'./failure {pass_name}.dot', 'w') as fd:

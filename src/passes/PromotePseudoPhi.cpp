@@ -1,6 +1,7 @@
 #include <SIRVisitor.hpp>
 #include <SIRCFG.hpp>
 #include <SIRAST.hpp>
+#include <deque>
 #include <memory>
 #include <unordered_set>
 #include <vector>
@@ -81,9 +82,9 @@ class PhiPromotor : public SIRVisitor {
 //  If promotion placed a pseudo phi node in another block P
 //    AND P isn't queued in Q
 //      Then enqueue P onto Q
-void promote_pseudo_phi(ProgramNode* program) {
+void promote_function(FunctionDefinitionNode* function) {
     std::vector<SIRBlock*> blocks;
-    for (std::shared_ptr<SIRBlock> block : program->blocks) {
+    for (std::shared_ptr<SIRBlock> block : function->blocks) {
         blocks.push_back(block.get());
     }
 
@@ -130,5 +131,12 @@ void promote_pseudo_phi(ProgramNode* program) {
         }
 
         promotor.redo_blocks.clear();
+    }
+}
+
+void promote_pseudo_phi(ProgramNode* program) {
+    std::vector<SIRBlock*> blocks;
+    for (std::shared_ptr<FunctionDefinitionNode> function : program->functions) {
+        promote_function(function.get());
     }
 }

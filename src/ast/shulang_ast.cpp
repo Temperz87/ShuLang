@@ -132,3 +132,19 @@ void WhileNode::accept(ShuLangVisitor* visitor) {
 void ProgramNode::accept(ShuLangVisitor* visitor) {
   visitor->visitNode(this);
 }
+
+vector<ShuLangNode*> FunctionNode::children() {
+  return { body.get() };
+}
+
+void FunctionNode::accept(ShuLangVisitor* visitor) {
+  visitor->visitNode(this);
+}
+
+vector<ShuLangNode*> ReturnNode::children() {
+  return { return_value.get() };
+}
+
+void ReturnNode::accept(ShuLangVisitor* visitor) {
+  visitor->visitNode(this);
+}

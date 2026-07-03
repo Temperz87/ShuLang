@@ -1,9 +1,5 @@
 #pragma once
 
-#include <deque>
-#include <memory>
-#include <vector>
-
 namespace sir {
     class SIRNode;
     class ImmediateNode;
@@ -18,9 +14,12 @@ namespace sir {
     class PhiNode;
     class PrintNode;
     class InputNode;
+    class CallNode;
     class JumpNode;
     class JumpIfElseNode;
     class ExitNode;
+    class FunctionDefinitionNode;
+    class ReturnNode;
     class ProgramNode;
     class SIRBlock;
     class SIRControlFlowGraph;
@@ -40,9 +39,12 @@ namespace sir {
             virtual void visit(PhiNode* node) {}
             virtual void visit(PrintNode* node) {}
             virtual void visit(InputNode* node) {}
+            virtual void visit(CallNode* node) {}
             virtual void visit(JumpNode* node) {}
             virtual void visit(JumpIfElseNode* node) {}
             virtual void visit(ExitNode* node) {}
+            virtual void visit(FunctionDefinitionNode* node) {}
+            virtual void visit(ReturnNode* node) {}
             virtual void visit(ProgramNode* node) {}
     };
 }

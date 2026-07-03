@@ -25,4 +25,6 @@ void ShuLangVisitor::visitNode(CallNode* node) { descendIntoChildren(node); }
 void ShuLangVisitor::visitNode(BodyNode* node) { descendIntoChildren(node); }
 void ShuLangVisitor::visitNode(IfNode* node) { descendIntoChildren(node); }
 void ShuLangVisitor::visitNode(WhileNode* node) { descendIntoChildren(node); }
+void ShuLangVisitor::visitNode(FunctionNode* node) { descendIntoChildren(node); }
+void ShuLangVisitor::visitNode(ReturnNode* node) { descendIntoChildren(node); }
 void ShuLangVisitor::visitNode(ProgramNode* node) { descendIntoChildren(node); }

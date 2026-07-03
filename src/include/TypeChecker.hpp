@@ -1,5 +1,6 @@
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
+#include <deque>
 #include <unordered_map>
 #include <utility>
 
@@ -8,6 +9,7 @@ class TypeChecker : public ShuLangVisitor {
         // We'll need random access to walk the scopes
         // Hence a vector and not a deque
         std::vector<std::unordered_map<std::string, std::string>> scope_stack = { {} };
+        std::deque<std::string> return_type_stack = { };
         std::unordered_map<std::string, std::pair<int, std::vector<std::string>>> function_types = {
             {"print", {1, {"Void", "Any"}}},
             {"read_input", {0, {"Integer"}}},
@@ -24,4 +26,6 @@ class TypeChecker : public ShuLangVisitor {
         void visitNode(CallNode* node) override;
         void visitNode(IfNode* node) override;
         void visitNode(WhileNode* node) override;
+        void visitNode(FunctionNode* node) override;
+        void visitNode(ReturnNode* node) override;
 };

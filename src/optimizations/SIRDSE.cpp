@@ -1,3 +1,4 @@
+#include <deque>
 #include <SIRCFG.hpp>
 #include <Analysis.hpp>
 #include <SIRAST.hpp>

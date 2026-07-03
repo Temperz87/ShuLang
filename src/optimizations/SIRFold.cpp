@@ -224,8 +224,9 @@ class FoldVisitor : public SIRVisitor {
 };
 
 void SIRFold(sir::ProgramNode& node, unordered_map<DefinitionNode*, int>& constants) {
-    FoldVisitor visitor(constants);
-    for (shared_ptr<SIRBlock> block : node.blocks) {
-        visitor.walk(block.get());
-    }
+    throw std::runtime_error("TODO: Implement SIRFold");
+    // FoldVisitor visitor(constants);
+    // for (shared_ptr<SIRBlock> block : node.blocks) {
+        // visitor.walk(block.get());
+    // }
 }

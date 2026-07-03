@@ -22,5 +22,7 @@ class ShuLangVisitor {
         virtual void visitNode(BodyNode* node);
         virtual void visitNode(IfNode* node);
         virtual void visitNode(WhileNode* node);
+        virtual void visitNode(FunctionNode* node);
+        virtual void visitNode(ReturnNode* node);
         virtual void visitNode(ProgramNode* node);
 };
