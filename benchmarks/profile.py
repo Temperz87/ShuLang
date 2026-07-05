@@ -20,7 +20,7 @@ def parse_timings(text):
 def format_timings(timings):
     ls = []
     for k,v in timings.items():
-        if k == "Optimization iterations":
+        if k.startswith("Optimization iterations"):
             ls.append(f"{k}: {int(v)}")
         else:
             ls.append(f"{k}: {v:.1f}μs")
