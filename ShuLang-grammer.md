@@ -2,7 +2,7 @@
 
 ShuLang is an imperative procedural programming language, currently supported if statements, printing, and some math operators! The grammar of the language is outlined in this file.
 
-This specification was last updated during Act 4. Any changes past that point will not be reflected here.
+This specification was last updated during Act 5. Any changes past that point will not be reflected here.
 
 ## Concrete Syntax
 
@@ -12,7 +12,11 @@ binary_operation ::= `x "+" y` | `x "-" y` | `x "*" y` | `x ">" y` | `x ">=" y` 
 
 unary_prefix_operation ::= `"not" b` | `"if" condition consequence alternative`
 
-value ::= `identifier` | number | boolean | binary_operation | unary_prefix_operation | `"if" boolean value value` | `"read_input"()`
+argument_list = `value` | `argument_list ", " argument_list`
+
+function_call = `identifier "()"` | `"identifier (" argument_list ")"`
+
+value ::= `identifier` | number | boolean | binary_operation | unary_prefix_operation | `"if" boolean value value` | function_call
 
 type ::= `Integer` | `Boolean` | `Void`
 
@@ -21,8 +25,10 @@ variable_binding ::= `"bind" identifier : type "to" value` | `"bind" identifier 
 
 body ::= `{ statement_list }` | `statement`
 
-statement ::= variable_binding | `"if" boolean body` | `"if" boolean body else body` | | `"read_input"()` | `"print"(value)` `"while" condition body`
+param_list ::= `identifier ":" type` | `param_list "," param_list`
 
-statement_list ::= statement | statement_list statement
+statement ::= variable_binding | `"if" boolean body` | `"if" boolean body else body` | | `"read_input"()` | `"while" condition body` | `"bind" identifier "(" param_list ") -> " type "in" body` | `"bind" identifier "() -> " type "in" body` | `function_call`
 
-program ::= statement_list
+statement_list ::= `statement` | `statement_list statement`
+
+program ::= `statement_list`
