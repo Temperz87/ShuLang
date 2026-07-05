@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SIRAST.hpp>
+#include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -12,7 +13,7 @@ namespace sir {
         private:
             std::unordered_map<SIRBlock*, std::unordered_set<SIRBlock*>> outgoing_edges;
             std::unordered_map<SIRBlock*, std::unordered_set<SIRBlock*>> incoming_edges;
-            SIRBlock* main;
+            SIRBlock* entry;
             std::vector<SIRBlock*> terminal_blocks;
 
             // Adds both incoming and outgoing edges
@@ -32,8 +33,8 @@ namespace sir {
         public:
             SIRControlFlowGraph(const std::vector<SIRBlock*>& blocks) {
                 for (SIRBlock* block : blocks) {
-                    if (block->name == "main") {
-                        main = block;
+                    if (block->name == "entry") {
+                        entry = block;
                     }
 
                     if (block->is_terminal) {
@@ -60,9 +61,13 @@ namespace sir {
                 return std::unordered_set<SIRBlock*>();
             }
 
-            // Returns a reference to the main block
-            SIRBlock* get_main() const {
-                return main;
+            // Returns a reference to the entry block
+            SIRBlock* get_entry() const {
+                if (entry == nullptr) {
+                    throw std::runtime_error("Entry was not found?");
+                }
+
+                return entry;
             }
 
             // Returns a reference to all blocks that jump to exit

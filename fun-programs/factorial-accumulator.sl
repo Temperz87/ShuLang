@@ -13,3 +13,4 @@ bind factorial_acc(n : Integer) -> Integer in {
 }
 
 print(factorial_acc(5))
+print(factorial(1, 2))

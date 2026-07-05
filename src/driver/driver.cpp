@@ -135,62 +135,63 @@ int main(int argc, char** argv) {
     // Optimizations
     
     if (optimization_level) {
-        // throw std::runtime_error("TODO: Implement optimizations");
-        // int optimazation_iterations = 0;
-        // time_phase("Optimizations", [&]() {
-        //     // TODO: some better form of queueing optimizations
-        //     bool did_work;
-        //     do {
-        //         optimazation_iterations +=  1;
-        //         did_work = false;
+        for (auto function : sir_program.functions) {
+        int optimazation_iterations = 0;
+        time_phase("Optimizations", [&]() {
+            // TODO: some better form of queueing optimizations
+            bool did_work;
+            do {
+                optimazation_iterations +=  1;
+                did_work = false;
 
-        //         // Rebuild analysis
-        //         std::vector<sir::SIRBlock*> blocks;
-        //         for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
-        //             blocks.push_back(b.get());
-        //         } 
+                // Rebuild analysis
+                std::vector<sir::SIRBlock*> blocks;
+                for (std::shared_ptr<sir::SIRBlock> b : function->blocks) {
+                    blocks.push_back(b.get());
+                } 
 
-        //         sir::SIRControlFlowGraph cfg(blocks);
-        //         UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
-        //         SCCPResults sccp = SIRSCCP(cfg, info);
+                sir::SIRControlFlowGraph cfg(blocks);
+                UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
+                SCCPResults sccp = SIRSCCP(cfg, function.get(), info);
 
-        //         // Run optimizations
-        //         SIRPropagate(sir_program, sccp.constants);
-        //         SIRFold(sir_program, sccp.constants);
-        //         did_work |= CFGSimplify(sir_program, cfg, sccp);
+                // Run optimizations
+                SIRPropagate(function.get(), sccp.constants);
+                SIRFold(function.get(), sccp.constants);
+                did_work |= CFGSimplify(function.get(), cfg, sccp);
 
-        //         // CFGSimplify invalidates the CFG and usedef analysis
-        //         // hence we rebuild them here!
-        //         if (did_work) {
-        //             blocks.clear();
-        //             for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
-        //                 blocks.push_back(b.get());
-        //             } 
+                // CFGSimplify invalidates the CFG and usedef analysis
+                // hence we rebuild them here!
+                if (did_work) {
+                    blocks.clear();
+                    for (std::shared_ptr<sir::SIRBlock> b : function->blocks) {
+                        blocks.push_back(b.get());
+                    } 
 
-        //             cfg = sir::SIRControlFlowGraph(blocks);
-        //             info = UseDefAnalysis::get_use_def_chains(cfg);
-        //         }
+                    cfg = sir::SIRControlFlowGraph(blocks);
+                    info = UseDefAnalysis::get_use_def_chains(cfg);
+                }
 
-        //         bool cfg_merged = CFGMerge(sir_program, cfg);
-        //         did_work |= cfg_merged;
-        //         if (cfg_merged) {
-        //             blocks.clear();
-        //             for (std::shared_ptr<sir::SIRBlock> b : sir_program.blocks) {
-        //                 blocks.push_back(b.get());
-        //             } 
+                bool cfg_merged = CFGMerge(function.get(), cfg);
+                did_work |= cfg_merged;
+                if (cfg_merged) {
+                    blocks.clear();
+                    for (std::shared_ptr<sir::SIRBlock> b : function->blocks) {
+                        blocks.push_back(b.get());
+                    } 
 
-        //             cfg = sir::SIRControlFlowGraph(blocks);
-        //         }
+                    cfg = sir::SIRControlFlowGraph(blocks);
+                }
 
-        //         info = UseDefAnalysis::get_use_def_chains(cfg);
-        //         bool dse = SIRDSE(info, cfg);
-        //         did_work |= dse;
-        //     } while (did_work);
-        // });
+                info = UseDefAnalysis::get_use_def_chains(cfg);
+                bool dse = SIRDSE(info, cfg);
+                did_work |= dse;
+            } while (did_work);
+        });
 
-        // if (print_timings) {
-        //     std::cout << "Optimization iterations: " << optimazation_iterations << "\n";
-        // }
+        if (print_timings) {
+            std::cout << "Optimization iterations for " << function->name << ": " << optimazation_iterations << "\n";
+        }
+        }
     }
 
     // std::cout << "-----LLVM CODE GENERATION-----" << std::endl;

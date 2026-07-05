@@ -75,6 +75,16 @@ class PropagationVisitor : public SIRVisitor {
         void visit(JumpIfElseNode* node) override {
             attempt_replace(node->condition);
         }
+
+        void visit(CallNode* node) override {
+            for (auto& argument : node->arguments) {
+                attempt_replace(argument);
+            }
+        }
+
+        void visit(ReturnNode* node) override {
+            attempt_replace(node->return_value);
+        }
         
         void walk(SIRBlock* block) {
             for (std::shared_ptr<InstructionNode> instr : block->instructions) {
@@ -83,10 +93,9 @@ class PropagationVisitor : public SIRVisitor {
         }
 };
 
-void SIRPropagate(sir::ProgramNode& node, unordered_map<DefinitionNode*, int>& constants) {
-    throw std::runtime_error("TODO: Implement SCCP");
-    // PropagationVisitor visitor(constants);
-    // for (shared_ptr<SIRBlock> block : node.blocks) {
-        // visitor.walk(block.get());
-    // }
+void SIRPropagate(sir::FunctionDefinitionNode* function, unordered_map<DefinitionNode*, int>& constants) {
+    PropagationVisitor visitor(constants);
+    for (shared_ptr<SIRBlock> block : function->blocks) {
+        visitor.walk(block.get());
+    }
 }

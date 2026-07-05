@@ -109,7 +109,7 @@ class SCCPVisitor : public SIRVisitor {
         void visit(ReferenceNode* node) override {
             auto lock = node->definition.lock();
             if (lock) {
-                ConstantLattice_t val = constantValues.contains(lock.get())? constantValues[lock.get()]: ConstantLattice_t{BOTTOM, 0};
+                ConstantLattice_t val = constantValues.contains(lock.get())? constantValues[lock.get()] : ConstantLattice_t{BOTTOM, 0};
                 lastValue = val;
             }
             else {
@@ -249,12 +249,23 @@ class SCCPVisitor : public SIRVisitor {
                 mark_block_reachable(current_block, node->else_destination.get());
             }
         }
+        
+        void visit(CallNode* node) override {
+            // This will always be top unless inlining
+            lastValue = {TOP, 0};
+        }
 
-        static SCCPResults SCCP(const SIRControlFlowGraph& cfg, 
+        static SCCPResults SCCP(const SIRControlFlowGraph& cfg, FunctionDefinitionNode* function,
                 UseDefInfo& usedefs) {
             SCCPVisitor visitor(usedefs);
-            visitor.reachable_blocks.insert(cfg.get_main());
-            visitor.reachable_worklist.push_front(cfg.get_main());
+            // Assign all parameters the top value
+            // As we don't reason about inter procedural stuff yet
+            for (auto parameter : function->parameters) {
+                visitor.constantValues[parameter.get()] = {TOP, 0};
+            }
+
+            visitor.reachable_blocks.insert(cfg.get_entry());
+            visitor.reachable_worklist.push_front(cfg.get_entry());
             while (!visitor.reachable_worklist.empty() || !visitor.modified_instructions.empty()) {
                 while (!visitor.reachable_worklist.empty()) {
                     visitor.current_block = visitor.reachable_worklist.front();
@@ -278,8 +289,6 @@ class SCCPVisitor : public SIRVisitor {
                 }
             }
 
-
-
             unordered_map<DefinitionNode*, int> ret;
             for (auto pair : visitor.constantValues) {
                 if (pair.second.type == CONSTANT) {
@@ -291,7 +300,7 @@ class SCCPVisitor : public SIRVisitor {
         }
 };
 
-SCCPResults SIRSCCP(const SIRControlFlowGraph& cfg, UseDefInfo& usedefs) {
+SCCPResults SIRSCCP(const SIRControlFlowGraph& cfg, FunctionDefinitionNode* function, UseDefInfo& usedefs) {
     unordered_map<DefinitionNode*, int> ret;
-    return SCCPVisitor::SCCP(cfg, usedefs);
+    return SCCPVisitor::SCCP(cfg, function, usedefs);
 }

@@ -79,7 +79,7 @@ UseDefInfo UseDefAnalysis::get_use_def_chains(const SIRControlFlowGraph &cfg) {
   UseDefAnalysis visitor;
   std::unordered_set<SIRBlock *> handling;
   std::deque<SIRBlock *> forwards;
-  forwards.push_back(cfg.get_main());
+  forwards.push_back(cfg.get_entry());
   while (!forwards.empty()) {
     SIRBlock *curr = forwards.front();
     visitor.walk(curr);

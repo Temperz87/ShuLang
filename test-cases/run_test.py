@@ -76,6 +76,18 @@ def run_sir_pass(sir_program, pass_name: str, pass_func, expected_stdout, stdin,
     check_expect_output(expected_stdout, output, file_name, pass_name, sir_program, False)
     return ret
 
+
+def run_sir_pass_on_function(sir_program, target_function, pass_name: str, pass_func, expected_stdout, stdin, file_name):
+    verbose(f"---{pass_name}---")
+    ret = pass_func(target_function)
+    if SHOULD_GRAPH_SIR:
+        graph_sir_program(sir_program)
+
+    verbose('Running')
+    output = run_sir_program(sir_program, iter(stdin), pass_name, file_name)
+    check_expect_output(expected_stdout, output, file_name, pass_name, sir_program, False)
+    return ret
+
 def run_case(file_name):
     if not os.path.exists(file_name + ".exp"):
         print("\nCould not find", file_name + '.exp', "Please add it")
@@ -156,36 +168,36 @@ def run_case(file_name):
     os.system("rm -f a.ll a.out")
     compare_stdout(expected_stdout, output_stdout, file_name, "select LLVM instructions")
     verbose("Unoptimized compiled program passed")
-    return
 
     verbose("---Optimization O1 pipeline---")
-    did_work = True
-    while did_work:
-        did_work = False
+    for function in sir_program.functions:
+        did_work = True
+        while did_work:
+            did_work = False
         
-        verbose("---Initial Analysis---")
-        cfg = SIRControlFlowGraph(sir_program.blocks)
-        usedef = UseDefAnalysis.get_use_def_chains(cfg)
-        sccp = SIRSCCP(cfg, usedef)
+            verbose("---Initial Analysis---")
+            cfg = SIRControlFlowGraph(function.blocks)
+            usedef = UseDefAnalysis.get_use_def_chains(cfg)
+            sccp = SIRSCCP(cfg, function, usedef)
+
+            prop_pass = lambda x: SIRPropagate(x, sccp.constants)
+            run_sir_pass_on_function(sir_program, function, 'SIRPropagate', prop_pass, expected_stdout, stdin, file_name)
     
-        fold_pass = lambda x: SIRFold(x, sccp.constants)
-        run_sir_pass(sir_program, 'SIRFold', fold_pass, expected_stdout, stdin, file_name)
+            fold_pass = lambda x: SIRFold(x, sccp.constants)
+            run_sir_pass_on_function(sir_program, function, 'SIRFold', fold_pass, expected_stdout, stdin, file_name)
 
-        prop_pass = lambda x: SIRPropagate(x, sccp.constants)
-        run_sir_pass(sir_program, 'SIRFold', prop_pass, expected_stdout, stdin, file_name)
+            cfg = SIRControlFlowGraph(function.blocks)
+            cfg_simplify_pass = lambda x: CFGSimplify(x, cfg, sccp)
+            did_work |= run_sir_pass_on_function(sir_program, function, 'CFGSimplify', cfg_simplify_pass, expected_stdout, stdin, file_name)
 
-        cfg = SIRControlFlowGraph(sir_program.blocks)
-        cfg_simplify_pass = lambda x: CFGSimplify(x, cfg, sccp)
-        did_work |= run_sir_pass(sir_program, 'CFGSimplify', cfg_simplify_pass, expected_stdout, stdin, file_name)
+            cfg = SIRControlFlowGraph(function.blocks)
+            cfg_merge_pass = lambda x: CFGMerge(x, cfg)
+            did_work |= run_sir_pass_on_function(sir_program, function, 'CFGMerge', cfg_merge_pass, expected_stdout, stdin, file_name)
 
-        cfg = SIRControlFlowGraph(sir_program.blocks)
-        cfg_merge_pass = lambda x: CFGMerge(x, cfg)
-        did_work |= run_sir_pass(sir_program, 'CFGMerge', cfg_merge_pass, expected_stdout, stdin, file_name)
-
-        cfg = SIRControlFlowGraph(sir_program.blocks)
-        usedef = UseDefAnalysis.get_use_def_chains(cfg)
-        dse_pass = lambda x: SIRDSE(usedef, cfg)
-        did_work |= run_sir_pass(sir_program, 'SIRDSE', dse_pass, expected_stdout, stdin, file_name)
+            cfg = SIRControlFlowGraph(function.blocks)
+            usedef = UseDefAnalysis.get_use_def_chains(cfg)
+            dse_pass = lambda x: SIRDSE(usedef, cfg)
+            did_work |= run_sir_pass_on_function(sir_program, function, 'SIRDSE', dse_pass, expected_stdout, stdin, file_name)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
     select_llvm(sir_program, file_name, 'a.ll')
