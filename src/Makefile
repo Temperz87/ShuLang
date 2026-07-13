@@ -1,8 +1,8 @@
 CC = clang++
 COMMONCPPFLAGS = -Iinclude -MMD -Wall -pedantic $(shell llvm-config --libs) -std=c++20
 RELEASEFLAGS = -O3
-DEBUGFLAGS = -g -O0
-ASANFLAGS = -fsanitize=address -fno-omit-frame-pointer
+DEBUGFLAGS = -g -O0 -DLLVM_ENABLE_ASSERTIONS=ON
+ASANFLAGS = -fsanitize=address -fno-omit-frame-pointer -DLLVM_ENABLE_ASSERTIONS=ON
 PROFILEFlags = -O3 -g -pg --coverage
 PYTHONFLAGS = -O3 -Wall -fPIC $(shell python3 -m pybind11 --includes) -Iinclude -std=c++20
 RM = rm

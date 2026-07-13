@@ -1,5 +1,7 @@
 #pragma once
 
+#include <llvm/IR/Module.h>
+#include <memory>
 #include <SIRAST.hpp>
 
-void select_llvm_instructions(sir::ProgramNode* node, std::string source_filename, std::string output_filename);
+std::unique_ptr<llvm::Module> select_llvm_instructions(sir::ProgramNode* node, std::string source_filename, llvm::LLVMContext& context);

@@ -1,9 +1,12 @@
 #include <Analysis.hpp>
 #include <chrono>
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <LLVMCodegenVisitor.hpp>
 #include <LLVMSelection.hpp>
+#include <llvm/IR/Verifier.h>
 #include <memory>
 #include <ostream>
 #include <parser.hpp>
@@ -18,9 +21,10 @@
 #include <TypeChecker.hpp>
 #include <vector>
 
-static std::string output_file = "a.ll";
+static std::string output_file = "a.out";
 static int optimization_level = 1;
 static bool print_timings = false;
+static bool emit_llvmir = false;
 
 std::string process_arguments(int argc, char** argv) {
     bool warned_multiple_files = false;
@@ -30,6 +34,9 @@ std::string process_arguments(int argc, char** argv) {
         if (arg == "-o") {
             i += 1;
             output_file = std::string(argv[i]);
+        }
+        else if (arg == "-l") {
+            emit_llvmir = true;
         }
         else if (arg == "--timings") {
             print_timings = true;
@@ -194,16 +201,45 @@ int main(int argc, char** argv) {
 
     // std::cout << "-----LLVM CODE GENERATION-----" << std::endl;
     // Emitting LLVM
+
+    // Context has to made before module
+    // as module depends on the context
+    llvm::LLVMContext context;
+    std::unique_ptr<llvm::Module> module;
     time_phase("LLVM Codegen", [&]() {
-        select_llvm_instructions(&sir_program, std::string(argv[1]), output_file);
+        module = select_llvm_instructions(&sir_program, std::string(filename), context);
     });    
 
+    // Emit object file
+    std::string obj;
+    if (emit_llvmir) {
+        if (output_file == "a.out") {
+            obj = "a.ll";
+        }
+        else  {
+            obj = output_file;
+        }
+    } 
+    else {
+        obj = 
+            std::filesystem::temp_directory_path().string() + "/shuc-" + std::to_string(std::rand()) + ".ll";
+    }
+
+    std::error_code code;
+    llvm::raw_fd_ostream fd(obj, code);
+    module->print(fd, nullptr);
+    fd.close();
     if (print_timings) {
         std::chrono::time_point compile_end = std::chrono::high_resolution_clock::now();
         long total = std::chrono::duration_cast<std::chrono::microseconds>(
             compile_end - compile_start).count();
         std::cout << "Total compilation time: " << total << " micro seconds\n";
-}
+    }
 
-    return 0;
+    if (emit_llvmir) { 
+        return 0;
+    }
+
+    std::string command = "clang " + obj + " -o " + output_file;
+    return std::system(command.c_str());
 }

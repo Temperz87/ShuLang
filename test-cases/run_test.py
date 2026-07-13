@@ -196,7 +196,7 @@ def run_case(file_name):
 def run_regression_tests(dir, optimization_level):
     print('Running regression tests for dir:', dir)
     # This next line is a crime...
-    shuc_file_dir = '../src/output/shuc'
+    shuc_file_dir = '../src/output/shuc -l'
     files = sorted([file for file in os.listdir(dir) if file.endswith('.sl')])
     total_files = len(files)
     ran_files = 0
