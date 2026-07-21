@@ -1,75 +1,67 @@
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include <tokenizer.hpp>
 
-// Who would've known that without regex
-// This guy would be fairly complex?
-// (not me)
+// Dictionary mapping string literals to their token types
+const std::unordered_map<std::string_view, token_type> token_types = {
+    // Infix operators
+    {"+",  OPERATOR},
+    {"-",  OPERATOR},
+    {"*",  OPERATOR},
+    {"/",  OPERATOR},
+    {"<=", OPERATOR},
+    {"<",  OPERATOR},
+    {">",  OPERATOR},
+    {">=", OPERATOR},
+    {":",  OPERATOR},
+    {"=",  OPERATOR},
+    {"!=", OPERATOR},
+    {"not", OPERATOR},
+    {"and", OPERATOR},
+    {"or",  OPERATOR},
+    {"xor", OPERATOR},
 
-// Infix operators
-const std::unordered_set<std::string_view> operators = {
-    "+",
-    "-",
-    "*",
-    "/",
-    "<=",
-    "<",
-    ">",
-    ">=",
-    ":",
-    "=",
-    "!=",
-    "not",
-    "and",
-    "or",
-    "xor"
+    // ShuLang reserved words
+    {"else",   KEYWORD},
+    {"fix",    KEYWORD},
+    {"in",     KEYWORD},
+    {"return", KEYWORD},
+    {"to",     KEYWORD},
+
+    // Top level statements
+    {"bind",  STATEMENT},
+    {"if",    STATEMENT},
+    {"while", STATEMENT},
+
+    // Punctuators
+    {"{", PUNCTUATOR},
+    {"}", PUNCTUATOR},
+    {"(", PUNCTUATOR},
+    {")", PUNCTUATOR},
+
+    // Value types
+    {"->",        TYPE},
+    {"Boolean",   TYPE},
+    {"Character", TYPE},
+    {"Integer",   TYPE},
+    {"String",    TYPE},
+
+    // Values
+    {"false",  VALUE},
+    {"lambda", VALUE},
+    {"true",   VALUE},
 };
 
-// ShuLang reserved words
-const std::unordered_set<std::string_view> keywords = {
-    "else",
-    "fix",
-    "in",
-    "return",
-    "to",
-};
-
-// Top level statements
-const std::unordered_set<std::string_view> statements = {
-    "bind",
-    "if",
-    "while"
-};
-
-const std::unordered_set<std::string_view> punctuators = {
-    "{",
-    "}",
-    "(",
-    ")"
-};
-
-// Value types
-const std::unordered_set<std::string_view> types = {
-    "->",
-    "Boolean",
-    "Character",
-    "Integer",
-    "String"
-};
-
+// Whitespace is checked character-by-character rather than looked up
+// as a "type" of token, so it stays a plain set.
 const std::unordered_set<std::string_view> whitespace = {
     " ",
     "\t",
     "\n"
-};
-
-const std::unordered_set<std::string_view> values = {
-    "false",
-    "lambda",
-    "true"
 };
 
 bool is_integer(const std::string& tok) {
@@ -86,23 +78,14 @@ token_type determine_type(const std::string& tok) {
         exit(1);
     }
 
-    if (keywords.contains(tok))
-        return KEYWORD;
-    else if (operators.contains(tok))
-        return OPERATOR;
-    else if (punctuators.contains(tok))
-        return PUNCTUATOR;
-    else if (statements.contains(tok))
-        return STATEMENT;
-    else if (types.contains(tok))
-        return TYPE;
-    else if (values.contains(tok))
-        return VALUE;
-    else if (whitespace.contains(tok))
+    auto it = token_types.find(tok);
+    if (it != token_types.end())
+        return it->second;
+    if (whitespace.contains(tok))
         return WHITESPACE;
-    else if (is_integer(tok))
+    if (is_integer(tok))
         return INTEGER;
-    else if (!std::isalpha(static_cast<unsigned char>(tok[0])))
+    if (!std::isalpha(static_cast<unsigned char>(tok[0])))
         return UNKNOWN;
 
     return IDENTIFIER;
@@ -216,11 +199,8 @@ int add_tokens(const std::vector<char>& tokenizing, std::vector<token>& token_li
     return created;
 }
 
-bool iswhitespace(char c) {
-    std::string s;
-    s = c;
-
-    return determine_type(s) == WHITESPACE;
+inline bool iswhitespace(char c) {
+    return whitespace.contains(std::string(1, c));
 }
 
 bool atcomment(std::vector<char> chars) {
