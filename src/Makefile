@@ -1,5 +1,6 @@
 CC = clang++
-COMMONCPPFLAGS = -Iinclude -MMD -Wall -pedantic $(shell llvm-config --libs) -std=c++20
+COMMONCPPFLAGS = -Iinclude -MMD -Wall -pedantic -std=c++20 \
+	$(shell llvm-config --libs) -I$(shell llvm-config --includedir) 
 RELEASEFLAGS = -O3
 DEBUGFLAGS = -g -O0 -DLLVM_ENABLE_ASSERTIONS=ON
 ASANFLAGS = -fsanitize=address -fno-omit-frame-pointer -DLLVM_ENABLE_ASSERTIONS=ON

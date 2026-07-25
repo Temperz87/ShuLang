@@ -2,7 +2,7 @@ from shulang import *
 from shared_utils import *
 from sys import stdout
 
-def print_ast(node : ASTNode, indentation = 0, file=stdout):
+def print_ast(node : ShuLangNode, indentation = 0, file=stdout):
     print_indentation(indentation, file=file)
     match node:
         case ProgramNode():
