@@ -63,7 +63,6 @@ def compile(cc, file, output_file, flags, max_iterations):
         timings[k] /= max_iterations
         
     command = f'{cc} {file} {flags} -o {output_file}'
-    formatted = format_timings(timings)
     return total / max_iterations, format_timings(timings)
 
 def benchmark(shuc_path, file_name, max_iterations=100, out_file=None):
@@ -81,8 +80,8 @@ def benchmark(shuc_path, file_name, max_iterations=100, out_file=None):
     unopt_flags = '-O0'
     opt_flags = '-O1'
 
-    shuc_unopt, unopt_compile_timings = compile(shuc_path, file_name, 'unopt.ll', f'{unopt_flags} --timings', max_iterations)
-    shuc_opt, opt_compile_timings   = compile(shuc_path, file_name, 'opt.ll',   f'{opt_flags} --timings', max_iterations)
+    shuc_unopt, unopt_compile_timings = compile(shuc_path, file_name, 'unopt.ll', f'{unopt_flags} --timings -l', max_iterations)
+    shuc_opt, opt_compile_timings   = compile(shuc_path, file_name, 'opt.ll',   f'{opt_flags} --timings -l', max_iterations)
 
     unopt_unopt, _ = compile('clang', 'unopt.ll', file_name + 'a00.out', '-O0', max_iterations)
     unopt_opt, _   = compile('clang', 'unopt.ll', file_name + 'a01.out', '-O1', max_iterations)
