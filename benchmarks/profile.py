@@ -74,8 +74,8 @@ def benchmark(shuc_path, file_name, max_iterations=100, out_file=None):
         out_stream = fd
 
     print('# Report for', file_name, file=out_stream)
-    print('Times determined by running each measure part', max_iterations,\
-          'times then taking the average')
+    print('Times determined by running each part', max_iterations,\
+          'times then taking the average', file=fd)
 
     unopt_flags = '-O0'
     opt_flags = '-O1'
@@ -126,4 +126,13 @@ def benchmark(shuc_path, file_name, max_iterations=100, out_file=None):
 if __name__ == '__main__':
     shuc_path = sys.argv[1]
     file_name = sys.argv[2]
-    benchmark(shuc_path, file_name, 100, None)
+    max_iterations = 100
+    if len(sys.argv) >= 4:
+        max_iterations = int(sys.argv[3])
+
+    if len(sys.argv) >= 5:
+        out_file = sys.argv[4]
+    else:
+        out_file = None
+    
+    benchmark(shuc_path, file_name, max_iterations, out_file)
