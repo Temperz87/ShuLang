@@ -43,7 +43,8 @@ def run_and_time(file_name, extension, max_iterations):
 
     # Actually benchmark now
     total = 0
-    for _ in range(max_iterations):
+    for i in range(max_iterations):
+        print("On iteration:", i + 1, "of:", max_iterations, "while running:", command, file=sys.stderr)
         total += one_time(command)[0]
 
     return total / max_iterations
@@ -52,7 +53,8 @@ def compile(cc, file, output_file, flags, max_iterations):
     command = f'{cc} {file} {flags} -o {output_file}'
     total = 0
     timings = {}
-    for _ in range(max_iterations):
+    for i in range(max_iterations):
+        print("On iteration:", i + 1, "of:", max_iterations, "while compiling:", command, file=sys.stderr)
         new_time, out = one_time(command)
         if cc.endswith('shuc'):
             out = parse_timings(out)
@@ -145,5 +147,5 @@ if __name__ == '__main__':
         out_file = sys.argv[4]
     else:
         out_file = None
-    
+
     benchmark(shuc_path, file_name, max_iterations, out_file)
