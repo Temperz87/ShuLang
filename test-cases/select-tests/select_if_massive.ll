@@ -29,7 +29,7 @@ else8:                                            ; preds = %entry
   %6 = icmp slt i32 2, 10
   %7 = icmp ne i1 true, false
   %8 = select i1 %6, i1 %7, i1 false
-  br i1 %8, label %select_true57, label %select_false58
+  br i1 %8, label %select_true58, label %select_false59
 
 select_true10:                                    ; preds = %then7
   %9 = icmp sgt i32 10, 3
@@ -66,7 +66,7 @@ select_cont12:                                    ; preds = %select_cont27, %sel
   %25 = icmp sgt i32 %24, 10
   %26 = icmp slt i32 %23, %22
   %27 = icmp ne i1 %25, %26
-  br i1 %27, label %then40, label %else41
+  br i1 %27, label %then41, label %else42
 
 select_true25:                                    ; preds = %select_false11
   %28 = add i32 2, 3
@@ -85,52 +85,56 @@ select_cont27:                                    ; preds = %select_false26, %se
   %35 = phi i32 [ %28, %select_true25 ], [ %29, %select_false26 ]
   br label %select_cont12
 
-then40:                                           ; preds = %select_cont12
+then41:                                           ; preds = %select_cont12
   %36 = icmp sgt i32 %23, %21
   %37 = select i1 %36, i32 %23, i32 %21
   %38 = add i32 %24, %37
-  br label %continuation6
+  br label %continuation40
 
-else41:                                           ; preds = %select_cont12
+else42:                                           ; preds = %select_cont12
   %39 = icmp slt i32 %19, %20
   %40 = select i1 %39, i32 %19, i32 %20
   %41 = sub i32 %24, %40
+  br label %continuation40
+
+continuation40:                                   ; preds = %else42, %then41
+  %42 = phi i32 [ %41, %else42 ], [ %38, %then41 ]
   br label %continuation6
 
-continuation6:                                    ; preds = %select_cont59, %else41, %then40
-  %42 = phi i32 [ %46, %select_cont59 ], [ %41, %else41 ], [ %38, %then40 ]
-  %43 = icmp ne i32 %42, 0
-  br i1 %43, label %then70, label %else71
+continuation6:                                    ; preds = %select_cont60, %continuation40
+  %43 = phi i32 [ %47, %select_cont60 ], [ %42, %continuation40 ]
+  %44 = icmp ne i32 %43, 0
+  br i1 %44, label %then71, label %else72
 
-select_true57:                                    ; preds = %else8
-  %44 = sub i32 10, 2
-  br label %select_cont59
+select_true58:                                    ; preds = %else8
+  %45 = sub i32 10, 2
+  br label %select_cont60
 
-select_false58:                                   ; preds = %else8
-  %45 = mul i32 2, 10
-  br label %select_cont59
+select_false59:                                   ; preds = %else8
+  %46 = mul i32 2, 10
+  br label %select_cont60
 
-select_cont59:                                    ; preds = %select_false58, %select_true57
-  %46 = phi i32 [ %44, %select_true57 ], [ %45, %select_false58 ]
+select_cont60:                                    ; preds = %select_false59, %select_true58
+  %47 = phi i32 [ %45, %select_true58 ], [ %46, %select_false59 ]
   br label %continuation6
 
-then70:                                           ; preds = %continuation6
-  %47 = icmp sgt i32 %42, 20
-  %48 = add i32 %42, 100
-  %49 = select i1 %47, i32 %42, i32 %48
-  %50 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
-  %51 = call i32 (ptr, ...) @printf(ptr %50, i32 %49)
-  br label %continuation69
+then71:                                           ; preds = %continuation6
+  %48 = icmp sgt i32 %43, 20
+  %49 = add i32 %43, 100
+  %50 = select i1 %48, i32 %43, i32 %49
+  %51 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
+  %52 = call i32 (ptr, ...) @printf(ptr %51, i32 %50)
+  br label %continuation70
 
-else71:                                           ; preds = %continuation6
-  %52 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
-  %53 = call i32 (ptr, ...) @printf(ptr %52, i32 0)
-  br label %continuation69
+else72:                                           ; preds = %continuation6
+  %53 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
+  %54 = call i32 (ptr, ...) @printf(ptr %53, i32 0)
+  br label %continuation70
 
-continuation69:                                   ; preds = %else71, %then70
+continuation70:                                   ; preds = %else72, %then71
   br label %exit
 
-exit:                                             ; preds = %continuation69
+exit:                                             ; preds = %continuation70
   ret i32 0
 }
 

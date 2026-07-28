@@ -150,7 +150,7 @@ def run_case(file_name):
     run_sir_pass(sir_program, 'PROMOTE PSEUDO PHI', promote_pseudo_phi, expected_stdout, stdin, file_name)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
-    select_llvm(sir_program, file_name, 'a.ll')
+    debug_emit_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
     output_stdout = run_program_with_input('./a.out', stdin)
     os.system("rm -f a.ll a.out")
@@ -162,10 +162,11 @@ def run_case(file_name):
     while did_work:
         did_work = False
         
-        verbose("---Initial Analysis---")
+        verbose("Initial Analysis...")
         cfg = SIRControlFlowGraph(sir_program.blocks)
         usedef = UseDefAnalysis.get_use_def_chains(cfg)
         sccp = SIRSCCP(cfg, usedef)
+        verbose("...finished without error")
     
         fold_pass = lambda x: SIRFold(x, sccp.constants)
         run_sir_pass(sir_program, 'SIRFold', fold_pass, expected_stdout, stdin, file_name)
@@ -187,7 +188,7 @@ def run_case(file_name):
         did_work |= run_sir_pass(sir_program, 'SIRDSE', dse_pass, expected_stdout, stdin, file_name)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
-    select_llvm(sir_program, file_name, 'a.ll')
+    debug_emit_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
     output_stdout = run_program_with_input('./a.out', stdin)
     os.system("rm -f a.ll a.out")

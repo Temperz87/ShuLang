@@ -24,19 +24,22 @@ then1:                                            ; preds = %entry
 
 else2:                                            ; preds = %entry
   %3 = select i1 false, i1 true, i1 false
-  br i1 %3, label %then3, label %else4
+  br i1 %3, label %then4, label %else5
 
-continuation0:                                    ; preds = %else4, %then3, %then1
+continuation0:                                    ; preds = %continuation3, %then1
   br label %exit
 
-then3:                                            ; preds = %else2
+then4:                                            ; preds = %else2
   %4 = select i1 false, ptr @printf_true_format, ptr @printf_false_format
   %5 = call i32 (ptr, ...) @printf(ptr %4)
-  br label %continuation0
+  br label %continuation3
 
-else4:                                            ; preds = %else2
+else5:                                            ; preds = %else2
   %6 = select i1 true, ptr @printf_true_format, ptr @printf_false_format
   %7 = call i32 (ptr, ...) @printf(ptr %6)
+  br label %continuation3
+
+continuation3:                                    ; preds = %else5, %then4
   br label %continuation0
 
 exit:                                             ; preds = %continuation0

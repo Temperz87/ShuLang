@@ -38,6 +38,8 @@ def run_and_time(file_name, extension, max_iterations):
     if os.path.exists(f'./{file_name}.in'):
         command = f'cat ./{file_name}.in | ' + command
 
+    # Prewarm caches
+    one_time(command)
     total = 0
     for _ in range(max_iterations):
         total += one_time(command)[0]
@@ -47,19 +49,15 @@ def run_and_time(file_name, extension, max_iterations):
 def compile(cc, file, output_file, flags, max_iterations):
     command = f'{cc} {file} {flags} -o {output_file}'
     total = 0
-    timings = None
+    timings = {}
     for _ in range(max_iterations):
         new_time, out = one_time(command)
         total += new_time
         out = parse_timings(out)
-        if timings == None:
-            timings = out
-        else:
-            for k,v in out.items():
-                timings[k] += v
-    
+        for k,v in out.items():
+            timings[k] = timings.get(k, 0) + v
 
-    for k,v in out.items():
+    for k,v in timings.items():
         timings[k] /= max_iterations
         
     command = f'{cc} {file} {flags} -o {output_file}'
@@ -75,7 +73,7 @@ def benchmark(shuc_path, file_name, max_iterations=100, out_file=None):
 
     print('# Report for', file_name, file=out_stream)
     print('Times determined by running each part', max_iterations,\
-          'times then taking the average', file=fd)
+          'times then taking the average', file=out_stream)
 
     unopt_flags = '-O0'
     opt_flags = '-O1'
