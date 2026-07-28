@@ -40,6 +40,8 @@ def run_and_time(file_name, extension, max_iterations):
 
     # Prewarm caches
     one_time(command)
+
+    # Actually benchmark now
     total = 0
     for _ in range(max_iterations):
         total += one_time(command)[0]
@@ -52,14 +54,18 @@ def compile(cc, file, output_file, flags, max_iterations):
     timings = {}
     for _ in range(max_iterations):
         new_time, out = one_time(command)
-        total += new_time
-        out = parse_timings(out)
-        for k,v in out.items():
-            timings[k] = timings.get(k, 0) + v
+        if cc.endswith('shuc'):
+            out = parse_timings(out)
+            total += out['Total compilation time']
+            for k,v in out.items():
+                timings[k] = timings.get(k, 0) + v
+        else:
+            total += new_time
+
 
     for k,v in timings.items():
         timings[k] /= max_iterations
-        
+
     command = f'{cc} {file} {flags} -o {output_file}'
     return total / max_iterations, format_timings(timings)
 
@@ -88,18 +94,25 @@ def benchmark(shuc_path, file_name, max_iterations=100, out_file=None):
     opt_opt, _     = compile('clang', 'opt.ll',   file_name + 'a11.out', '-O1', max_iterations)
     opt_o2, _      = compile('clang', 'opt.ll',   file_name + 'a12.out', '-O2', max_iterations)
 
-    print('## COMPILATION TIMING', file=out_stream)
+    print('\n## COMPILATION TIMING', file=out_stream)
+    print('shuc + clang timings', file=out_stream)
     print('|  | clang -O0 | clang -O1 | clang -O2 |', file=out_stream)
     print('| --- | --- | --- | --- |', file=out_stream)
     print(f'| shuc -O0 | {(shuc_unopt + unopt_unopt):.1f}μs | {(shuc_unopt + unopt_opt):.1f}μs | {(shuc_unopt + unopt_o2):.1f}μs |', file=out_stream)
     print(f'| shuc -O1 | {(shuc_opt + opt_unopt):.1f}μs | {(shuc_opt + opt_opt):.1f}μs | {(shuc_opt + opt_o2):.1f}μs |', file=out_stream)
+
+    print('\nclang timings alone', file=out_stream)
+    print('|  | clang -O0 | clang -O1 | clang -O2 |', file=out_stream)
+    print('| --- | --- | --- | --- |', file=out_stream)
+    print(f'| shuc -O0 | {unopt_unopt:.1f}μs | {unopt_opt:.1f}μs | {unopt_o2:.1f}μs |', file=out_stream)
+    print(f'| shuc -O1 | {opt_unopt:.1f}μs | {opt_opt:.1f}μs | {opt_o2:.1f}μs |', file=out_stream)
 
     print('\nshuc -O0 pass timings', file=out_stream)
     print(unopt_compile_timings, file=out_stream)
     print('\nshuc -O1 pass timings', file=out_stream)
     print(opt_compile_timings, file=out_stream)
 
-    print('## EXECUTION TIME', file=out_stream)
+    print('\n## EXECUTION TIME', file=out_stream)
     print('|  | clang -O0 | clang -O1 | clang -O2 |', file=out_stream)
     print('| --- | --- | --- | --- |', file=out_stream)
 
