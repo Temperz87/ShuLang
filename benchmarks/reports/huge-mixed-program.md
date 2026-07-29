@@ -1,45 +1,45 @@
 # Report for programs/huge-mixed-program.sl
-Times determined by running each part 100 times then taking the average
+Times determined by running each part 10000 times then taking the average
 
 ## COMPILATION TIMING
 shuc + clang timings
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 42605.5μs | 45522.8μs | 45641.8μs |
-| shuc -O1 | 42537.5μs | 46601.3μs | 47057.7μs |
+| shuc -O0 | 57973.3μs | 64252.8μs | 64838.9μs |
+| shuc -O1 | 60923.9μs | 67375.1μs | 67639.2μs |
 
 clang timings alone
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 41403.3μs | 44320.7μs | 44439.6μs |
-| shuc -O1 | 40260.8μs | 44324.6μs | 44781.0μs |
+| shuc -O0 | 56892.7μs | 63172.2μs | 63758.3μs |
+| shuc -O1 | 56832.9μs | 63284.0μs | 63548.2μs |
 
 shuc -O0 pass timings
-- Tokenization: 206.0μs
-- Parsing: 51.8μs
-- Type Checking: 59.8μs
-- Short Circuitify: 17.6μs
-- Remove Complex Operands: 15.4μs
-- SIR Instruction Selection: 101.4μs
-- Promote Phi: 91.2μs
-- LLVM Codegen: 311.6μs
-- Total compilation time: 1202.2μs
+- Tokenization: 179.1μs
+- Parsing: 45.0μs
+- Type Checking: 49.3μs
+- Short Circuitify: 13.8μs
+- Remove Complex Operands: 11.0μs
+- SIR Instruction Selection: 88.9μs
+- Promote Phi: 86.8μs
+- LLVM Codegen: 330.4μs
+- Total compilation time: 1080.6μs
 
 shuc -O1 pass timings
-- Tokenization: 138.9μs
-- Parsing: 36.0μs
-- Type Checking: 42.2μs
-- Short Circuitify: 12.3μs
-- Remove Complex Operands: 10.6μs
-- SIR Instruction Selection: 69.2μs
-- Promote Phi: 63.0μs
-- Optimizations: 1477.7μs
+- Tokenization: 178.7μs
+- Parsing: 45.0μs
+- Type Checking: 49.2μs
+- Short Circuitify: 13.6μs
+- Remove Complex Operands: 10.9μs
+- SIR Instruction Selection: 88.7μs
+- Promote Phi: 86.4μs
+- Optimizations: 3073.9μs
 - Optimization iterations: 2
-- LLVM Codegen: 185.6μs
-- Total compilation time: 2276.7μs
+- LLVM Codegen: 274.4μs
+- Total compilation time: 4091.0μs
 
 ## EXECUTION TIME
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 2837.3μs | 2889.0μs | 2816.9μs |
-| shuc -O1 | 2774.9μs | 2884.5μs | 2738.3μs |
+| shuc -O0 | 1507.4μs | 1496.2μs | 1491.6μs |
+| shuc -O1 | 1494.6μs | 1494.3μs | 1501.0μs |

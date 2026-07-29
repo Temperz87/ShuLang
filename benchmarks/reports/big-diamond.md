@@ -1,45 +1,45 @@
 # Report for programs/big-diamond.sl
-Times determined by running each part 100 times then taking the average
+Times determined by running each part 10000 times then taking the average
 
 ## COMPILATION TIMING
 shuc + clang timings
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 89657.7μs | 66010.0μs | 66287.2μs |
-| shuc -O1 | 374821.3μs | 375514.9μs | 375836.6μs |
+| shuc -O0 | 155309.1μs | 99987.1μs | 100012.8μs |
+| shuc -O1 | 817436.7μs | 818997.4μs | 819081.5μs |
 
 clang timings alone
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 70896.0μs | 47248.3μs | 47525.5μs |
-| shuc -O1 | 38754.3μs | 39447.9μs | 39769.7μs |
+| shuc -O0 | 124604.6μs | 69282.5μs | 69308.2μs |
+| shuc -O1 | 53330.1μs | 54890.8μs | 54974.9μs |
 
 shuc -O0 pass timings
-- Tokenization: 4315.5μs
-- Parsing: 1002.4μs
-- Type Checking: 746.3μs
-- Short Circuitify: 139.3μs
-- Remove Complex Operands: 230.6μs
-- SIR Instruction Selection: 2713.9μs
-- Promote Phi: 2256.6μs
-- LLVM Codegen: 4182.3μs
-- Total compilation time: 18761.8μs
+- Tokenization: 6835.2μs
+- Parsing: 1519.8μs
+- Type Checking: 1324.1μs
+- Short Circuitify: 225.3μs
+- Remove Complex Operands: 340.4μs
+- SIR Instruction Selection: 4468.5μs
+- Promote Phi: 4440.0μs
+- LLVM Codegen: 6997.8μs
+- Total compilation time: 30704.6μs
 
 shuc -O1 pass timings
-- Tokenization: 4305.9μs
-- Parsing: 1056.5μs
-- Type Checking: 742.3μs
-- Short Circuitify: 135.1μs
-- Remove Complex Operands: 218.2μs
-- SIR Instruction Selection: 2677.6μs
-- Promote Phi: 2094.5μs
-- Optimizations: 324160.7μs
+- Tokenization: 6777.9μs
+- Parsing: 1476.4μs
+- Type Checking: 1306.5μs
+- Short Circuitify: 219.9μs
+- Remove Complex Operands: 339.5μs
+- SIR Instruction Selection: 4252.5μs
+- Promote Phi: 4204.1μs
+- Optimizations: 744611.3μs
 - Optimization iterations: 2
-- LLVM Codegen: 254.5μs
-- Total compilation time: 336067.0μs
+- LLVM Codegen: 387.9μs
+- Total compilation time: 764106.6μs
 
 ## EXECUTION TIME
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 2605.5μs | 2502.8μs | 2564.6μs |
-| shuc -O1 | 2586.5μs | 2425.1μs | 2544.2μs |
+| shuc -O0 | 1285.9μs | 1268.9μs | 1261.1μs |
+| shuc -O1 | 1265.7μs | 1251.2μs | 1254.6μs |
