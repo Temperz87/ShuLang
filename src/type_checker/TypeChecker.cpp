@@ -1,7 +1,6 @@
 #include <ShuLangAST.hpp>
 #include <ShuLangVisitor.hpp>
 #include <TypeChecker.hpp>
-#include <asm-generic/errno.h>
 #include <iostream>
 #include <string>
 
