@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
         });
 
         if (print_timings) {
-            std::cout << "Optimization" << optimization_iterations << "\n";
+            std::cout << "Optimization iterations: " << optimization_iterations << "\n";
         }
     }
 
