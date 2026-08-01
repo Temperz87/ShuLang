@@ -184,7 +184,7 @@ def run_case(file_name):
     run_sir_pass(sir_program, 'PROMOTE PSEUDO PHI', promote_pseudo_phi, expected_stdout, stdin, file_name)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
-    select_llvm(sir_program, file_name, 'a.ll')
+    debug_emit_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
     output_stdout = run_program_with_input('./a.out', stdin)
     os.system("rm -f a.ll a.out")
@@ -215,7 +215,7 @@ def run_case(file_name):
             did_work |= run_sir_pass_on_function(sir_program, function, 'SIRDSE', dse_pass, expected_stdout, stdin, file_name)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")
-    select_llvm(sir_program, file_name, 'a.ll')
+    debug_emit_llvm(sir_program, file_name, 'a.ll')
     subprocess.run("clang a.ll -O0 -g -o a.out", shell=True)
     output_stdout = run_program_with_input('./a.out', stdin)
     os.system("rm -f a.ll a.out")
@@ -224,7 +224,7 @@ def run_case(file_name):
 def run_regression_tests(dir, optimization_level):
     print('Running regression tests for dir:', dir)
     # This next line is a crime...
-    shuc_file_dir = '../src/output/shuc'
+    shuc_file_dir = '../src/output/shuc -l'
     files = sorted([file for file in os.listdir(dir) if file.endswith('.sl')])
     total_files = len(files)
     ran_files = 0

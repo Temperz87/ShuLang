@@ -275,13 +275,7 @@ class SLTranslator : public ShuLangVisitor {
         }
 
         void visitNode(shulang::IfNode* node) override {
-            // We store what happens after the if in a new block
-            // In order to avoid code duplication and exponential file size
-            std::shared_ptr<sir::SIRBlock> previous_continuation = continuation;
-            if (continuation == nullptr) {
-                // No need to remake the continuation if it already exists
-                continuation = std::make_shared<sir::SIRBlock>(gen_name("continuation"));
-            }
+            std::shared_ptr<sir::SIRBlock> continuation = std::make_shared<sir::SIRBlock>(gen_name("continuation"));
 
             // Create then block
             std::shared_ptr<sir::SIRBlock> then_block = std::make_shared<sir::SIRBlock>(gen_name("then"));
@@ -327,11 +321,9 @@ class SLTranslator : public ShuLangVisitor {
 
             // Write rest of the code to the continuation
             current_block = continuation;
-            continuation = previous_continuation;
         }
 
         void visitNode(WhileNode* node) override {
-            std::shared_ptr<sir::SIRBlock> previous_continuation = continuation;
             std::shared_ptr<sir::SIRBlock> loop_condition = std::make_shared<sir::SIRBlock>(gen_name("loop_condition"));
             std::shared_ptr<sir::SIRBlock> loop_body = std::make_shared<sir::SIRBlock>(gen_name("loop_body"));
             std::shared_ptr<sir::SIRBlock> loop_continuation = std::make_shared<sir::SIRBlock>(gen_name("loop_continuation"));
@@ -343,9 +335,6 @@ class SLTranslator : public ShuLangVisitor {
             mark_block_reachable(loop_condition);   
             current_block = loop_condition;
 
-            // We don't want an if to jump outside the loop
-            //  Hence setting the continuation to nullptr forces a creation of a new cont
-            continuation = nullptr;
             node->condition->accept(this); 
             std::shared_ptr<sir::JumpIfElseNode> jump_cond_body = std::make_shared<sir::JumpIfElseNode>(current_block.get(), loop_body, loop_continuation, completed.top());
             current_block->instructions.push_back(jump_cond_body);
@@ -357,7 +346,6 @@ class SLTranslator : public ShuLangVisitor {
 
             // Translate loop body
             current_block = loop_body;
-            continuation = nullptr;
             node->body->accept(this);
 
             // This might not be an infinite loop because:
@@ -370,9 +358,8 @@ class SLTranslator : public ShuLangVisitor {
 
             loop_condition->predecesors.insert(current_block.get());
             
-            // Loop done, insert all instructions after loop
+            // Loop done, insert all of the next instructions after loop
             current_block = loop_continuation;
-            continuation = previous_continuation;
         }
 
         void visitNode(shulang::FunctionNode* node) override {

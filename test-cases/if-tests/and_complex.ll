@@ -24,39 +24,51 @@ then2:                                            ; preds = %entry
 
 else3:                                            ; preds = %entry
   %3 = select i1 true, i1 false, i1 false
-  br i1 %3, label %then6, label %else7
+  br i1 %3, label %then7, label %else8
 
-continuation1:                                    ; preds = %else15, %then14, %then10, %then6, %then2
-  %4 = phi i32 [ 5, %else15 ], [ 1, %then14 ], [ 4, %then10 ], [ 3, %then6 ], [ 2, %then2 ]
+continuation1:                                    ; preds = %continuation6, %then2
+  %4 = phi i32 [ %10, %continuation6 ], [ 2, %then2 ]
   %5 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %6 = call i32 (ptr, ...) @printf(ptr %5, i32 %4)
   br label %exit
 
-then6:                                            ; preds = %else3
+then7:                                            ; preds = %else3
   %7 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %8 = call i32 (ptr, ...) @printf(ptr %7, i32 8)
-  br label %continuation1
+  br label %continuation6
 
-else7:                                            ; preds = %else3
+else8:                                            ; preds = %else3
   %9 = select i1 false, i1 false, i1 false
-  br i1 %9, label %then10, label %else11
+  br i1 %9, label %then12, label %else13
 
-then10:                                           ; preds = %else7
-  %10 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
-  %11 = call i32 (ptr, ...) @printf(ptr %10, i32 9)
+continuation6:                                    ; preds = %continuation11, %then7
+  %10 = phi i32 [ %14, %continuation11 ], [ 3, %then7 ]
   br label %continuation1
 
-else11:                                           ; preds = %else7
-  %12 = select i1 true, i1 true, i1 false
-  br i1 %12, label %then14, label %else15
+then12:                                           ; preds = %else8
+  %11 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
+  %12 = call i32 (ptr, ...) @printf(ptr %11, i32 9)
+  br label %continuation11
 
-then14:                                           ; preds = %else11
-  br label %continuation1
+else13:                                           ; preds = %else8
+  %13 = select i1 true, i1 true, i1 false
+  br i1 %13, label %then17, label %else18
 
-else15:                                           ; preds = %else11
-  %13 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
-  %14 = call i32 (ptr, ...) @printf(ptr %13, i32 10)
-  br label %continuation1
+continuation11:                                   ; preds = %continuation16, %then12
+  %14 = phi i32 [ %17, %continuation16 ], [ 4, %then12 ]
+  br label %continuation6
+
+then17:                                           ; preds = %else13
+  br label %continuation16
+
+else18:                                           ; preds = %else13
+  %15 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
+  %16 = call i32 (ptr, ...) @printf(ptr %15, i32 10)
+  br label %continuation16
+
+continuation16:                                   ; preds = %else18, %then17
+  %17 = phi i32 [ 5, %else18 ], [ 1, %then17 ]
+  br label %continuation11
 
 exit:                                             ; preds = %continuation1
   ret i32 0

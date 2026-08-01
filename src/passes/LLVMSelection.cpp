@@ -1,8 +1,9 @@
 #include <SIRAST.hpp>
 #include <SIRCFG.hpp>
 #include <LLVMCodegenVisitor.hpp>
-#include "llvm/IR/IRBuilder.h"
+#include <llvm/IR/IRBuilder.h>
 #include <iostream>
+#include <llvm/IR/IRBuilder.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/IR/Attributes.h>
@@ -21,14 +22,15 @@
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Alignment.h>
 #include <llvm/Support/raw_ostream.h>
-#include <memory>
 #include <system_error>
+#include <llvm/TargetParser/Host.h>
+#include <memory>
 
 using namespace llvm;
 using namespace sir;
 
-void codegen_function(LLVMCodegenVisitor& visitor, std::shared_ptr<FunctionDefinitionNode> function, LLVMContext& context, IRBuilder<NoFolder>& builder, Module& module) {
-    Function* llvm_function = module.getFunction(function->name);
+void codegen_function(LLVMCodegenVisitor& visitor, std::shared_ptr<FunctionDefinitionNode> function, LLVMContext& context, IRBuilder<NoFolder>& builder, Module* module) {
+    Function* llvm_function = module->getFunction(function->name);
     if (llvm_function == nullptr) {
         std::vector<Type*> paramTypes;
         for (auto param : function->parameters) {
@@ -87,46 +89,37 @@ void codegen_function(LLVMCodegenVisitor& visitor, std::shared_ptr<FunctionDefin
     }
 }
 
-void select_llvm_instructions(ProgramNode* node, std::string source_filename, std::string output) {
-    LLVMContext context;
-    IRBuilder<NoFolder> builder(context);
-    Module module("Module", context);
-    module.setTargetTriple(Triple("x86_64-pc-linux-gnu"));
-    module.setSourceFileName(StringRef(source_filename));
+std::unique_ptr<Module> select_llvm_instructions(ProgramNode* node, std::string source_filename, LLVMContext& context) {
+    llvm::IRBuilder<llvm::NoFolder> builder(context);
+    std::unique_ptr<Module> module = std::make_unique<Module>("Module", context);
+    std::string tt = llvm::sys::getDefaultTargetTriple();
+    module->setTargetTriple(Triple(tt));
+    module->setSourceFileName(StringRef(source_filename));
+    
     // Extern printf function
     FunctionType* printf_ty = FunctionType::get(Type::getInt32Ty(context), PointerType::get(Type::getInt8Ty(context), 0), true);
-    Function::Create(printf_ty, Function::ExternalLinkage, "printf", module);
+    Function::Create(printf_ty, Function::ExternalLinkage, "printf", *module);
 
     // Extern scanf function
     FunctionType* scanf_ty = FunctionType::get(Type::getInt32Ty(context), PointerType::get(Type::getInt8Ty(context), 0), true);
-    Function::Create(scanf_ty, Function::ExternalLinkage, "scanf", module);
+    Function::Create(scanf_ty, Function::ExternalLinkage, "scanf", *module);
 
     // Add %d format
-    builder.CreateGlobalString(StringRef("%d\n"), "printf_integer_format", 0, &module);
+    builder.CreateGlobalString(StringRef("%d\n"), "printf_integer_format", 0, module.get());
     // Add "true\n" format
-    builder.CreateGlobalString(StringRef("true\n"), "printf_true_format", 0, &module);
+    builder.CreateGlobalString(StringRef("true\n"), "printf_true_format", 0, module.get());
     // Add "false\n" format
-    builder.CreateGlobalString(StringRef("false\n"), "printf_false_format", 0, &module);
+    builder.CreateGlobalString(StringRef("false\n"), "printf_false_format", 0, module.get());
     
     // Add " %d" format
-    builder.CreateGlobalString(StringRef(" %d"), "scanf_integer_format", 0, &module);
+    builder.CreateGlobalString(StringRef(" %d"), "scanf_integer_format", 0, module.get());
     
     // Translate functions
-    LLVMCodegenVisitor codegen(context, &builder, &module);
+    LLVMCodegenVisitor codegen(context, &builder, module.get());
     for (std::shared_ptr<FunctionDefinitionNode> function : node->functions) {
         codegen.reset();
-        codegen_function(codegen, function, context, builder, module);
+        codegen_function(codegen, function, context, builder, module.get());
     }
 
-    std::error_code code;
-    raw_fd_ostream fd(output, code);
-    if (code) {
-        std::cout << "ShuC: Error when writing to file " << output;
-        std::cout << "\n\tIs it open in another program?";
-        std::cout << "\n\tDo I have permission to open and write to it?" << std::endl;
-        exit(1);
-    }
-
-    module.print(fd, nullptr);
-    fd.close();
+    return module;
 }

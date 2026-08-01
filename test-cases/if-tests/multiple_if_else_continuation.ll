@@ -22,21 +22,24 @@ then1:                                            ; preds = %entry
   br label %continuation0
 
 else2:                                            ; preds = %entry
-  br i1 true, label %then3, label %else4
+  br i1 true, label %then4, label %else5
 
-continuation0:                                    ; preds = %else4, %then3, %then1
+continuation0:                                    ; preds = %continuation3, %then1
   %2 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %3 = call i32 (ptr, ...) @printf(ptr %2, i32 1)
   br label %exit
 
-then3:                                            ; preds = %else2
+then4:                                            ; preds = %else2
   %4 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %5 = call i32 (ptr, ...) @printf(ptr %4, i32 1)
-  br label %continuation0
+  br label %continuation3
 
-else4:                                            ; preds = %else2
+else5:                                            ; preds = %else2
   %6 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %7 = call i32 (ptr, ...) @printf(ptr %6, i32 1)
+  br label %continuation3
+
+continuation3:                                    ; preds = %else5, %then4
   br label %continuation0
 
 exit:                                             ; preds = %continuation0

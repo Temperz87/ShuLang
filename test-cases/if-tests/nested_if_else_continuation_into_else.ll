@@ -17,21 +17,24 @@ entry:
   br i1 false, label %then1, label %continuation0
 
 then1:                                            ; preds = %entry
-  br i1 true, label %then2, label %else3
+  br i1 true, label %then3, label %else4
 
-continuation0:                                    ; preds = %else3, %then2, %entry
+continuation0:                                    ; preds = %continuation2, %entry
   %0 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %1 = call i32 (ptr, ...) @printf(ptr %0, i32 2)
   br label %exit
 
-then2:                                            ; preds = %then1
+then3:                                            ; preds = %then1
   %2 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %3 = call i32 (ptr, ...) @printf(ptr %2, i32 1)
-  br label %continuation0
+  br label %continuation2
 
-else3:                                            ; preds = %then1
+else4:                                            ; preds = %then1
   %4 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %5 = call i32 (ptr, ...) @printf(ptr %4, i32 0)
+  br label %continuation2
+
+continuation2:                                    ; preds = %else4, %then3
   br label %continuation0
 
 exit:                                             ; preds = %continuation0

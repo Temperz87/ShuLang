@@ -5,7 +5,7 @@ from sys import stdout
 def run_ast(node, stdin, file_name, env, stdout):
     pass
 
-def print_ast(node : ASTNode, indentation = 0, file=stdout):
+def print_ast(node : ShuLangNode, indentation = 0, file=stdout):
     print_indentation(indentation, file=file)
     match node:
         case ProgramNode():

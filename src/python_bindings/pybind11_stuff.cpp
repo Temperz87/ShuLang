@@ -1,6 +1,7 @@
 #include "SIRCFG.hpp"
 #include "pybind11/detail/common.h"
 #include <Analysis.hpp>
+#include <llvm/IR/LLVMContext.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <ShuLangPasses.hpp>
@@ -30,6 +31,16 @@ std::shared_ptr<shulang::ProgramNode> parse_file(std::string file) {
 void type_check(shulang::ProgramNode* ast) {
     TypeChecker tyc;
     ast->accept(&tyc);
+}
+
+int proxy_select_llvm_instructions(sir::ProgramNode* node, std::string source_filename, std::string output_filename) {
+    llvm::LLVMContext context;
+    auto module = select_llvm_instructions(node, source_filename, context);
+    std::error_code code;
+    llvm::raw_fd_ostream fd(output_filename, code);
+    module->print(fd, nullptr);
+    fd.close();
+    return code.value();
 }
 
 PYBIND11_MODULE(shulang, m) {
@@ -269,6 +280,7 @@ PYBIND11_MODULE(shulang, m) {
     m.def("select_instructions", &select_SIR_instructions, "Translated from ShuLang to SIR");
     m.def("promote_pseudo_phi", &promote_pseudo_phi, "Making PseudoPhiNode's just PhiNode's");
     m.def("select_llvm", &select_llvm_instructions, "Perform the final lowering!!!");
+    m.def("debug_emit_llvm", &proxy_select_llvm_instructions, "Emits LLVMIR!!!");
 
     // optimizations and analysis
     m.def("SIRDSE", &SIRDSE, "Perform dead store elimination on a SIR Program");
