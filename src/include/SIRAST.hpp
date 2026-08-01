@@ -33,6 +33,7 @@ namespace sir {
             // A width of 0 represents a void function
             int return_width;
             std::string name;
+            std::unordered_set<FunctionDefinitionNode*> callees;
             FunctionDefinitionNode(int return_width, std::string name): return_width(return_width),
                 name(name) { }
 

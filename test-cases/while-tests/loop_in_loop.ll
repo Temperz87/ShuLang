@@ -16,34 +16,34 @@ define i32 @main() #0 {
 entry:
   br label %loop_condition2
 
-loop_condition2:                                  ; preds = %loop_continuation11, %entry
-  %0 = phi i32 [ %6, %loop_continuation11 ], [ 1, %entry ]
-  %1 = phi i32 [ %12, %loop_continuation11 ], [ 1, %entry ]
+loop_condition2:                                  ; preds = %loop_continuation12, %entry
+  %0 = phi i32 [ %6, %loop_continuation12 ], [ 1, %entry ]
+  %1 = phi i32 [ %12, %loop_continuation12 ], [ 1, %entry ]
   %2 = icmp slt i32 %1, 5
   br i1 %2, label %loop_body3, label %loop_continuation4
 
 loop_body3:                                       ; preds = %loop_condition2
-  br label %loop_condition9
+  br label %loop_condition10
 
 loop_continuation4:                               ; preds = %loop_condition2
   %3 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %4 = call i32 (ptr, ...) @printf(ptr %3, i32 %0)
   br label %exit
 
-loop_condition9:                                  ; preds = %loop_body10, %loop_body3
-  %5 = phi i32 [ %5, %loop_body10 ], [ %0, %loop_body3 ]
-  %6 = phi i32 [ %10, %loop_body10 ], [ %0, %loop_body3 ]
-  %7 = phi i32 [ %7, %loop_body10 ], [ %1, %loop_body3 ]
-  %8 = phi i32 [ %11, %loop_body10 ], [ 0, %loop_body3 ]
+loop_condition10:                                 ; preds = %loop_body11, %loop_body3
+  %5 = phi i32 [ %5, %loop_body11 ], [ %0, %loop_body3 ]
+  %6 = phi i32 [ %10, %loop_body11 ], [ %0, %loop_body3 ]
+  %7 = phi i32 [ %7, %loop_body11 ], [ %1, %loop_body3 ]
+  %8 = phi i32 [ %11, %loop_body11 ], [ 0, %loop_body3 ]
   %9 = icmp slt i32 %8, %7
-  br i1 %9, label %loop_body10, label %loop_continuation11
+  br i1 %9, label %loop_body11, label %loop_continuation12
 
-loop_body10:                                      ; preds = %loop_condition9
+loop_body11:                                      ; preds = %loop_condition10
   %10 = add i32 %6, %5
   %11 = add i32 %8, 1
-  br label %loop_condition9
+  br label %loop_condition10
 
-loop_continuation11:                              ; preds = %loop_condition9
+loop_continuation12:                              ; preds = %loop_condition10
   %12 = add i32 %7, 1
   br label %loop_condition2
 

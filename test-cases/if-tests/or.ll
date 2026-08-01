@@ -24,37 +24,37 @@ then2:                                            ; preds = %entry
 continuation1:                                    ; preds = %then2, %entry
   %2 = phi i32 [ %1, %then2 ], [ 0, %entry ]
   %3 = select i1 true, i1 true, i1 false
-  br i1 %3, label %then6, label %continuation5
+  br i1 %3, label %then8, label %continuation7
 
-then6:                                            ; preds = %continuation1
+then8:                                            ; preds = %continuation1
   %4 = add i32 %2, 1
-  br label %continuation5
+  br label %continuation7
 
-continuation5:                                    ; preds = %then6, %continuation1
-  %5 = phi i32 [ %4, %then6 ], [ %2, %continuation1 ]
+continuation7:                                    ; preds = %then8, %continuation1
+  %5 = phi i32 [ %4, %then8 ], [ %2, %continuation1 ]
   %6 = select i1 false, i1 true, i1 false
-  br i1 %6, label %then10, label %continuation9
+  br i1 %6, label %then14, label %continuation13
 
-then10:                                           ; preds = %continuation5
+then14:                                           ; preds = %continuation7
   %7 = sub i32 %5, 1
-  br label %continuation9
-
-continuation9:                                    ; preds = %then10, %continuation5
-  %8 = phi i32 [ %7, %then10 ], [ %5, %continuation5 ]
-  %9 = select i1 true, i1 true, i1 true
-  br i1 %9, label %then14, label %continuation13
-
-then14:                                           ; preds = %continuation9
-  %10 = add i32 %8, 1
   br label %continuation13
 
-continuation13:                                   ; preds = %then14, %continuation9
-  %11 = phi i32 [ %10, %then14 ], [ %8, %continuation9 ]
+continuation13:                                   ; preds = %then14, %continuation7
+  %8 = phi i32 [ %7, %then14 ], [ %5, %continuation7 ]
+  %9 = select i1 true, i1 true, i1 true
+  br i1 %9, label %then20, label %continuation19
+
+then20:                                           ; preds = %continuation13
+  %10 = add i32 %8, 1
+  br label %continuation19
+
+continuation19:                                   ; preds = %then20, %continuation13
+  %11 = phi i32 [ %10, %then20 ], [ %8, %continuation13 ]
   %12 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %13 = call i32 (ptr, ...) @printf(ptr %12, i32 %11)
   br label %exit
 
-exit:                                             ; preds = %continuation13
+exit:                                             ; preds = %continuation19
   ret i32 0
 }
 

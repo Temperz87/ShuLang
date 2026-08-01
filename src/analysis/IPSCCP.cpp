@@ -2,6 +2,7 @@
 #include <deque>
 #include <memory>
 #include <SIRVisitor.hpp>
+#include <SIRCallGraph.hpp>
 #include <SIRCFG.hpp>
 #include <SIRAST.hpp>
 #include <stdexcept>
@@ -53,7 +54,7 @@ ConstantLattice_t join(const ConstantLattice_t& lhs, const ConstantLattice_t& rh
     }
 }
 
-class SCCPVisitor : public SIRVisitor {
+class IPSCCPVisitor : public SIRVisitor {
     private:
         ConstantLattice_t lastValue;
         deque<SIRBlock*> reachable_worklist;
@@ -74,7 +75,6 @@ class SCCPVisitor : public SIRVisitor {
 
             reachable_edges[from].insert(to);
             reachable_blocks.insert(to);
-
             if (!handling.contains(to)) {
                 handling.insert(to);
                 reachable_worklist.push_back(to);
@@ -100,7 +100,7 @@ class SCCPVisitor : public SIRVisitor {
         std::unordered_map<SIRBlock*, std::unordered_set<SIRBlock*>> reachable_edges;
         unordered_set<SIRBlock*> reachable_blocks;
         UseDefInfo& usedefs;
-        SCCPVisitor(UseDefInfo& usedefs):usedefs(usedefs) { }
+        IPSCCPVisitor(UseDefInfo& usedefs):usedefs(usedefs) { }
 
         void visit(ImmediateNode* node) override {
             lastValue = { CONSTANT, node->number};
@@ -255,52 +255,80 @@ class SCCPVisitor : public SIRVisitor {
             lastValue = {TOP, 0};
         }
 
-        static SCCPResults SCCP(const SIRControlFlowGraph& cfg, FunctionDefinitionNode* function,
-                UseDefInfo& usedefs) {
-            SCCPVisitor visitor(usedefs);
-            // Assign all parameters the top value
-            // As we don't reason about inter procedural stuff yet
+        unique_ptr<SCCPResults> SCCP(const SIRControlFlowGraph& cfg,
+                                                 const FunctionDefinitionNode* function) {
             for (auto parameter : function->parameters) {
-                visitor.constantValues[parameter.get()] = {TOP, 0};
+                this->constantValues[parameter.get()] = {TOP, 0};
             }
 
-            visitor.reachable_blocks.insert(cfg.get_entry());
-            visitor.reachable_worklist.push_front(cfg.get_entry());
-            while (!visitor.reachable_worklist.empty() || !visitor.modified_instructions.empty()) {
-                while (!visitor.reachable_worklist.empty()) {
-                    visitor.current_block = visitor.reachable_worklist.front();
-                    visitor.reachable_worklist.pop_front();
-                    visitor.handling.erase(visitor.current_block);
-                    for (shared_ptr<InstructionNode> instr : visitor.current_block->instructions) {
-                        instr->accept(&visitor);
+            this->reachable_blocks.insert(cfg.get_entry());
+            this->reachable_worklist.push_front(cfg.get_entry());
+            while (!this->reachable_worklist.empty() || !this->modified_instructions.empty()) {
+                while (!this->reachable_worklist.empty()) {
+                    this->current_block = this->reachable_worklist.front();
+                    this->reachable_worklist.pop_front();
+                    this->handling.erase(this->current_block);
+                    for (shared_ptr<InstructionNode> instr : this->current_block->instructions) {
+                        instr->accept(this);
                     }
                 }
 
-                while (!visitor.modified_instructions.empty()) {
-                    InstructionNode* instr = visitor.modified_instructions.front();
-                    visitor.modified_instructions.pop_front();
-                    visitor.handling_instructions.erase(instr);
-                    if (!visitor.reachable_blocks.contains(instr->parent)) {
+                while (!this->modified_instructions.empty()) {
+                    InstructionNode* instr = this->modified_instructions.front();
+                    this->modified_instructions.pop_front();
+                    this->handling_instructions.erase(instr);
+                    if (!this->reachable_blocks.contains(instr->parent)) {
                         continue;
                     }
 
-                    visitor.current_block = instr->parent;
-                    instr->accept(&visitor);
+                    this->current_block = instr->parent;
+                    instr->accept(this);
                 }
             }
 
             unordered_map<DefinitionNode*, int> ret;
-            for (auto pair : visitor.constantValues) {
+            for (auto pair : this->constantValues) {
                 if (pair.second.type == CONSTANT) {
                     ret[pair.first] = pair.second.value;
                 }
             }
 
-            return SCCPResults(ret, visitor.reachable_edges, visitor.reachable_blocks);
+            return make_unique<SCCPResults>(ret, reachable_edges, reachable_blocks);
+        }
+
+        static unique_ptr<IPSCCPResults> IPSCCP(const CallGraph& cg) {
+            unordered_map<FunctionDefinitionNode*, unique_ptr<SCCPResults>> ret;
+            deque<FunctionDefinitionNode*> queue;
+            unordered_set<FunctionDefinitionNode*> seen;
+            queue.push_back(cg.get_main());
+            seen.insert(cg.get_main());
+            while (!queue.empty()) {
+                FunctionDefinitionNode* current = queue.front();
+                queue.pop_front();
+                for (auto def : cg.get_outgoing(current)) {
+                    if (seen.contains(def)) {
+                        continue;
+                    }
+
+                    queue.push_back(def);
+                    seen.insert(def);
+                }
+
+                vector<SIRBlock*> blocks;
+                for (const auto& block : current->blocks) {
+                    blocks.push_back(block.get());
+                }
+
+                SIRControlFlowGraph cfg(blocks);
+                std::unique_ptr<UseDefInfo> usedef = UseDefAnalysis::get_use_def_chains(cfg);
+                IPSCCPVisitor visitor(*usedef);
+                ret[current] = visitor.SCCP(cfg, current);
+            }
+
+            return make_unique<IPSCCPResults>(std::move(ret));
         }
 };
 
-SCCPResults SIRSCCP(const SIRControlFlowGraph& cfg, FunctionDefinitionNode* function, UseDefInfo& usedefs) {
-    unordered_map<DefinitionNode*, int> ret;
-    return SCCPVisitor::SCCP(cfg, function, usedefs);
+unique_ptr<IPSCCPResults> sir::IPSCCP(const CallGraph& cg) {
+    return IPSCCPVisitor::IPSCCP(cg);
 }

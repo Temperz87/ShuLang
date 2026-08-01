@@ -5,6 +5,7 @@
 #include <ShuLangVisitor.hpp>
 #include <memory>
 #include <stack>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -23,6 +24,7 @@ class SLTranslator : public ShuLangVisitor {
         std::shared_ptr<sir::SIRBlock> continuation = nullptr;
 
         // Book keeping
+        std::unordered_map<std::string, std::shared_ptr<sir::FunctionDefinitionNode>> function_map;
         std::shared_ptr<sir::FunctionDefinitionNode> current_function;
         std::shared_ptr<sir::SIRBlock> current_block;
         bool need_to_write_exit = true;
@@ -57,6 +59,7 @@ class SLTranslator : public ShuLangVisitor {
             current_function = std::make_shared<sir::FunctionDefinitionNode>(type_to_width(type), function_name);
             functions.push_back(current_function);
             current_function->parameters = std::move(parameters);
+            function_map[current_function->name] = current_function;
             current_block = std::make_shared<sir::SIRBlock>("entry");
             for (auto param : current_function->parameters) {
                 current_block->variable_to_ref[param->identifier] = param;
@@ -128,7 +131,10 @@ class SLTranslator : public ShuLangVisitor {
             completed.pop();
             ret->lhs = completed.top();
             completed.pop();
-            completed.push(ret);
+            std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(current_block.get(), gen_name("cmp_final"), ret);
+            current_block->instructions.push_back(def);
+            std::shared_ptr<sir::ReferenceNode> ref = std::make_shared<sir::ReferenceNode>(def, def->width);
+            completed.push(ref);
         }
 
         // The only top level nodes we can have at this point are statements
@@ -157,7 +163,10 @@ class SLTranslator : public ShuLangVisitor {
             op->lhs = completed.top();
             completed.pop();
             op->rhs = std::make_shared<sir::ImmediateNode>(0, 1);
-            completed.push(op);
+            std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(current_block.get(), gen_name("not_final"), op);
+            current_block->instructions.push_back(def);
+            std::shared_ptr<sir::ReferenceNode> ref = std::make_shared<sir::ReferenceNode>(def, def->width);
+            completed.push(ref);
         }
 
         void visitNode(shulang::SelectOperatorNode* node) override {
@@ -175,7 +184,10 @@ class SLTranslator : public ShuLangVisitor {
                 std::shared_ptr<sir::ValueNode> false_value = completed.top();
                 completed.pop();
                 std::shared_ptr<sir::SelectNode> final = std::make_shared<sir::SelectNode>(true_value->width, condition, true_value, false_value);
-                completed.push(final);
+                std::shared_ptr<sir::DefinitionNode> def = std::make_shared<sir::DefinitionNode>(current_block.get(), gen_name("select_final"), final);
+                current_block->instructions.push_back(def);
+                std::shared_ptr<sir::ReferenceNode> ref = std::make_shared<sir::ReferenceNode>(def, def->width);
+                completed.push(ref);
                 return;
             }
 
@@ -247,24 +259,19 @@ class SLTranslator : public ShuLangVisitor {
             }
 
             // Handle user defined functions
-            for (auto function : functions) {
-                if (function->name != node->function_name) {
-                    continue;
-                }
-
-                std::shared_ptr<sir::CallNode> call = std::make_shared<sir::CallNode>(function);
-                for (auto argument : node->arguments) {
-                    argument->accept(this);
-                    call->arguments.push_back(completed.top());
-                    completed.pop();
-                }
-
-                std::shared_ptr<sir::DefinitionNode> def = 
-                    std::make_shared<sir::DefinitionNode>(current_block.get(), gen_name(function->name), call);
-                completed.push(std::make_shared<sir::ReferenceNode>(def, def->width));
-                current_block->instructions.push_back(def);
-                return;
+            std::shared_ptr<sir::FunctionDefinitionNode> callee_function = function_map.at(node->function_name);
+            std::shared_ptr<sir::CallNode> call = std::make_shared<sir::CallNode>(callee_function);
+            for (auto argument : node->arguments) {
+                argument->accept(this);
+                call->arguments.push_back(completed.top());
+                completed.pop();
             }
+
+            std::shared_ptr<sir::DefinitionNode> def = 
+                std::make_shared<sir::DefinitionNode>(current_block.get(), gen_name(callee_function->name), call);
+            completed.push(std::make_shared<sir::ReferenceNode>(def, def->width));
+            current_block->instructions.push_back(def);
+            current_function->callees.insert(callee_function.get());
         }
 
         void visitNode(shulang::IfNode* node) override {
@@ -384,6 +391,9 @@ class SLTranslator : public ShuLangVisitor {
                 inner.current_block->is_terminal = true;
             }
 
+            for (auto& function : inner.functions) {
+                function_map[function->name] = function;
+            }
 
             functions.insert(functions.end(), inner.functions.begin(), inner.functions.end());
         }

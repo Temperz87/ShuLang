@@ -5,11 +5,13 @@
 #include <cstddef>
 #include <unordered_map>
 
-bool UseDefInfo::HasUses(sir::DefinitionNode* node) const {
+using namespace sir;
+
+bool UseDefInfo::HasUses(DefinitionNode* node) const {
     return UseCount(node) != 0;
 }
 
-size_t UseDefInfo::UseCount(sir::DefinitionNode* node) const {
+size_t UseDefInfo::UseCount(DefinitionNode* node) const {
     auto it = usedefs.find(node);
     return it != usedefs.end()? it->second.size() : 0;
 }

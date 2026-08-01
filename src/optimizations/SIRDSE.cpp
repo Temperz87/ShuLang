@@ -48,13 +48,14 @@ class DSEVisitor : public SIRVisitor {
         }
 };
 
-bool SIRDSE(const UseDefInfo& usedefs, const SIRControlFlowGraph& cfg) {
+bool SIRDSE(FunctionDefinitionNode* function, AnalysisManager& am) {
     // Walk CFG backwards
     // Removes need for fixpoint iteration
-    DSEVisitor visitor(usedefs);
+    DSEVisitor visitor(*am.getUseDefChains(function));
     unordered_set<SIRBlock*> handled;
     deque<SIRBlock*> next;
-    for (SIRBlock* block : cfg.get_terminals()) {
+    SIRControlFlowGraph* cfg = am.getCFG(function);
+    for (SIRBlock* block : cfg->get_terminals()) {
         handled.insert(block);
         next.push_back(block);
     }
@@ -63,7 +64,7 @@ bool SIRDSE(const UseDefInfo& usedefs, const SIRControlFlowGraph& cfg) {
         SIRBlock* incoming = next.front();
         next.pop_front();
         visitor.walk(incoming);
-        for (SIRBlock* new_block : cfg.get_incoming(incoming)) {
+        for (SIRBlock* new_block : cfg->get_incoming(incoming)) {
             if (handled.contains(new_block)) {
                 continue;
             }
@@ -71,6 +72,10 @@ bool SIRDSE(const UseDefInfo& usedefs, const SIRControlFlowGraph& cfg) {
             handled.insert(new_block);
             next.push_back(new_block);
         }
+    }
+
+    if (visitor.did_work) {
+        am.invalidateFunction(function);
     }
 
     return visitor.did_work;

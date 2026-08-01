@@ -75,7 +75,7 @@ void UseDefAnalysis::visit(JumpIfElseNode *node) {
   }
 }
 
-UseDefInfo UseDefAnalysis::get_use_def_chains(const SIRControlFlowGraph &cfg) {
+unique_ptr<UseDefInfo> UseDefAnalysis::get_use_def_chains(const SIRControlFlowGraph &cfg) {
   UseDefAnalysis visitor;
   std::unordered_set<SIRBlock *> handling;
   std::deque<SIRBlock *> forwards;
@@ -93,5 +93,5 @@ UseDefInfo UseDefAnalysis::get_use_def_chains(const SIRControlFlowGraph &cfg) {
     }
   }
 
-  return UseDefInfo(visitor.usedefs);
+  return make_unique<UseDefInfo>(visitor.usedefs);
 }

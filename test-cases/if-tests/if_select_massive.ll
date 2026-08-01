@@ -27,96 +27,96 @@ select_false1:                                    ; preds = %entry
 
 select_cont2:                                     ; preds = %select_false1, %select_true0
   %3 = phi i1 [ %1, %select_true0 ], [ %2, %select_false1 ]
-  br i1 true, label %select_true9, label %select_false10
+  %4 = select i1 true, i1 %3, i1 false
+  br i1 true, label %select_true13, label %select_false14
 
-select_true9:                                     ; preds = %select_cont2
-  %4 = select i1 true, i1 true, i1 false
-  %5 = select i1 true, i1 %4, i1 false
-  br label %select_cont11
+select_true13:                                    ; preds = %select_cont2
+  %5 = select i1 true, i1 true, i1 false
+  %6 = select i1 true, i1 %5, i1 false
+  br label %select_cont15
 
-select_false10:                                   ; preds = %select_cont2
-  %6 = select i1 true, i1 false, i1 false
-  br label %select_cont11
+select_false14:                                   ; preds = %select_cont2
+  %7 = select i1 true, i1 false, i1 false
+  br label %select_cont15
 
-select_cont11:                                    ; preds = %select_false10, %select_true9
-  %7 = phi i1 [ %5, %select_true9 ], [ %6, %select_false10 ]
-  %8 = select i1 true, i1 %7, i1 false
-  br i1 %8, label %select_true6, label %select_false7
+select_cont15:                                    ; preds = %select_false14, %select_true13
+  %8 = phi i1 [ %6, %select_true13 ], [ %7, %select_false14 ]
+  %9 = select i1 true, i1 %8, i1 false
+  br i1 %9, label %select_true10, label %select_false11
 
-select_true6:                                     ; preds = %select_cont11
-  br i1 true, label %select_true15, label %select_false16
+select_true10:                                    ; preds = %select_cont15
+  br i1 true, label %select_true23, label %select_false24
 
-select_false7:                                    ; preds = %select_cont11
-  br i1 true, label %select_true34, label %select_false35
+select_false11:                                   ; preds = %select_cont15
+  br i1 true, label %select_true56, label %select_false57
 
-select_true15:                                    ; preds = %select_true6
-  %9 = select i1 true, i1 true, i1 false
-  %10 = select i1 true, i1 %9, i1 false
-  br label %select_cont17
+select_true23:                                    ; preds = %select_true10
+  %10 = select i1 true, i1 true, i1 false
+  %11 = select i1 true, i1 %10, i1 false
+  br label %select_cont25
 
-select_false16:                                   ; preds = %select_true6
-  %11 = select i1 true, i1 false, i1 false
-  br label %select_cont17
+select_false24:                                   ; preds = %select_true10
+  %12 = select i1 true, i1 false, i1 false
+  br label %select_cont25
 
-select_cont17:                                    ; preds = %select_false16, %select_true15
-  %12 = phi i1 [ %10, %select_true15 ], [ %11, %select_false16 ]
-  br i1 true, label %select_true21, label %select_false22
-
-select_true21:                                    ; preds = %select_cont17
-  %13 = select i1 true, i1 true, i1 false
+select_cont25:                                    ; preds = %select_false24, %select_true23
+  %13 = phi i1 [ %11, %select_true23 ], [ %12, %select_false24 ]
   %14 = select i1 true, i1 %13, i1 false
-  br label %select_cont23
+  br i1 true, label %select_true33, label %select_false34
 
-select_false22:                                   ; preds = %select_cont17
-  %15 = select i1 true, i1 false, i1 false
-  br label %select_cont23
+select_true33:                                    ; preds = %select_cont25
+  %15 = select i1 true, i1 true, i1 false
+  %16 = select i1 true, i1 %15, i1 false
+  br label %select_cont35
 
-select_cont23:                                    ; preds = %select_false22, %select_true21
-  %16 = phi i1 [ %14, %select_true21 ], [ %15, %select_false22 ]
-  br i1 true, label %select_true27, label %select_false28
+select_false34:                                   ; preds = %select_cont25
+  %17 = select i1 true, i1 false, i1 false
+  br label %select_cont35
 
-select_true27:                                    ; preds = %select_cont23
-  %17 = select i1 true, i1 true, i1 false
-  %18 = select i1 true, i1 %17, i1 false
-  br label %select_cont29
+select_cont35:                                    ; preds = %select_false34, %select_true33
+  %18 = phi i1 [ %16, %select_true33 ], [ %17, %select_false34 ]
+  %19 = select i1 true, i1 %18, i1 false
+  br i1 true, label %select_true43, label %select_false44
 
-select_false28:                                   ; preds = %select_cont23
-  %19 = select i1 true, i1 false, i1 false
-  br label %select_cont29
+select_true43:                                    ; preds = %select_cont35
+  %20 = select i1 true, i1 true, i1 false
+  %21 = select i1 true, i1 %20, i1 false
+  br label %select_cont45
 
-select_cont29:                                    ; preds = %select_false28, %select_true27
-  %20 = phi i1 [ %18, %select_true27 ], [ %19, %select_false28 ]
-  %21 = select i1 true, i1 %12, i1 false
-  %22 = select i1 true, i1 %16, i1 false
-  %23 = select i1 true, i1 %20, i1 false
-  %24 = select i1 %22, i1 %23, i1 false
-  %25 = select i1 %21, i1 %24, i1 false
-  br label %select_cont8
+select_false44:                                   ; preds = %select_cont35
+  %22 = select i1 true, i1 false, i1 false
+  br label %select_cont45
 
-select_cont8:                                     ; preds = %select_cont36, %select_cont29
-  %26 = phi i1 [ %25, %select_cont29 ], [ %36, %select_cont36 ]
-  %27 = select i1 true, i1 %3, i1 false
-  %28 = select i1 %27, i1 %26, i1 false
+select_cont45:                                    ; preds = %select_false44, %select_true43
+  %23 = phi i1 [ %21, %select_true43 ], [ %22, %select_false44 ]
+  %24 = select i1 true, i1 %23, i1 false
+  %25 = select i1 %19, i1 %24, i1 false
+  %26 = select i1 %14, i1 %25, i1 false
+  br label %select_cont12
+
+select_cont12:                                    ; preds = %select_cont58, %select_cont45
+  %27 = phi i1 [ %26, %select_cont45 ], [ %36, %select_cont58 ]
+  %28 = select i1 %4, i1 %27, i1 false
   %29 = select i1 %28, ptr @printf_true_format, ptr @printf_false_format
   %30 = call i32 (ptr, ...) @printf(ptr %29)
   br label %exit
 
-select_true34:                                    ; preds = %select_false7
+select_true56:                                    ; preds = %select_false11
   %31 = select i1 true, i1 true, i1 false
   %32 = select i1 true, i1 %31, i1 false
-  br label %select_cont36
+  br label %select_cont58
 
-select_false35:                                   ; preds = %select_false7
+select_false57:                                   ; preds = %select_false11
   %33 = select i1 true, i1 false, i1 false
-  br label %select_cont36
+  br label %select_cont58
 
-select_cont36:                                    ; preds = %select_false35, %select_true34
-  %34 = phi i1 [ %32, %select_true34 ], [ %33, %select_false35 ]
+select_cont58:                                    ; preds = %select_false57, %select_true56
+  %34 = phi i1 [ %32, %select_true56 ], [ %33, %select_false57 ]
   %35 = select i1 true, i1 %34, i1 false
   %36 = select i1 %35, i1 false, i1 false
-  br label %select_cont8
+  br label %select_cont12
 
-exit:                                             ; preds = %select_cont8
+exit:                                             ; preds = %select_cont12
   ret i32 0
 }
 

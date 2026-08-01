@@ -26,39 +26,39 @@ continuation1:                                    ; preds = %then2, %entry
   %3 = phi i32 [ %2, %then2 ], [ 0, %entry ]
   %4 = select i1 true, i1 false, i1 false
   %5 = icmp eq i1 %4, false
-  br i1 %5, label %then7, label %continuation6
+  br i1 %5, label %then10, label %continuation9
 
-then7:                                            ; preds = %continuation1
+then10:                                           ; preds = %continuation1
   %6 = add i32 %3, 1
-  br label %continuation6
+  br label %continuation9
 
-continuation6:                                    ; preds = %then7, %continuation1
-  %7 = phi i32 [ %6, %then7 ], [ %3, %continuation1 ]
+continuation9:                                    ; preds = %then10, %continuation1
+  %7 = phi i32 [ %6, %then10 ], [ %3, %continuation1 ]
   %8 = select i1 false, i1 false, i1 false
   %9 = icmp eq i1 %8, false
-  br i1 %9, label %then12, label %continuation11
+  br i1 %9, label %then18, label %continuation17
 
-then12:                                           ; preds = %continuation6
+then18:                                           ; preds = %continuation9
   %10 = add i32 %7, 1
-  br label %continuation11
+  br label %continuation17
 
-continuation11:                                   ; preds = %then12, %continuation6
-  %11 = phi i32 [ %10, %then12 ], [ %7, %continuation6 ]
+continuation17:                                   ; preds = %then18, %continuation9
+  %11 = phi i32 [ %10, %then18 ], [ %7, %continuation9 ]
   %12 = select i1 true, i1 true, i1 false
   %13 = icmp eq i1 %12, false
-  br i1 %13, label %then17, label %continuation16
+  br i1 %13, label %then26, label %continuation25
 
-then17:                                           ; preds = %continuation11
+then26:                                           ; preds = %continuation17
   %14 = sub i32 %11, 1
-  br label %continuation16
+  br label %continuation25
 
-continuation16:                                   ; preds = %then17, %continuation11
-  %15 = phi i32 [ %14, %then17 ], [ %11, %continuation11 ]
+continuation25:                                   ; preds = %then26, %continuation17
+  %15 = phi i32 [ %14, %then26 ], [ %11, %continuation17 ]
   %16 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %17 = call i32 (ptr, ...) @printf(ptr %16, i32 %15)
   br label %exit
 
-exit:                                             ; preds = %continuation16
+exit:                                             ; preds = %continuation25
   ret i32 0
 }
 

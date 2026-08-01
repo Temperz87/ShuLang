@@ -271,22 +271,14 @@ PYBIND11_MODULE(shulang, m) {
     m.def("select_llvm", &select_llvm_instructions, "Perform the final lowering!!!");
 
     // optimizations and analysis
-    m.def("SIRSCCP", &SIRSCCP, "Returns the results of the SCCP analysis", py::return_value_policy::reference);
     m.def("SIRDSE", &SIRDSE, "Perform dead store elimination on a SIR Program");
     m.def("SIRFold", &SIRFold, "Perform constant folding on a SIR Program");
     m.def("SIRPropagate", &SIRPropagate, "Perform constant propagation on a SIR Program");
     m.def("CFGSimplify", &CFGSimplify, "Removes dead edges in a SIR Program");
     m.def("CFGMerge", &CFGMerge, "Merges trivial blocks in a SIR Program");
 
-    py::class_<UseDefInfo, std::shared_ptr<UseDefInfo>>(m, "UseDefInfo");
-    
-    py::class_<SCCPResults, std::shared_ptr<SCCPResults>>(m, "SCCPResults")
-    .def_readwrite("constants", &SCCPResults::constants)
-    .def_readwrite("reachable_edges", &SCCPResults::reachable_edges)
-    .def_readwrite("reachable_blocks", &SCCPResults::reachable_blocks);
-
-    py::class_<UseDefAnalysis, std::shared_ptr<UseDefAnalysis>>(m, "UseDefAnalysis")
-    .def_static("get_use_def_chains", UseDefAnalysis::get_use_def_chains);
+    py::class_<sir::AnalysisManager, std::shared_ptr<sir::AnalysisManager>>(m, "AnalysisManager")
+    .def(py::init<std::vector<sir::FunctionDefinitionNode*>>());
 
     py::class_<sir::SIRControlFlowGraph, std::shared_ptr<sir::SIRControlFlowGraph>>(m, "SIRControlFlowGraph")
     .def(py::init<const std::vector<sir::SIRBlock*>&>());

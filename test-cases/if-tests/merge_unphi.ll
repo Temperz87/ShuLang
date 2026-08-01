@@ -27,25 +27,25 @@ entry:
   %10 = call i32 (ptr, ...) @scanf(ptr %9, ptr %8)
   %11 = load i32, ptr %8, align 4
   %12 = add i32 2, %11
-  br i1 true, label %then9, label %else10
+  br i1 true, label %then10, label %else11
 
-then9:                                            ; preds = %entry
+then10:                                           ; preds = %entry
   %13 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %14 = call i32 (ptr, ...) @printf(ptr %13, i32 0)
-  br label %continuation8
+  br label %continuation9
 
-else10:                                           ; preds = %entry
+else11:                                           ; preds = %entry
   %15 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %16 = call i32 (ptr, ...) @printf(ptr %15, i32 1)
-  br label %continuation8
+  br label %continuation9
 
-continuation8:                                    ; preds = %else10, %then9
-  %17 = phi i32 [ %12, %else10 ], [ %12, %then9 ]
+continuation9:                                    ; preds = %else11, %then10
+  %17 = phi i32 [ %12, %else11 ], [ %12, %then10 ]
   %18 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %19 = call i32 (ptr, ...) @printf(ptr %18, i32 %17)
   br label %exit
 
-exit:                                             ; preds = %continuation8
+exit:                                             ; preds = %continuation9
   ret i32 0
 }
 

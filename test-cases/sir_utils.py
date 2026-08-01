@@ -34,7 +34,8 @@ def stringify_value(node):
                 ret += "[" + block_name.name + ", " + stringify_value(val) + "] "
             return ret
         case SelectNode():
-            return "Select (" + stringify_value(node.condition) +  ") (" + stringify_value(node.true_value) + \
+            return "Select (" + stringify_value(node.condition) +  ") " \
+                              + "( " + stringify_value(node.true_value) + ") " \
                              " (" + stringify_value(node.false_value) + ")"
         case SIRInputNode():
             return 'read_input()'
@@ -160,9 +161,128 @@ def print_sir_ast(node, indentation = 0, file=stdout):
             print("Unknown definition", node)
             exit(1)
 
+def validate_sir_atom(node, block, env, in_phi=False):
+    match node:
+        case ImmediateNode():
+            return node.width
+        case ReferenceNode():
+            if node.definition.identifier not in env:
+                if in_phi:
+                    return None
+                raise RuntimeError('Reference node found before its definition ' + node.definition.identifier)
+            return env[node.definition.identifier]
+        case PseudoPhiNode():
+            if node.requested_previous not in env:
+                raise RuntimeError("PseudoPhi node couldn't find target " + node.requested_previous)
+            return env[node.requested_previous]
+        case PhiNode():
+            if len(node.candidates) == 0:
+                raise RuntimeError('Phi node has no candidates!')
+            elif len(node.candidates) != len(block.predecessors):
+                raise RuntimeError('Phi node did NOT have a candidate for each predecesor block')
+            ty = None
+            for block, val in node.candidates:
+                if ty == None:
+                    ty = validate_sir_atom(val, block, env, in_phi=True)
+                else:
+                    if ty != validate_sir_atom(val, block, env):
+                        raise RuntimeError('Phi node has candidates with conflicting types!')
+            if ty is None:
+                raise RuntimeError("Couldn't get a valid width for phi node")
+            return ty
+        case SelectNode():
+            val = validate_sir_atom(node.condition, block, env)
+            if val != 1:
+                raise RuntimeError('Condition for select node has a width that is not 1 and is instead ' + str(val))
+            lhs_width = validate_sir_atom(node.true_value, block, env) 
+            if lhs_width != validate_sir_atom(node.false_value, block, env):
+                raise RuntimeError("Select node true and false path's do have matching widths!")
+            return lhs_width
+        case AddNode():
+            lhs_width = validate_sir_atom(node.lhs, block, env)
+            if lhs_width != validate_sir_atom(node.rhs, block, env):
+                raise RuntimeError("Add nodes lhs and rhs operands do not have matching widths!")
+            return lhs_width
+        case SubNode():
+            lhs_width = validate_sir_atom(node.lhs, block, env)
+            if lhs_width != validate_sir_atom(node.rhs, block, env):
+                raise RuntimeError("Sub nodes lhs and rhs operands do not have matching widths!")
+            return lhs_width
+        case MultNode():
+            lhs_width = validate_sir_atom(node.lhs, block, env)
+            if lhs_width != validate_sir_atom(node.rhs, block, env):
+                raise RuntimeError("Mult nodes lhs and rhs operands do not have matching widths!")
+            return lhs_width
+        case CmpNode():
+            lhs_width = validate_sir_atom(node.lhs, block, env)
+            if lhs_width != validate_sir_atom(node.rhs, block, env):
+                raise RuntimeError("Cmp nodes lhs and rhs operands do not have matching widths!")
+            return 1
+        case SIRInputNode():
+            return 32
+        case SIRCallNode():
+            return env[node.function.name]
+        case _:
+            raise RuntimeError("Unsupported sir value found in validate_sir_atom: " + str(node))
 
-def run_sir_function(function, env, functions, stdout, stdin):
-    pass
+def validate_sir_block(block, current_function_name, env):
+    for instruction in block.instructions:
+        match instruction:
+            case ExitNode():
+                pass
+            case SIRPrintNode():
+                width = validate_sir_atom(instruction.to_print, block, env)
+                match instruction.print_type:
+                    case 'Integer':
+                        seeking_width = 32
+                    case 'Boolean':
+                        seeking_width = 1
+                    case _:
+                        raise RuntimeError("Unsupported print type found in a SIRPrintNode: " + instruction.print_type)
+                if width != seeking_width:
+                    raise RuntimeError("Print node wanted a width of " + str(seeking_width) + ' but instead got ' + str(width))
+            case DefinitionNode():
+                try:
+                    val = validate_sir_atom(instruction.binding, block, env)
+                except RuntimeError as e:
+                    new_msg = '\n\tWhile handling definition ' + instruction.identifier
+                    raise RuntimeError(e.args[0] + new_msg)
+                if val != instruction.width:
+                    raise RuntimeError("Definition node's binding " + instruction.identifier + " was expecting width " + str(instruction.width) + " but instead got " + str(val))
+                env[instruction.identifier] = val
+            case JumpIfElseNode():
+                val = validate_sir_atom(instruction.condition, block, env)
+                if val != 1:
+                    raise RuntimeError("JumpIfElse node's condition had a width that wasn't 1")
+                elif block not in instruction.destination.predecessors:
+                    raise RuntimeError("Found JumpIfElse node whose parent block wasn't in then destination's predecessors")
+                elif block not in instruction.else_destination.predecessors:
+                    raise RuntimeError("Found JumpIfElse node whose parent block wasn't in else destination's predecessors")
+            case JumpNode():
+                if block not in instruction.destination.predecessors:
+                    raise RuntimeError("Found Jump node whose parent block wasn't in its destination's predecessors")
+            case SIRReturnNode():
+                val = validate_sir_atom(instruction.return_value, block, env)
+                if val != env[current_function_name]:
+                    raise RuntimeError('Found return of width ' + str(val) + ' when expecting width ' + env[current_function_name])
+            
+
+def validate_sir(program):
+    functions = {}
+    ctx = {}
+    for function in program.functions:
+        functions[function.name] = function
+        ctx[function.name] = function.return_width
+
+    for function in program.functions:
+        for block in function.blocks:
+            try:
+                validate_sir_block(block, function.name, ctx)
+            except RuntimeError as e:
+                new_msg = '\n\tWhile handling block ' + block.name + ' for function ' + function.name 
+                raise RuntimeError(e.args[0] + new_msg)
+
+def run_sir_function(function, env, functions, stdout, stdin): pass
 
 def get_sir_value(node, last_block, env, functions, stdout, stdin):
     if env == None:
@@ -225,7 +345,7 @@ def get_sir_value(node, last_block, env, functions, stdout, stdin):
         case SIRInputNode():
             new_input = next(stdin, None)
             if new_input == None:
-                print('Not enough input to stdin were provided for the test case', stdout)
+                print('Not enough input to stdin was provided for the test case', stdout)
                 print('\tThis means that an input node got duplicated')
                 exit(1)
 

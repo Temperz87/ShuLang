@@ -2,8 +2,8 @@
 #include <SIRAST.hpp>
 #include <SIRCFG.hpp>
 
-bool SIRDSE(const UseDefInfo& usedefs, const sir::SIRControlFlowGraph& cfg);
-void SIRFold(sir::FunctionDefinitionNode* function, std::unordered_map<sir::DefinitionNode*, int>& constants);
-void SIRPropagate(sir::FunctionDefinitionNode* function, std::unordered_map<sir::DefinitionNode*, int>& constants);
-bool CFGMerge(sir::FunctionDefinitionNode* function, const sir::SIRControlFlowGraph& cfg);
-bool CFGSimplify(sir::FunctionDefinitionNode* function, const sir::SIRControlFlowGraph& cfg, const SCCPResults& sccp);
+bool SIRFold(sir::FunctionDefinitionNode*, sir::AnalysisManager& am);
+bool SIRPropagate(sir::FunctionDefinitionNode*, sir::AnalysisManager& am);
+bool SIRDSE(sir::FunctionDefinitionNode*, sir::AnalysisManager& am);
+bool CFGMerge(sir::FunctionDefinitionNode*, sir::AnalysisManager& am);
+bool CFGSimplify(sir::FunctionDefinitionNode*, sir::AnalysisManager& am);

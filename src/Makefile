@@ -13,7 +13,8 @@ OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
 		  ast/shulang_ast.o ast/sir_ast.o \
 		  Visitors/ComplexDetector.o Visitors/LLVMCodegenVisitor.o Visitors/ShuLangPrinter.o \
 		  Visitors/ShuLangVisitor.o \
-		  analysis/SIRSCCP.o analysis/KnownConstant.o analysis/UseDefAnalysis.o analysis/UseDefInfo.o \
+		  analysis/AnalysisManager.o analysis/IPSCCP.o analysis/KnownConstant.o \
+			analysis/UseDefAnalysis.o analysis/UseDefInfo.o \
 		  optimizations/SIRPropagateConstants.o optimizations/SIRFold.o optimizations/SIRDSE.o \
 		  optimizations/CFGSimplify.o optimizations/CFGMerge.o \
 		  passes/Uniquification.o passes/ShortCircuitify.o passes/RemoveComplexOperands.o  \

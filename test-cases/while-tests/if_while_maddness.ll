@@ -16,8 +16,8 @@ define i32 @main() #0 {
 entry:
   br label %loop_condition1
 
-loop_condition1:                                  ; preds = %continuation5, %entry
-  %0 = phi i32 [ %12, %continuation5 ], [ 6, %entry ]
+loop_condition1:                                  ; preds = %continuation6, %entry
+  %0 = phi i32 [ %12, %continuation6 ], [ 6, %entry ]
   %1 = icmp sgt i32 %0, 0
   br i1 %1, label %loop_body2, label %loop_continuation3
 
@@ -27,23 +27,23 @@ loop_body2:                                       ; preds = %loop_condition1
   %4 = select i1 %2, i1 true, i1 %3
   %5 = icmp eq i32 %0, 6
   %6 = select i1 %4, i1 true, i1 %5
-  br i1 %6, label %then6, label %else7
+  br i1 %6, label %then7, label %else8
 
 loop_continuation3:                               ; preds = %loop_condition1
   br label %exit
 
-then6:                                            ; preds = %loop_body2
+then7:                                            ; preds = %loop_body2
   %7 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %8 = call i32 (ptr, ...) @printf(ptr %7, i32 1)
-  br label %continuation5
+  br label %continuation6
 
-else7:                                            ; preds = %loop_body2
+else8:                                            ; preds = %loop_body2
   %9 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %10 = call i32 (ptr, ...) @printf(ptr %9, i32 0)
-  br label %continuation5
+  br label %continuation6
 
-continuation5:                                    ; preds = %else7, %then6
-  %11 = phi i32 [ %0, %else7 ], [ %0, %then6 ]
+continuation6:                                    ; preds = %else8, %then7
+  %11 = phi i32 [ %0, %else8 ], [ %0, %then7 ]
   %12 = sub i32 %11, 1
   br label %loop_condition1
 

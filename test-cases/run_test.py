@@ -71,6 +71,13 @@ def run_sir_pass(sir_program, pass_name: str, pass_func, expected_stdout, stdin,
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
 
+    verbose('Validating...')
+    try:
+        validate_sir(sir_program)
+    except RuntimeError as e:
+        with open(f'./failure {pass_name}.dot', 'w') as fd:
+            graph_sir_program(sir_program, fd)
+        raise e
     verbose('Running')
     output = run_sir_program(sir_program, iter(stdin), pass_name, file_name)
     check_expect_output(expected_stdout, output, file_name, pass_name, sir_program, False)
@@ -83,6 +90,14 @@ def run_sir_pass_on_function(sir_program, target_function, pass_name: str, pass_
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
 
+    verbose('Validating...')
+    try:
+        validate_sir(sir_program)
+    except RuntimeError as e:
+        with open(f'./failure {pass_name}.dot', 'w') as fd:
+            graph_sir_program(sir_program, fd)
+        raise e
+    validate_sir(sir_program)
     verbose('Running')
     output = run_sir_program(sir_program, iter(stdin), pass_name, file_name)
     check_expect_output(expected_stdout, output, file_name, pass_name, sir_program, False)
@@ -149,6 +164,13 @@ def run_case(file_name):
 
     verbose("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
+    # TODO: Get validation working on sir with pseudophi nodes
+    # try:
+        # validate_sir(sir_program)
+    # except RuntimeError as e:
+        # with open('./failure SELECT SIR INSTRUCTIONS.dot', 'w') as fd:
+            # graph_sir_program(sir_program, fd)
+        # raise e
     # print_sir_ast(sir_program)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
@@ -170,33 +192,26 @@ def run_case(file_name):
     verbose("Unoptimized compiled program passed")
 
     verbose("---Optimization O1 pipeline---")
+    did_work = True
+    am = AnalysisManager(sir_program.functions)
     for function in sir_program.functions:
         did_work = True
+        verbose('Optimizing', function.name)
         while did_work:
             did_work = False
-        
-            verbose("---Initial Analysis---")
-            cfg = SIRControlFlowGraph(function.blocks)
-            usedef = UseDefAnalysis.get_use_def_chains(cfg)
-            sccp = SIRSCCP(cfg, function, usedef)
-
-            prop_pass = lambda x: SIRPropagate(x, sccp.constants)
-            run_sir_pass_on_function(sir_program, function, 'SIRPropagate', prop_pass, expected_stdout, stdin, file_name)
+            prop_pass = lambda x: SIRPropagate(x, am)
+            did_work |= run_sir_pass_on_function(sir_program, function, 'SIRPropagate', prop_pass, expected_stdout, stdin, file_name)
     
-            fold_pass = lambda x: SIRFold(x, sccp.constants)
-            run_sir_pass_on_function(sir_program, function, 'SIRFold', fold_pass, expected_stdout, stdin, file_name)
+            fold_pass = lambda x: SIRFold(x, am)
+            did_work |= run_sir_pass_on_function(sir_program, function, 'SIRFold', fold_pass, expected_stdout, stdin, file_name)
 
-            cfg = SIRControlFlowGraph(function.blocks)
-            cfg_simplify_pass = lambda x: CFGSimplify(x, cfg, sccp)
+            cfg_simplify_pass = lambda x: CFGSimplify(x, am)
             did_work |= run_sir_pass_on_function(sir_program, function, 'CFGSimplify', cfg_simplify_pass, expected_stdout, stdin, file_name)
 
-            cfg = SIRControlFlowGraph(function.blocks)
-            cfg_merge_pass = lambda x: CFGMerge(x, cfg)
+            cfg_merge_pass = lambda x: CFGMerge(x, am)
             did_work |= run_sir_pass_on_function(sir_program, function, 'CFGMerge', cfg_merge_pass, expected_stdout, stdin, file_name)
 
-            cfg = SIRControlFlowGraph(function.blocks)
-            usedef = UseDefAnalysis.get_use_def_chains(cfg)
-            dse_pass = lambda x: SIRDSE(usedef, cfg)
+            dse_pass = lambda x: SIRDSE(x, am)
             did_work |= run_sir_pass_on_function(sir_program, function, 'SIRDSE', dse_pass, expected_stdout, stdin, file_name)
 
     verbose("---SELECT LLVM INSTRUCTIONS---")

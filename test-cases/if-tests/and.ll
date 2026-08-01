@@ -22,29 +22,29 @@ then2:                                            ; preds = %entry
 
 else3:                                            ; preds = %entry
   %1 = select i1 true, i1 false, i1 false
-  br i1 %1, label %then5, label %else6
+  br i1 %1, label %then6, label %else7
 
-continuation1:                                    ; preds = %else9, %then8, %then5, %then2
-  %2 = phi i32 [ 4, %else9 ], [ 3, %then8 ], [ 2, %then5 ], [ 1, %then2 ]
+continuation1:                                    ; preds = %else11, %then10, %then6, %then2
+  %2 = phi i32 [ 4, %else11 ], [ 3, %then10 ], [ 2, %then6 ], [ 1, %then2 ]
   %3 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %4 = call i32 (ptr, ...) @printf(ptr %3, i32 %2)
   br label %exit
 
-then5:                                            ; preds = %else3
+then6:                                            ; preds = %else3
   %5 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %6 = call i32 (ptr, ...) @printf(ptr %5, i32 5)
   br label %continuation1
 
-else6:                                            ; preds = %else3
+else7:                                            ; preds = %else3
   %7 = select i1 false, i1 true, i1 false
-  br i1 %7, label %then8, label %else9
+  br i1 %7, label %then10, label %else11
 
-then8:                                            ; preds = %else6
+then10:                                           ; preds = %else7
   %8 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %9 = call i32 (ptr, ...) @printf(ptr %8, i32 6)
   br label %continuation1
 
-else9:                                            ; preds = %else6
+else11:                                           ; preds = %else7
   %10 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %11 = call i32 (ptr, ...) @printf(ptr %10, i32 7)
   br label %continuation1

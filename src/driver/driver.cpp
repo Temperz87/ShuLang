@@ -1,5 +1,6 @@
 #include <Analysis.hpp>
 #include <chrono>
+#include <deque>
 #include <fstream>
 #include <iostream>
 #include <LLVMCodegenVisitor.hpp>
@@ -10,12 +11,14 @@
 #include <PromotePseudoPhi.hpp>
 #include <SelectInstructions.hpp>
 #include <SIRAST.hpp>
+#include <SIRCallGraph.hpp>
 #include <SIRCFG.hpp>
 #include <ShuLangAST.hpp>
 #include <ShuLangPasses.hpp>
 #include <SIROptimizations.hpp>
 #include <tokenizer.hpp>
 #include <TypeChecker.hpp>
+#include <unordered_set>
 #include <vector>
 
 static std::string output_file = "a.ll";
@@ -135,62 +138,50 @@ int main(int argc, char** argv) {
     // Optimizations
     
     if (optimization_level) {
-        for (auto function : sir_program.functions) {
-            int optimazation_iterations = 0;
-            time_phase("Optimizations for " + function->name, [&]() {
-                // TODO: some better form of queueing optimizations
+        std::vector<sir::FunctionDefinitionNode*> functions;
+        for (std::shared_ptr<sir::FunctionDefinitionNode> function : sir_program.functions) {
+            functions.push_back(function.get());
+        } 
+
+        int optimization_iterations = 0;
+        time_phase("Optimizations", [&]() {
+            // TODO: some better form of queueing optimizations
+            std::vector<sir::FunctionDefinitionNode*> defs;
+            for (const auto& def : sir_program.functions) {
+                defs.push_back(def.get());
+            }
+
+            sir::AnalysisManager am(defs);
+            optimization_iterations += 1;
+
+            sir::CallGraph* cg = am.getCallGraph();
+            std::unordered_set<sir::FunctionDefinitionNode*> seen({cg->get_main()});
+            std::deque<sir::FunctionDefinitionNode*> order({cg->get_main()});
+            while (!order.empty()) {
+                sir::FunctionDefinitionNode* func = order.front();
+                order.pop_front();
+                for (const auto& incoming : cg->get_outgoing(func)) {
+                    if (seen.contains(incoming))
+                        continue;
+                    seen.insert(incoming);
+                    order.push_back(incoming);
+                }
+
+                // Optimize the function!
                 bool did_work;
                 do {
-                    optimazation_iterations +=  1;
                     did_work = false;
-
-                    // Rebuild analysis
-                    std::vector<sir::SIRBlock*> blocks;
-                    for (std::shared_ptr<sir::SIRBlock> b : function->blocks) {
-                        blocks.push_back(b.get());
-                    } 
-
-                    sir::SIRControlFlowGraph cfg(blocks);
-                    UseDefInfo info = UseDefAnalysis::get_use_def_chains(cfg);
-                    SCCPResults sccp = SIRSCCP(cfg, function.get(), info);
-
-                    // Run optimizations
-                    SIRPropagate(function.get(), sccp.constants);
-                    SIRFold(function.get(), sccp.constants);
-                    did_work |= CFGSimplify(function.get(), cfg, sccp);
-
-                    // CFGSimplify invalidates the CFG and usedef analysis
-                    // hence we rebuild them here!
-                    if (did_work) {
-                        blocks.clear();
-                        for (std::shared_ptr<sir::SIRBlock> b : function->blocks) {
-                            blocks.push_back(b.get());
-                        } 
-
-                        cfg = sir::SIRControlFlowGraph(blocks);
-                        info = UseDefAnalysis::get_use_def_chains(cfg);
-                    }
-
-                    bool cfg_merged = CFGMerge(function.get(), cfg);
-                    did_work |= cfg_merged;
-                    if (cfg_merged) {
-                        blocks.clear();
-                        for (std::shared_ptr<sir::SIRBlock> b : function->blocks) {
-                            blocks.push_back(b.get());
-                        } 
-
-                        cfg = sir::SIRControlFlowGraph(blocks);
-                    }
-
-                    info = UseDefAnalysis::get_use_def_chains(cfg);
-                    bool dse = SIRDSE(info, cfg);
-                    did_work |= dse;
+                    did_work |= SIRPropagate(func, am);
+                    did_work |= SIRFold(func, am);
+                    did_work |= CFGSimplify(func, am);
+                    did_work |= CFGMerge(func, am);
+                    did_work |= SIRDSE(func, am);
                 } while (did_work);
-            });
-
-            if (print_timings) {
-                std::cout << "Optimization iterations for " << function->name << ": " << optimazation_iterations << "\n";
             }
+        });
+
+        if (print_timings) {
+            std::cout << "Optimization" << optimization_iterations << "\n";
         }
     }
 

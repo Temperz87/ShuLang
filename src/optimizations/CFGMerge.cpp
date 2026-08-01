@@ -118,15 +118,16 @@ void merge(SIRBlock* big_block, SIRBlock* to_subsume, const unordered_set<SIRBlo
     }
 }
 
-bool CFGMerge(FunctionDefinitionNode* function, const SIRControlFlowGraph& cfg) {
+bool CFGMerge(FunctionDefinitionNode* function, AnalysisManager& am) {
     unordered_map<SIRBlock*, SIRBlock*> mergable;
-    auto terminals = cfg.get_terminals();
-    deque<SIRBlock*> forwards = { cfg.get_entry() };
-    unordered_set<SIRBlock*> seen = { cfg.get_entry() };
+    SIRControlFlowGraph* cfg = am.getCFG(function);
+    auto terminals = cfg->get_terminals();
+    deque<SIRBlock*> forwards = { cfg->get_entry() };
+    unordered_set<SIRBlock*> seen = { cfg->get_entry() };
     while (!forwards.empty()) {
         SIRBlock* b = forwards.front();
         forwards.pop_front();
-        for (SIRBlock* outgoing : cfg.get_outgoing(b)) {
+        for (SIRBlock* outgoing : cfg->get_outgoing(b)) {
             if (seen.contains(outgoing)) {
                 continue;
             }
@@ -138,7 +139,7 @@ bool CFGMerge(FunctionDefinitionNode* function, const SIRControlFlowGraph& cfg) 
         // If the destination has only one predecsor
         // and our block has only one succesor
         // THEN we can merge the two blocks together
-        auto outgoing = cfg.get_outgoing(b);
+        auto outgoing = cfg->get_outgoing(b);
         if (outgoing.size() != 1) {
             continue;
         }
@@ -168,7 +169,7 @@ bool CFGMerge(FunctionDefinitionNode* function, const SIRControlFlowGraph& cfg) 
         }
 
         if (mergable.contains(subsumable)) {
-            merge(mergable[subsumable], subsumable, cfg.get_outgoing(subsumable), mergable);
+            merge(mergable[subsumable], subsumable, cfg->get_outgoing(subsumable), mergable);
             did_work = true;
         }
     }
@@ -200,6 +201,9 @@ bool CFGMerge(FunctionDefinitionNode* function, const SIRControlFlowGraph& cfg) 
             PhiRedirectVisitor::walk(block.get(), mergable);
         }
     }
+
+    if (did_work)
+        am.invalidateFunction(function);
 
     return did_work;
 }

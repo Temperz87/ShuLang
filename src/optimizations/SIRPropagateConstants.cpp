@@ -1,24 +1,28 @@
+#include <Analysis.hpp>
 #include <SIRAST.hpp>
-#include <stdexcept>
 
 using namespace sir;
 using namespace std;
 
 class PropagationVisitor : public SIRVisitor {
     private:
-        optional<int> lastValue;
+        optional<int> lastValue = nullopt;
         unordered_map<DefinitionNode*, int>& constantValues;
 
         void attempt_replace(shared_ptr<ValueNode>& node) {
+            lastValue = nullopt;
             node->accept(this);
-            if (lastValue.has_value()) {
+            optional<int> oldVal = KnownConstant::GetIntValue(node.get());
+            if (lastValue.has_value() &&
+                (!oldVal.has_value() || oldVal.value() != lastValue.value())) {
                 node = make_shared<ImmediateNode>(lastValue.value(), node->width);
                 lastValue = nullopt;
+                did_work = true;
             }
         }
 
     public:
-
+        bool did_work = false;
         PropagationVisitor(unordered_map<DefinitionNode*, int>& constantValues):lastValue(nullopt), 
            constantValues(constantValues) { }
 
@@ -93,9 +97,15 @@ class PropagationVisitor : public SIRVisitor {
         }
 };
 
-void SIRPropagate(sir::FunctionDefinitionNode* function, unordered_map<DefinitionNode*, int>& constants) {
-    PropagationVisitor visitor(constants);
+bool SIRPropagate(sir::FunctionDefinitionNode* function, AnalysisManager& am) {
+    PropagationVisitor visitor(am.getIPSCCPResults()->results[function]->constants);
     for (shared_ptr<SIRBlock> block : function->blocks) {
         visitor.walk(block.get());
     }
+
+    if (visitor.did_work) {
+        am.invalidateFunction(function);
+    }
+
+    return visitor.did_work;
 }
