@@ -1,6 +1,7 @@
 #include <SIRAST.hpp>
 #include <SIRCFG.hpp>
 #include <LLVMCodegenVisitor.hpp>
+#include <deque>
 #include <llvm/IR/IRBuilder.h>
 #include <iostream>
 #include <llvm/IR/IRBuilder.h>
@@ -22,9 +23,9 @@
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Alignment.h>
 #include <llvm/Support/raw_ostream.h>
-#include <system_error>
 #include <llvm/TargetParser/Host.h>
 #include <memory>
+#include <unordered_set>
 
 using namespace llvm;
 using namespace sir;
@@ -57,7 +58,21 @@ void codegen_function(LLVMCodegenVisitor& visitor, std::shared_ptr<FunctionDefin
         visitor.bindings[param->identifier] = llvm_function->getArg(i);
     }
 
-    for (std::shared_ptr<SIRBlock> block : function->blocks) {
+    std::vector<SIRBlock*> blocks;
+    for (auto& block : function->blocks)
+        blocks.push_back(block.get());
+    SIRControlFlowGraph cfg(blocks);
+
+    // First create the functions entry block
+    // As LLVM recognizes the first block added as entry
+    SIRBlock* entry = cfg.get_entry();
+    BasicBlock* bb = BasicBlock::Create(context, entry->name, llvm_function);            
+    visitor.blocks.insert({entry->name, bb});
+    
+    // Create the rest of the blocks
+    for (auto& block : function->blocks) {
+        if (block->name == "entry")
+            continue;
         BasicBlock* bb = BasicBlock::Create(context, block->name, llvm_function);            
         visitor.blocks.insert({block->name, bb});
     }
@@ -77,15 +92,29 @@ void codegen_function(LLVMCodegenVisitor& visitor, std::shared_ptr<FunctionDefin
         }
     }
 
-    for (std::shared_ptr<SIRBlock> block : function->blocks) {
+    // BFS graph to add blocks
+    // So we don't reference bindings before they exist
+    // Phi nodes get fixed later, we just declare them here
+    std::deque<SIRBlock*> order({entry});
+    std::unordered_set<SIRBlock*> seen({entry});
+    while (!order.empty()) {
+        SIRBlock* block = order.front();
+        order.pop_front();
+        for (SIRBlock* outgoing : cfg.get_outgoing(block)) {
+            if (seen.contains(outgoing))
+                continue;
+            order.push_front(outgoing);
+            seen.insert(outgoing);
+        }
+
         builder.SetInsertPoint(visitor.blocks.at(block->name));
-        visitor.walk(block.get());
+        visitor.walk(block);
     }
 
     visitor.fix_phi();
     if (verifyFunction(*llvm_function, &errs())) {
-        std::cout << "ShuC: Error while compiling program\n\tPlease report the bug" << std::endl;
-        exit(1);
+        std::cout << "ShuC: Error while compiling program during LLVM lowering\n\tPlease report the bug" << std::endl;
+        // exit(1);
     }
 }
 

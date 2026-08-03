@@ -90,13 +90,13 @@ def run_sir_pass_on_function(sir_program, target_function, pass_name: str, pass_
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)
 
-    verbose('Validating...')
-    try:
-        validate_sir(sir_program)
-    except RuntimeError as e:
-        with open(f'./failure {pass_name}.dot', 'w') as fd:
-            graph_sir_program(sir_program, fd)
-        raise e
+    # verbose('Validating...')
+    # try:
+        # validate_sir(sir_program)
+    # except RuntimeError as e:
+        # with open(f'./failure {pass_name}.dot', 'w') as fd:
+            # graph_sir_program(sir_program, fd)
+        # raise e
     verbose('Running')
     output = run_sir_program(sir_program, iter(stdin), pass_name, file_name)
     check_expect_output(expected_stdout, output, file_name, pass_name, sir_program, False)

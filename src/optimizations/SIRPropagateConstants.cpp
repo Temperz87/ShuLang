@@ -106,7 +106,9 @@ class PropagationVisitor : public SIRVisitor {
 bool SIRPropagate(sir::FunctionDefinitionNode* function, AnalysisManager& am) {
     auto ipsccp_results = am.getIPSCCPResults();
     if (ipsccp_results->results[function] == nullptr) {
-        std::cout << "How??" << std::endl;
+        std::cout << "ShuC: An error has occured while optimizing your code" << std::endl;
+        std::cout << "\tPlease report \"SIRPropagate\" null SCCP results error" << std::endl;
+        std::cout << "If you would like to compile your code without optimizations, pass the \"-O0\" flag" << std::endl;
         return false;
     }
 

@@ -1,24 +1,81 @@
+#include <Analysis.hpp>
+#include <IPSCCP.hpp>
 #include <SIRCFG.hpp>
 #include <SIRVisitor.hpp>
-#include <Analysis.hpp>
 #include <SIRAST.hpp>
+#include <deque>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using namespace sir;
 using namespace std;
 
+class ReachableVisitor : public SIRVisitor {
+    public:
+        unordered_map<SIRBlock*, unordered_set<SIRBlock*>> reachable_edges;
+        unordered_set<shared_ptr<SIRBlock>> reachable_blocks;
+        SIRBlock* current_block;
+
+        void visit(JumpNode* node) override {
+            reachable_blocks.insert(node->destination);
+            reachable_edges[current_block].insert(node->destination.get());
+        }
+
+        void visit(JumpIfElseNode* node) override {
+            auto constant = KnownConstant::GetIntValue(node->condition.get());
+            if (constant.has_value()) {
+                shared_ptr<SIRBlock> new_dest = (constant.value() == 1)? node->destination : node->else_destination;
+                reachable_blocks.insert(new_dest);
+                reachable_edges[current_block].insert({new_dest.get()});
+            }
+            else {
+                reachable_blocks.insert(node->destination);
+                reachable_blocks.insert(node->else_destination);
+                reachable_edges[current_block].insert(node->destination.get());
+                reachable_edges[current_block].insert(node->else_destination.get());
+            }
+        }
+        
+        void walk(std::shared_ptr<SIRBlock> entry) {
+            deque<SIRBlock*> order({entry.get()});
+            unordered_set<SIRBlock*> seen({entry.get()});
+            reachable_blocks.insert(entry);
+            while (!order.empty()) {
+                SIRBlock* block = order.front();
+                order.pop_front();
+                current_block = block;
+                for (shared_ptr<InstructionNode> instr : block->instructions) {
+                    instr->accept(this);
+                }
+
+                for (SIRBlock* live_outgoing : reachable_edges[block]) {
+                    if (seen.contains(live_outgoing))
+                        continue;
+                    seen.insert(live_outgoing);
+                    order.push_back(live_outgoing);
+                }
+            }
+        }
+};
+
 class CFGSimplifyVisitor : public SIRVisitor {
     private:
-        SCCPResults* const sccp_results;
+        const std::unordered_map<SIRBlock*, std::unordered_set<SIRBlock*>>& reachable_edges;
+        unordered_set<SIRBlock*> reachable_blocks;
         std::shared_ptr<SIRBlock> new_dest = nullptr;
-        std::shared_ptr<SIRBlock> current_block;
+        std::shared_ptr<SIRBlock> current_block = nullptr;
 
     public:
         bool did_work = false;
-
-        CFGSimplifyVisitor(SCCPResults* const sccp_results):sccp_results(sccp_results) { }
+        CFGSimplifyVisitor(const std::unordered_map<SIRBlock*, std::unordered_set<SIRBlock*>>& reachable_edges,
+                           const unordered_set<shared_ptr<SIRBlock>>& reachable_blocks)
+            :reachable_edges(reachable_edges) { 
+                for (auto& block : reachable_blocks) {
+                    this->reachable_blocks.insert(block.get());
+                }
+            }
 
         void visit(DefinitionNode* def) override {
             // Neccesary to visit phi nodes
@@ -27,8 +84,9 @@ class CFGSimplifyVisitor : public SIRVisitor {
 
         void visit(PhiNode* phi) override {
             std::vector<std::pair<SIRBlock*, std::shared_ptr<ValueNode>>> new_candidates;
-            for (auto pair : phi->candidates) {
-                if (sccp_results->reachable_edges.contains(pair.first) && sccp_results->reachable_edges.at(pair.first).contains(current_block.get())) {
+            for (auto& pair : phi->candidates) {
+                if (reachable_edges.contains(pair.first) && 
+                    reachable_edges.at(pair.first).contains(current_block.get())) {
                     new_candidates.push_back(pair);
                 }
             }
@@ -38,18 +96,35 @@ class CFGSimplifyVisitor : public SIRVisitor {
         }
 
         void visit(JumpIfElseNode* node) override {
-            auto reachable = sccp_results->reachable_edges.at(current_block.get());
+            if (!reachable_edges.contains(current_block.get()))
+                return;
+
+            const auto& reachable = reachable_edges.at(current_block.get());
             if (reachable.size() == 1) {
                 did_work = true;
                 bool goto_then = (node->destination.get() == *reachable.begin()); 
                 new_dest = goto_then? node->destination : node->else_destination;
+                auto& not_reachable = goto_then? node->else_destination : node->destination;
+                not_reachable->predecesors.erase(current_block.get());
             }
         }
 
         void walk(std::shared_ptr<SIRBlock> block) {
+            // Update predcessors
             current_block = block;
+            unordered_set<SIRBlock*> reachable_predecessors;
+            for (SIRBlock* block : block->predecesors) {
+                if (reachable_blocks.contains(block))
+                    reachable_predecessors.insert(block);
+            }
+
+            block->predecesors = std::move(reachable_predecessors);
+
+
+            // Update PhiNodes
+            // And try to change JumpIfElseNodes to JumpNodes
             vector<shared_ptr<InstructionNode>> instrs;
-            for (shared_ptr<InstructionNode> instr : block->instructions) {
+            for (auto& instr : block->instructions) {
                 instr->accept(this);
                 if (new_dest != nullptr) {
                     shared_ptr<JumpNode> jump = make_shared<JumpNode>(block.get(), new_dest);
@@ -66,30 +141,27 @@ class CFGSimplifyVisitor : public SIRVisitor {
 };
 
 bool CFGSimplify(FunctionDefinitionNode* function, AnalysisManager& am) {
-    vector<shared_ptr<SIRBlock>> reachable;
-    SCCPResults* results = am.getIPSCCPResults()->results[function].get();
-    if (results == nullptr) {
-        return false;
-    }
-    
-    CFGSimplifyVisitor visitor(results);
-    for (shared_ptr<SIRBlock> b : function->blocks) {
-        if (results->reachable_blocks.contains(b.get())) {
-            reachable.push_back(b);
-            visitor.walk(b);
-            unordered_set<SIRBlock*> new_predecesors;
-            for (SIRBlock* pred : b->predecesors) {
-                if (results->reachable_edges.contains(pred)) {
-                    new_predecesors.insert(pred);
-                }
-            }
-
-            b->predecesors = std::move(new_predecesors);
+    // First discover reachable blocks
+    shared_ptr<SIRBlock> entry = nullptr;
+    for (auto& block : function->blocks) {
+        if (block->name == "entry") {
+            entry = block;
+            break;
         }
     }
 
-    bool did_work = visitor.did_work || function->blocks.size() != reachable.size();
-    function->blocks = std::move(reachable);
+    assert(entry != nullptr);
+    ReachableVisitor reachable_visitor;
+    reachable_visitor.walk(entry);
+    
+    // Then change JumpIfElse and PhiNodes to match reachability
+    CFGSimplifyVisitor visitor(reachable_visitor.reachable_edges, reachable_visitor.reachable_blocks);
+    for (auto& block : function->blocks)
+        visitor.walk(block);
+
+    bool did_work = visitor.did_work;
+    function->blocks = vector(reachable_visitor.reachable_blocks.begin(), 
+                               reachable_visitor.reachable_blocks.end());
     if (did_work)
         am.invalidateFunction(function);
     return did_work;

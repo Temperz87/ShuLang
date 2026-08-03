@@ -14,6 +14,7 @@
 namespace sir {
     class AnalysisManager;
 
+    // TODO: This is NOT the place for this
     enum LatticeType {
         BOTTOM,
         CONSTANT,

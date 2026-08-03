@@ -39,7 +39,7 @@ else6:                                            ; preds = %then1
 continuation4:                                    ; preds = %else6, %then5
   br label %continuation0
 
-continuation0:                                    ; preds = %continuation4, %else2
+continuation0:                                    ; preds = %else2, %continuation4
   br label %exit
 
 exit:                                             ; preds = %continuation0
