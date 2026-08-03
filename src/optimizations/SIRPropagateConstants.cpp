@@ -117,9 +117,5 @@ bool SIRPropagate(sir::FunctionDefinitionNode* function, AnalysisManager& am) {
         visitor.walk(block.get());
     }
 
-    if (visitor.did_work) {
-        am.invalidateFunction(function);
-    }
-
     return visitor.did_work;
 }
