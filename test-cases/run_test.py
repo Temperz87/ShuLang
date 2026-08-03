@@ -301,6 +301,7 @@ if __name__ == '__main__':
             for i in range(0, max_optimization + 1):
                 print('Testing optimization level:', i)
                 run_regression_tests('binding-and-arithmatic-tests', i)
+                run_regression_tests('function-tests', i)
                 run_regression_tests('if-tests', i)
                 run_regression_tests('input-tests', i)
                 run_regression_tests('select-tests', i)
