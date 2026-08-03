@@ -10,7 +10,7 @@ using namespace sir;
 using namespace std;
 
 void UseDefAnalysis::walk(SIRBlock *block) {
-  for (std::shared_ptr<InstructionNode> instr : block->instructions) {
+  for (auto& instr : block->instructions) {
     instr->accept(this);
   }
 }
@@ -50,29 +50,28 @@ void UseDefAnalysis::visit(CmpNode *node) {
 
 void UseDefAnalysis::visit(DefinitionNode *node) {
   node->binding->accept(this);
-  for (DefinitionNode* def : uses_found) {
+  for (DefinitionNode* def : uses_found)
     usedefs[def].push_back(node);
-  }
+  uses_found.clear();
 }
 
 void UseDefAnalysis::visit(PhiNode *node) {
-  for (auto candidate : node->candidates) {
+  for (auto& candidate : node->candidates)
     candidate.second->accept(this);
-  }
 }
 
 void UseDefAnalysis::visit(PrintNode *node) { 
   node->to_print->accept(this);
-  for (DefinitionNode* def : uses_found) {
+  for (DefinitionNode* def : uses_found)
     usedefs[def].push_back(node);
- }
+  uses_found.clear();
 }
 
 void UseDefAnalysis::visit(JumpIfElseNode *node) {
   node->condition->accept(this);
-  for (DefinitionNode* def : uses_found) {
+  for (DefinitionNode* def : uses_found)
     usedefs[def].push_back(node);
-  }
+  uses_found.clear();
 }
 
 unique_ptr<UseDefInfo> UseDefAnalysis::get_use_def_chains(const SIRControlFlowGraph &cfg) {
