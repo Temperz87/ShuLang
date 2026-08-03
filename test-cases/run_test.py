@@ -199,7 +199,7 @@ def run_case(file_name):
         while did_work:
             did_work = False
             prop_pass = lambda x: SIRPropagate(x, am)
-            did_work |= run_sir_pass_on_function(sir_program, function, 'SIRPropagate', prop_pass, expected_stdout, stdin, file_name)
+            run_sir_pass_on_function(sir_program, function, 'SIRPropagate', prop_pass, expected_stdout, stdin, file_name)
     
             fold_pass = lambda x: SIRFold(x, am)
             did_work |= run_sir_pass_on_function(sir_program, function, 'SIRFold', fold_pass, expected_stdout, stdin, file_name)

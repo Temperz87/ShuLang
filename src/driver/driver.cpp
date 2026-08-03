@@ -177,7 +177,11 @@ int main(int argc, char** argv) {
                 do {
                     optimization_iterations += 1;
                     did_work = false;
-                    did_work |= SIRPropagate(function, am);
+
+                    // This pass is just propagating IPSCCP results
+                    // which already will evaluate to a fixpoint
+                    // hence we don't track if it does work or not
+                    SIRPropagate(function, am);
                     did_work |= SIRFold(function, am);
                     did_work |= CFGSimplify(function, am);
                     did_work |= CFGMerge(function, am);

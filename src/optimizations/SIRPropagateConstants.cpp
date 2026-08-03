@@ -23,12 +23,10 @@ class PropagationVisitor : public SIRVisitor {
                 (!oldVal.has_value() || oldVal.value() != lastValue.value())) {
                 node = make_shared<ImmediateNode>(lastValue.value(), node->width);
                 lastValue = nullopt;
-                did_work = true;
             }
         }
 
     public:
-        bool did_work = false;
         PropagationVisitor(unordered_map<DefinitionNode*, int>& constantValues):lastValue(nullopt), 
            constantValues(constantValues) { }
 
@@ -103,13 +101,12 @@ class PropagationVisitor : public SIRVisitor {
         }
 };
 
-bool SIRPropagate(sir::FunctionDefinitionNode* function, AnalysisManager& am) {
+void SIRPropagate(sir::FunctionDefinitionNode* function, AnalysisManager& am) {
     auto ipsccp_results = am.getIPSCCPResults();
     if (ipsccp_results->results[function] == nullptr) {
         std::cout << "ShuC: An error has occured while optimizing your code" << std::endl;
         std::cout << "\tPlease report \"SIRPropagate\" null SCCP results error" << std::endl;
         std::cout << "If you would like to compile your code without optimizations, pass the \"-O0\" flag" << std::endl;
-        return false;
     }
 
     PropagationVisitor visitor(ipsccp_results->results[function]->constants);
@@ -117,5 +114,4 @@ bool SIRPropagate(sir::FunctionDefinitionNode* function, AnalysisManager& am) {
         visitor.walk(block.get());
     }
 
-    return visitor.did_work;
 }
