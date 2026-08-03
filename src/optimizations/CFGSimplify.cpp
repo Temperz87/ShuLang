@@ -120,7 +120,6 @@ class CFGSimplifyVisitor : public SIRVisitor {
 
             block->predecesors = std::move(reachable_predecessors);
 
-
             // Update PhiNodes
             // And try to change JumpIfElseNodes to JumpNodes
             vector<shared_ptr<InstructionNode>> instrs;
