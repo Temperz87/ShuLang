@@ -14,7 +14,7 @@ def parse_timings(text):
             name = m.group(1).strip()
             value = int(m.group(2))
             results[name] = value
-
+        
     return results
 
 def format_timings(timings):

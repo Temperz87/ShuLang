@@ -1,45 +1,45 @@
 # Report for programs/big-diamond.sl
-Times determined by running each part 10000 times then taking the average
+Times determined by running each part 100 times then taking the average
 
 ## COMPILATION TIMING
 shuc + clang timings
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 155309.1μs | 99987.1μs | 100012.8μs |
-| shuc -O1 | 817436.7μs | 818997.4μs | 819081.5μs |
+| shuc -O0 | 92392.2μs | 71609.4μs | 75554.6μs |
+| shuc -O1 | 79611.2μs | 79510.0μs | 79464.2μs |
 
 clang timings alone
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 124604.6μs | 69282.5μs | 69308.2μs |
-| shuc -O1 | 53330.1μs | 54890.8μs | 54974.9μs |
+| shuc -O0 | 70567.1μs | 49784.3μs | 53729.5μs |
+| shuc -O1 | 39748.3μs | 39647.2μs | 39601.3μs |
 
 shuc -O0 pass timings
-- Tokenization: 6835.2μs
-- Parsing: 1519.8μs
-- Type Checking: 1324.1μs
-- Short Circuitify: 225.3μs
-- Remove Complex Operands: 340.4μs
-- SIR Instruction Selection: 4468.5μs
-- Promote Phi: 4440.0μs
-- LLVM Codegen: 6997.8μs
-- Total compilation time: 30704.6μs
+- Tokenization: 4338.2μs
+- Parsing: 1025.8μs
+- Type Checking: 770.1μs
+- Short Circuitify: 142.4μs
+- Remove Complex Operands: 225.2μs
+- SIR Instruction Selection: 3177.3μs
+- Promote Phi: 2683.6μs
+- LLVM Codegen: 6100.2μs
+- Total compilation time: 21825.1μs
 
 shuc -O1 pass timings
-- Tokenization: 6777.9μs
-- Parsing: 1476.4μs
-- Type Checking: 1306.5μs
-- Short Circuitify: 219.9μs
-- Remove Complex Operands: 339.5μs
-- SIR Instruction Selection: 4252.5μs
-- Promote Phi: 4204.1μs
-- Optimizations: 744611.3μs
-- Optimization iterations: 2
-- LLVM Codegen: 387.9μs
-- Total compilation time: 764106.6μs
+- Tokenization: 4322.5μs
+- Parsing: 1012.9μs
+- Type Checking: 751.1μs
+- Short Circuitify: 138.3μs
+- Remove Complex Operands: 220.3μs
+- SIR Instruction Selection: 2898.8μs
+- Promote Phi: 2382.8μs
+- Optimization iterations for main: 2
+- Optimizations: 27691.4μs
+- LLVM Codegen: 261.1μs
+- Total compilation time: 39862.8μs
 
 ## EXECUTION TIME
 |  | clang -O0 | clang -O1 | clang -O2 |
 | --- | --- | --- | --- |
-| shuc -O0 | 1285.9μs | 1268.9μs | 1261.1μs |
-| shuc -O1 | 1265.7μs | 1251.2μs | 1254.6μs |
+| shuc -O0 | 2291.5μs | 2355.8μs | 2475.7μs |
+| shuc -O1 | 2233.8μs | 2260.6μs | 2342.7μs |
