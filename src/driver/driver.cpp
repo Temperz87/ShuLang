@@ -150,7 +150,6 @@ int main(int argc, char** argv) {
             functions.push_back(function.get());
         } 
 
-        int optimization_iterations = 0;
         time_phase("Optimizations", [&]() {
             // TODO: some better form of queueing optimizations
             std::vector<sir::FunctionDefinitionNode*> defs;
@@ -159,14 +158,13 @@ int main(int argc, char** argv) {
             }
 
             sir::AnalysisManager am(defs);
-            optimization_iterations += 1;
 
             std::unordered_set<sir::FunctionDefinitionNode*> seen({am.getCallGraph()->get_main()});
             std::deque<sir::FunctionDefinitionNode*> order({am.getCallGraph()->get_main()});
             while (!order.empty()) {
-                sir::FunctionDefinitionNode* func = order.front();
+                sir::FunctionDefinitionNode* function = order.front();
                 order.pop_front();
-                for (const auto& incoming : am.getCallGraph()->get_outgoing(func)) {
+                for (const auto& incoming : am.getCallGraph()->get_outgoing(function)) {
                     if (seen.contains(incoming))
                         continue;
                     seen.insert(incoming);
@@ -174,21 +172,23 @@ int main(int argc, char** argv) {
                 }
 
                 // Optimize the function!
+                int optimization_iterations = 0;
                 bool did_work;
                 do {
+                    optimization_iterations += 1;
                     did_work = false;
-                    did_work |= SIRPropagate(func, am);
-                    did_work |= SIRFold(func, am);
-                    did_work |= CFGSimplify(func, am);
-                    did_work |= CFGMerge(func, am);
-                    did_work |= SIRDSE(func, am);
+                    did_work |= SIRPropagate(function, am);
+                    did_work |= SIRFold(function, am);
+                    did_work |= CFGSimplify(function, am);
+                    did_work |= CFGMerge(function, am);
+                    did_work |= SIRDSE(function, am);
                 } while (did_work);
+
+                if (print_timings) {
+                    std::cout << "Optimization iterations for " << function->name << ": " << optimization_iterations << "\n";
+                }
             }
         });
-
-        if (print_timings) {
-            std::cout << "Optimization iterations: " << optimization_iterations << "\n";
-        }
     }
 
     // std::cout << "-----LLVM CODE GENERATION-----" << std::endl;
