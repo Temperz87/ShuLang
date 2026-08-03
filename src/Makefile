@@ -4,11 +4,11 @@ COMMONCPPFLAGS = -Iinclude -MMD -Wall -pedantic -std=c++20 \
 RELEASEFLAGS = -O3
 DEBUGFLAGS = -g -O0 -DLLVM_ENABLE_ASSERTIONS=ON
 ASANFLAGS = -fsanitize=address -fno-omit-frame-pointer -DLLVM_ENABLE_ASSERTIONS=ON
-PROFILEFlags = -O3 -g -pg --coverage
+PROFILEFlags = -O3 -g -pg
 PYTHONFLAGS = -O3 -Wall -fPIC $(shell python3 -m pybind11 --includes) -Iinclude -std=c++20
 RM = rm
 
-CPPFLAGS ?= $(COMMON_CPPFLAGS)
+CPPFLAGS ?= $(COMMONCPPFLAGS)
 
 OBJECTS = parser/parser.o tokenizer/tokenizer.o type_checker/TypeChecker.o \
 		  ast/shulang_ast.o ast/sir_ast.o \
@@ -74,6 +74,7 @@ clean:
 	$(RM) -f ShuLangPy.dll
 	$(RM) -f $(OBJECTS)
 	$(RM) -f $(DEPS)
+	$(RM) -f $(COVS)
 	$(RM) -f ./driver/driver.d
 	$(RM) -f ./driver/driver.o
 	$(RM) -f ./python_bindings/pybind11_stuff.d

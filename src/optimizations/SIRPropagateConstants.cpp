@@ -1,5 +1,6 @@
 #include <Analysis.hpp>
 #include <SIRAST.hpp>
+#include <iostream>
 
 using namespace sir;
 using namespace std;
@@ -13,6 +14,11 @@ class PropagationVisitor : public SIRVisitor {
             lastValue = nullopt;
             node->accept(this);
             optional<int> oldVal = KnownConstant::GetIntValue(node.get());
+            // If we have discovered a constant candidate and one of:
+            //  1. The current value in the node is NOT a constant
+            //      e.g. call, reference
+            //  2. The current constant isn't the same as the one we found
+            // We replace it!
             if (lastValue.has_value() &&
                 (!oldVal.has_value() || oldVal.value() != lastValue.value())) {
                 node = make_shared<ImmediateNode>(lastValue.value(), node->width);
@@ -98,7 +104,13 @@ class PropagationVisitor : public SIRVisitor {
 };
 
 bool SIRPropagate(sir::FunctionDefinitionNode* function, AnalysisManager& am) {
-    PropagationVisitor visitor(am.getIPSCCPResults()->results[function]->constants);
+    auto ipsccp_results = am.getIPSCCPResults();
+    if (ipsccp_results->results[function] == nullptr) {
+        std::cout << "How??" << std::endl;
+        return false;
+    }
+
+    PropagationVisitor visitor(ipsccp_results->results[function]->constants);
     for (shared_ptr<SIRBlock> block : function->blocks) {
         visitor.walk(block.get());
     }

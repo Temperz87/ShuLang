@@ -161,13 +161,12 @@ int main(int argc, char** argv) {
             sir::AnalysisManager am(defs);
             optimization_iterations += 1;
 
-            sir::CallGraph* cg = am.getCallGraph();
-            std::unordered_set<sir::FunctionDefinitionNode*> seen({cg->get_main()});
-            std::deque<sir::FunctionDefinitionNode*> order({cg->get_main()});
+            std::unordered_set<sir::FunctionDefinitionNode*> seen({am.getCallGraph()->get_main()});
+            std::deque<sir::FunctionDefinitionNode*> order({am.getCallGraph()->get_main()});
             while (!order.empty()) {
                 sir::FunctionDefinitionNode* func = order.front();
                 order.pop_front();
-                for (const auto& incoming : cg->get_outgoing(func)) {
+                for (const auto& incoming : am.getCallGraph()->get_outgoing(func)) {
                     if (seen.contains(incoming))
                         continue;
                     seen.insert(incoming);

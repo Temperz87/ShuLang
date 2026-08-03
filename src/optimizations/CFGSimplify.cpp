@@ -68,6 +68,10 @@ class CFGSimplifyVisitor : public SIRVisitor {
 bool CFGSimplify(FunctionDefinitionNode* function, AnalysisManager& am) {
     vector<shared_ptr<SIRBlock>> reachable;
     SCCPResults* results = am.getIPSCCPResults()->results[function].get();
+    if (results == nullptr) {
+        return false;
+    }
+    
     CFGSimplifyVisitor visitor(results);
     for (shared_ptr<SIRBlock> b : function->blocks) {
         if (results->reachable_blocks.contains(b.get())) {

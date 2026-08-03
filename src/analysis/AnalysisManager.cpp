@@ -1,4 +1,5 @@
 #include <Analysis.hpp>
+#include <IPSCCP.hpp>
 #include <SIRVisitor.hpp>
 #include <SIRCallGraph.hpp>
 #include <SIRCFG.hpp>
@@ -10,10 +11,12 @@ using namespace sir;
 using namespace std;
 
 IPSCCPResults* AnalysisManager::getIPSCCPResults() {
-    if (ipsccp_results == nullptr)
-        ipsccp_results = IPSCCP(*getCallGraph());
+    if (dirty_functions.size() > 0) {
+        IPSCCP(*this, dirty_functions, ipsccp_results);
+        dirty_functions.clear();
+    }
 
-    return ipsccp_results.get();
+    return &ipsccp_results;
 }
 
 CallGraph* AnalysisManager::getCallGraph() { 
@@ -47,6 +50,5 @@ void AnalysisManager::invalidateFunction(FunctionDefinitionNode* node) {
     if (usedef_infos.contains(node))
         usedef_infos[node] = nullptr;
 
-    // TODO: Proper IPSCCP scheduling!!!
-    ipsccp_results = nullptr;
+    dirty_functions.push_back(node);
 }

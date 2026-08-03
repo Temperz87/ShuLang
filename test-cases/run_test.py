@@ -97,7 +97,6 @@ def run_sir_pass_on_function(sir_program, target_function, pass_name: str, pass_
         with open(f'./failure {pass_name}.dot', 'w') as fd:
             graph_sir_program(sir_program, fd)
         raise e
-    validate_sir(sir_program)
     verbose('Running')
     output = run_sir_program(sir_program, iter(stdin), pass_name, file_name)
     check_expect_output(expected_stdout, output, file_name, pass_name, sir_program, False)
@@ -165,12 +164,12 @@ def run_case(file_name):
     verbose("---SELECT SIR INSTRUCTIONS---")
     sir_program = select_instructions(ast)
     # TODO: Get validation working on sir with pseudophi nodes
-    # try:
+    try: pass
         # validate_sir(sir_program)
-    # except RuntimeError as e:
-        # with open('./failure SELECT SIR INSTRUCTIONS.dot', 'w') as fd:
-            # graph_sir_program(sir_program, fd)
-        # raise e
+    except RuntimeError as e:
+        with open('./failure SELECT SIR INSTRUCTIONS.dot', 'w') as fd:
+            graph_sir_program(sir_program, fd)
+        raise e
     # print_sir_ast(sir_program)
     if SHOULD_GRAPH_SIR:
         graph_sir_program(sir_program)

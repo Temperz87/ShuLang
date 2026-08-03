@@ -9,7 +9,6 @@ using namespace std;
 class FoldVisitor : public SIRVisitor {
     private:
         optional<shared_ptr<ValueNode>> lastValue = nullopt;
-        unordered_map<DefinitionNode*, int>& constantValues;
 
         void attempt_replace(shared_ptr<ValueNode>& node) {
             node->accept(this);
@@ -29,8 +28,7 @@ class FoldVisitor : public SIRVisitor {
 
     public:
         bool did_work = false;
-        FoldVisitor(unordered_map<DefinitionNode*, int>& constantValues):lastValue(nullopt), 
-           constantValues(constantValues) { }
+        FoldVisitor():lastValue(nullopt) { }
 
         void visit(ImmediateNode* node) override {
             lastValue = std::make_shared<ImmediateNode>(node->number, node->width);
@@ -134,12 +132,7 @@ class FoldVisitor : public SIRVisitor {
         }
         
         void visit(DefinitionNode* node) override {
-            if (constantValues.contains(node)) {
-                node->binding = make_shared<ImmediateNode>(constantValues[node], node->width);
-            }
-            else {
-                attempt_replace(node->binding);
-            }
+            attempt_replace(node->binding);
         }
         
         void visit(PhiNode* node) override {
@@ -156,7 +149,7 @@ class FoldVisitor : public SIRVisitor {
 };
 
 bool SIRFold(sir::FunctionDefinitionNode* function, AnalysisManager& am) {
-    FoldVisitor visitor(am.getIPSCCPResults()->results[function]->constants);
+    FoldVisitor visitor;
     for (shared_ptr<SIRBlock> block : function->blocks) {
         visitor.walk(block.get());
     }

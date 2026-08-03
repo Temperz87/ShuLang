@@ -1,6 +1,7 @@
 #include <Analysis.hpp>
 #include <deque>
 #include <memory>
+#include <IPSCCP.hpp>
 #include <SIRVisitor.hpp>
 #include <SIRCallGraph.hpp>
 #include <SIRCFG.hpp>
@@ -13,31 +14,7 @@
 using namespace sir;
 using namespace std;
 
-enum LatticeType {
-    BOTTOM,
-    TOP,
-    CONSTANT
-};
-
-// TODO
-//  When values can be things other than integers
-//  Change this analysis accordingly!!!
-typedef struct ConstantLattice {
-    LatticeType type;
-    int value;
-
-    ConstantLattice() {
-        type = BOTTOM;
-        value = 0;
-    }
-
-    ConstantLattice(LatticeType type, int value):type(type), value(value) { }
-    auto operator<=>(const struct ConstantLattice&) const = default;
-
-
-} ConstantLattice_t;
-
-ConstantLattice_t join(const ConstantLattice_t& lhs, const ConstantLattice_t& rhs) {
+ConstantLattice join(const ConstantLattice& lhs, const ConstantLattice& rhs) {
     if (lhs.type == TOP || rhs.type == TOP) {
         return {TOP,0 };
     }
@@ -56,14 +33,18 @@ ConstantLattice_t join(const ConstantLattice_t& lhs, const ConstantLattice_t& rh
 
 class IPSCCPVisitor : public SIRVisitor {
     private:
-        ConstantLattice_t lastValue;
+        ConstantLattice lastValue;
         deque<SIRBlock*> reachable_worklist;
         unordered_set<SIRBlock*> handling;
         deque<InstructionNode*> modified_instructions;
         unordered_set<InstructionNode*> handling_instructions;
+        unordered_map<FunctionDefinitionNode*, FunctionSummary>& summaries;
+        UseDefInfo* usedefs;
+        unordered_set<FunctionDefinitionNode*> dirty_functions;
         SIRBlock* current_block;
+        FunctionDefinitionNode* current_function;
 
-        ConstantLattice_t get_value(ValueNode* val) {
+        ConstantLattice get_value(ValueNode* val) {
             val->accept(this);
             return lastValue;
         };
@@ -82,8 +63,8 @@ class IPSCCPVisitor : public SIRVisitor {
         }
 
         void visit_bin_op(ValueNode* lhs_node, ValueNode* rhs_node, auto F) {
-            ConstantLattice_t lhs = get_value(lhs_node);
-            ConstantLattice_t rhs = get_value(rhs_node);
+            ConstantLattice lhs = get_value(lhs_node);
+            ConstantLattice rhs = get_value(rhs_node);
             // TODO: Width handling when we add 64 bit stuff
             if (lhs.type != CONSTANT || rhs.type != CONSTANT) {
                 LatticeType ty = lhs.type == TOP || rhs.type == TOP? TOP : BOTTOM;
@@ -96,11 +77,12 @@ class IPSCCPVisitor : public SIRVisitor {
         }
 
     public:
-        unordered_map<DefinitionNode*, ConstantLattice_t> constantValues;
+        unordered_map<DefinitionNode*, ConstantLattice> constantValues;
         std::unordered_map<SIRBlock*, std::unordered_set<SIRBlock*>> reachable_edges;
         unordered_set<SIRBlock*> reachable_blocks;
-        UseDefInfo& usedefs;
-        IPSCCPVisitor(UseDefInfo& usedefs):usedefs(usedefs) { }
+        IPSCCPVisitor(unordered_map<FunctionDefinitionNode*, FunctionSummary>& summaries,
+                      UseDefInfo* usedefs, FunctionDefinitionNode* current_function)
+            :summaries(summaries), usedefs(usedefs), current_function(current_function) { }
 
         void visit(ImmediateNode* node) override {
             lastValue = { CONSTANT, node->number};
@@ -109,12 +91,12 @@ class IPSCCPVisitor : public SIRVisitor {
         void visit(ReferenceNode* node) override {
             auto lock = node->definition.lock();
             if (lock) {
-                ConstantLattice_t val = constantValues.contains(lock.get())? constantValues[lock.get()] : ConstantLattice_t{BOTTOM, 0};
+                ConstantLattice val = constantValues.contains(lock.get())? constantValues[lock.get()] : ConstantLattice{BOTTOM, 0};
                 lastValue = val;
             }
             else {
                 // Shouldn't occur in practice
-                lastValue = {TOP, 0};
+                lastValue = {BOTTOM, 0};
             }
         }
 
@@ -129,8 +111,8 @@ class IPSCCPVisitor : public SIRVisitor {
                 }
             }
             else {
-                ConstantLattice_t true_val = get_value(node->true_value.get());
-                ConstantLattice_t false_val = get_value(node->false_value.get());
+                ConstantLattice true_val = get_value(node->true_value.get());
+                ConstantLattice false_val = get_value(node->false_value.get());
                 lastValue = join(true_val, false_val); 
             }
         }
@@ -188,12 +170,12 @@ class IPSCCPVisitor : public SIRVisitor {
         
         void visit(DefinitionNode* node) override {
             node->binding->accept(this);
-            ConstantLattice_t old = constantValues.contains(node)? constantValues[node]: ConstantLattice_t{BOTTOM, 0};
-            ConstantLattice_t joined = join(old, lastValue); 
+            ConstantLattice old = constantValues.contains(node)? constantValues[node]: ConstantLattice{BOTTOM, 0};
+            ConstantLattice joined = join(old, lastValue); 
             bool modified = constantValues[node] != joined;
             constantValues[node] = joined;
             if (modified) {
-                for (InstructionNode* values : usedefs.usedefs[node]) {
+                for (InstructionNode* values : usedefs->usedefs[node]) {
                     // If values is in the current block
                     if (!handling_instructions.contains(values)) {
                         modified_instructions.push_back(values);
@@ -204,11 +186,11 @@ class IPSCCPVisitor : public SIRVisitor {
         }
         
         void visit(PhiNode* node) override {
-            ConstantLattice_t val = {BOTTOM, 0};
+            ConstantLattice val = {BOTTOM, 0};
             for (int i = 0; i < node->candidates.size(); i++) {
                 auto pair  = node->candidates[i];
                 if (reachable_blocks.contains(pair.first) && reachable_edges[pair.first].contains(current_block)) {
-                    ConstantLattice_t incoming = get_value(pair.second.get());
+                    ConstantLattice incoming = get_value(pair.second.get());
                     val = join(val, incoming);
                 }
             }
@@ -233,15 +215,9 @@ class IPSCCPVisitor : public SIRVisitor {
             if (lastValue.type == CONSTANT) {
                 if (lastValue.value) {
                     mark_block_reachable(current_block, node->destination.get());
-                    if (reachable_edges[current_block].contains(node->else_destination.get())) {
-                        reachable_edges[current_block].erase(node->else_destination.get());
-                    }
                 }
                 else {
                     mark_block_reachable(current_block, node->else_destination.get());
-                    if (reachable_edges[current_block].contains(node->destination.get())) {
-                        reachable_edges[current_block].erase(node->destination.get());
-                    }
                 }
             }
             else {
@@ -249,21 +225,53 @@ class IPSCCPVisitor : public SIRVisitor {
                 mark_block_reachable(current_block, node->else_destination.get());
             }
         }
+
+        void visit(ReturnNode* node) override {
+            ConstantLattice current_return = summaries[current_function].return_value;
+            ConstantLattice new_return = get_value(node->return_value.get());
+            ConstantLattice joined = join(current_return, new_return);
+            if (current_return != joined) {
+                dirty_functions.insert(current_function);
+                summaries[current_function].return_value = joined;
+            }
+        }
         
         void visit(CallNode* node) override {
-            // This will always be top unless inlining
-            lastValue = {TOP, 0};
-        }
-
-        unique_ptr<SCCPResults> SCCP(const SIRControlFlowGraph& cfg,
-                                                 const FunctionDefinitionNode* function) {
-            for (auto parameter : function->parameters) {
-                this->constantValues[parameter.get()] = {TOP, 0};
+            auto lock = node->function.lock();
+            if (!lock) {
+                return;
             }
 
-            this->reachable_blocks.insert(cfg.get_entry());
-            this->reachable_worklist.push_front(cfg.get_entry());
+            FunctionDefinitionNode* function = lock.get();
+            if (lock) {
+                FunctionSummary& summary = summaries[function];
+                for (int i = 0; i < summary.parameter_values.size(); i++) {
+                    ConstantLattice& old = summary.parameter_values[i];
+                    ConstantLattice incoming = get_value(node->arguments[i].get()); 
+                    ConstantLattice new_value = join(old, incoming);
+                    if (new_value != old) {
+                        dirty_functions.insert(function);
+                        old = new_value;
+                    }
+                }
+
+                lastValue = summaries[function].return_value;
+            }
+        }
+
+        unique_ptr<SCCPResults> SCCP(const SIRControlFlowGraph* cfg) {
+            // Enqueue parameter lattice
+            for (int i = 0; i < current_function->parameters.size(); i++) {
+                auto parameter = current_function->parameters[i];
+                this->constantValues[parameter.get()] = summaries[current_function].parameter_values[i];
+            }
+
+            // Initialize worklists
+            this->reachable_blocks.insert(cfg->get_entry());
+            this->reachable_worklist.push_front(cfg->get_entry());
             while (!this->reachable_worklist.empty() || !this->modified_instructions.empty()) {
+                // Walk through reachable blocks first
+                //  Order shouldn't matter
                 while (!this->reachable_worklist.empty()) {
                     this->current_block = this->reachable_worklist.front();
                     this->reachable_worklist.pop_front();
@@ -273,6 +281,7 @@ class IPSCCPVisitor : public SIRVisitor {
                     }
                 }
 
+                // Then walk through modified instructions
                 while (!this->modified_instructions.empty()) {
                     InstructionNode* instr = this->modified_instructions.front();
                     this->modified_instructions.pop_front();
@@ -286,6 +295,7 @@ class IPSCCPVisitor : public SIRVisitor {
                 }
             }
 
+            // Bundle up constants before returning
             unordered_map<DefinitionNode*, int> ret;
             for (auto pair : this->constantValues) {
                 if (pair.second.type == CONSTANT) {
@@ -296,39 +306,57 @@ class IPSCCPVisitor : public SIRVisitor {
             return make_unique<SCCPResults>(ret, reachable_edges, reachable_blocks);
         }
 
-        static unique_ptr<IPSCCPResults> IPSCCP(const CallGraph& cg) {
-            unordered_map<FunctionDefinitionNode*, unique_ptr<SCCPResults>> ret;
-            deque<FunctionDefinitionNode*> queue;
-            unordered_set<FunctionDefinitionNode*> seen;
-            queue.push_back(cg.get_main());
-            seen.insert(cg.get_main());
+        static void run_dirty_functions(AnalysisManager& am, 
+                                        const vector<FunctionDefinitionNode*>& dirty_functions, 
+                                        IPSCCPResults& results) {
+            CallGraph* cg = am.getCallGraph();
+
+            // Initialize worklist
+            deque<FunctionDefinitionNode*> queue(dirty_functions.begin(), dirty_functions.end());
+            unordered_set<FunctionDefinitionNode*> handling(dirty_functions.begin(), dirty_functions.end());
+            
+            // Iterate through functions
             while (!queue.empty()) {
                 FunctionDefinitionNode* current = queue.front();
                 queue.pop_front();
-                for (auto def : cg.get_outgoing(current)) {
-                    if (seen.contains(def)) {
-                        continue;
+                handling.erase(current);
+
+                // Perform SCCP
+                SIRControlFlowGraph* cfg = am.getCFG(current);
+                UseDefInfo* usedef = am.getUseDefChains(current);
+                IPSCCPVisitor visitor(results.summaries, usedef, current);
+                results.results[current] = visitor.SCCP(cfg);
+
+                // Add functions whose IPSCCP results might be changed
+                // e.g. main calls foo, foo calls bar
+                //  foo has been changed, so enqueue main and bar
+                for (FunctionDefinitionNode* dirty : visitor.dirty_functions) {
+                    // First add self
+                    if (!handling.contains(dirty)) {
+                        queue.push_back(dirty);
+                        handling.insert(dirty);
                     }
 
-                    queue.push_back(def);
-                    seen.insert(def);
-                }
+                    // Add callers
+                    for (auto def : cg->get_incoming(dirty)) {
+                        if (!handling.contains(def)) {
+                            queue.push_back(def);
+                            handling.insert(def);
+                        }
+                    }
 
-                vector<SIRBlock*> blocks;
-                for (const auto& block : current->blocks) {
-                    blocks.push_back(block.get());
+                    // Add callees
+                    for (auto def : cg->get_outgoing(dirty)) {
+                        if (!handling.contains(def)) {
+                            queue.push_back(def);
+                            handling.insert(def);
+                        }
+                    }
                 }
-
-                SIRControlFlowGraph cfg(blocks);
-                std::unique_ptr<UseDefInfo> usedef = UseDefAnalysis::get_use_def_chains(cfg);
-                IPSCCPVisitor visitor(*usedef);
-                ret[current] = visitor.SCCP(cfg, current);
             }
-
-            return make_unique<IPSCCPResults>(std::move(ret));
         }
 };
 
-unique_ptr<IPSCCPResults> sir::IPSCCP(const CallGraph& cg) {
-    return IPSCCPVisitor::IPSCCP(cg);
+void sir::IPSCCP(AnalysisManager& am, const vector<FunctionDefinitionNode*>& dirty_functions, IPSCCPResults& results) {
+    IPSCCPVisitor::run_dirty_functions(am, dirty_functions, results);
 }

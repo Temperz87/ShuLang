@@ -275,9 +275,12 @@ def validate_sir(program):
         ctx[function.name] = function.return_width
 
     for function in program.functions:
+        new_ctx = ctx.copy()
+        for param in function.parameters:
+            new_ctx[param.identifier] = param.width
         for block in function.blocks:
             try:
-                validate_sir_block(block, function.name, ctx)
+                validate_sir_block(block, function.name, new_ctx)
             except RuntimeError as e:
                 new_msg = '\n\tWhile handling block ' + block.name + ' for function ' + function.name 
                 raise RuntimeError(e.args[0] + new_msg)

@@ -17,10 +17,10 @@ class DSEVisitor : public SIRVisitor {
         DSEVisitor(const UseDefInfo& usedefs):usedefs(usedefs) { }
 
         void visit(DefinitionNode* node) override {
-            // TODO: THIS IS PROBABLY A HACK
-            // THERE ARE TIMES WHEN A FUNCTION IS NOT STATEFUL
-            // YET ITLL STILL PERSIST
-            // WHEN FUNCTIONS ARE PROPERLY ADDED, CHANGE THIS!!!
+            // KnownConstant tries to see if somethings not an integer
+            //  in SIR right now this can only be a function
+            // we can't get rid of functions do to potentially changing behavior
+            //  (e.g. program diverges cuz a while true in a function call vs not)
             bool stateful = !KnownConstant::GetIntValue(node->binding.get()).has_value();
             can_remove = !(stateful || usedefs.HasUses(node));
         }
