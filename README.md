@@ -14,7 +14,7 @@
 - [License](#license)
 
 ## About
-The ShuLang project is a compiler research propject focused on modern compiler construction techniques, and is still ongoing. The language itself is statically typed and imperative, and has syntax similar to Rust, despite me not knowing Rust when I created my language. If you want to see more of what I've done and what's next, it can be found in [timeline.md](timeline.md). If you would like summary:
+The ShuLang project is a compiler research project focused on modern compiler construction techniques, and is still ongoing. The language itself is statically typed and imperative, and has syntax similar to Rust, despite me not knowing Rust when I created my language. If you want to see more of what I've done and what's next, it can be found in [timeline.md](timeline.md). If you would like summary:
 
 ### Language Features
 Implemented
