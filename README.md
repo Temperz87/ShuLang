@@ -1,6 +1,17 @@
 # ShuLang
 
-TODO: Table of Contents
+- [About](#about)
+  - [Language Features](#language-features)
+- [Getting Started](#getting-started)
+  - [Running and Building ShuC](#running-and-building-shuc)
+  - [ShuC Usage](#shuc-usage)
+  - [Example Programs](#example-programs)
+- [Compiler Architecture](#compiler-architecture)
+  - [Front End](#front-end)
+  - [Middle End](#middle-end)
+  - [Middle End Optimizations](#middle-end-optimizations)
+  - [Optimization Benchmarks](#optimization-benchmarks)
+- [License](#license)
 
 ## About
 The ShuLang project is a compiler research propject focused on modern compiler construction techniques, and is still ongoing. The language itself is statically typed and imperative, and has syntax similar to Rust, despite me not knowing Rust when I created my language. If you want to see more of what I've done and what's next, it can be found in [timeline.md](timeline.md). If you would like summary:
