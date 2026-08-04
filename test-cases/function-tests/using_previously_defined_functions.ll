@@ -1,5 +1,5 @@
 ; ModuleID = 'Module'
-source_filename = "factorial.sl"
+source_filename = "function-tests/using_previously_defined_functions.sl"
 target triple = "x86_64-pc-linux-gnu"
 
 @printf_integer_format = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
@@ -14,7 +14,7 @@ declare i32 @scanf(ptr, ...)
 ; Function Attrs: nounwind
 define i32 @main() #0 {
 entry:
-  %0 = call i32 @factorial(i32 5)
+  %0 = call i32 @add(i32 6, i32 7)
   %1 = getelementptr [4 x i8], ptr @printf_integer_format, i32 0, i32 0
   %2 = call i32 (ptr, ...) @printf(ptr %1, i32 %0)
   br label %exit
@@ -23,19 +23,23 @@ exit:                                             ; preds = %entry
   ret i32 0
 }
 
-define i32 @factorial(i32 %0) {
+define i32 @add(i32 %0, i32 %1) {
 entry:
-  %1 = icmp eq i32 %0, 0
-  br i1 %1, label %then1, label %else2
-
-else2:                                            ; preds = %entry
-  %2 = sub i32 %0, 1
-  %3 = call i32 @factorial(i32 %2)
-  %4 = mul i32 %0, %3
+  %2 = call i32 @wrap_id(i32 %0)
+  %3 = call i32 @wrap_id(i32 %1)
+  %4 = add i32 %2, %3
   ret i32 %4
+}
 
-then1:                                            ; preds = %entry
-  ret i32 1
+define internal i32 @id(i32 %0) {
+entry:
+  ret i32 %0
+}
+
+define internal i32 @wrap_id(i32 %0) {
+entry:
+  %1 = call i32 @id(i32 %0)
+  ret i32 %1
 }
 
 attributes #0 = { nounwind }

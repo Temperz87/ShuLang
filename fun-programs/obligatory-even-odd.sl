@@ -1,3 +1,8 @@
+/*******************************************
+* This program does not current compile    *
+* It is meant to represent future features *
+********************************************/
+
 bind even(n : Integer, odd : Integer -> Bool) -> Bool in {
     if n = 0
         return true

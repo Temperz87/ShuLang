@@ -1,3 +1,8 @@
+/*******************************************
+* This program does not current compile    *
+* It is meant to represent future features *
+********************************************/
+
 bind statements_are_just_s_expression : Boolean -> Integer to {
     lambda n : Boolean -> Integer {
         bind x to 5

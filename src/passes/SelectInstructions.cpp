@@ -5,7 +5,6 @@
 #include <ShuLangVisitor.hpp>
 #include <memory>
 #include <stack>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -372,6 +371,9 @@ class SLTranslator : public ShuLangVisitor {
             }
 
             SLTranslator inner(node->name, node->return_type, parameters);
+            for (auto& [k ,v ] : function_map) {
+                inner.function_map[k] = v;
+            }
             node->body->accept(&inner);
             if (inner.need_to_write_exit) {
                 inner.current_block->instructions.push_back(std::make_shared<sir::ExitNode>(inner.current_block.get()));

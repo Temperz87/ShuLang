@@ -29,6 +29,17 @@ static int optimization_level = 1;
 static bool print_timings = false;
 static bool emit_llvmir = false;
 
+void emit_help() {
+    std::cout << "ShuC: Usage: shuc <filename>" << std::endl;
+    std::cout << "NOTE: Only one file can be compiled per instance of ShuC" << std::endl;
+    std::cout << "CLI arguments:" << std::endl;
+    std::cout << "--help:\n\tDisplays this message" << std::endl;
+    std::cout << "-l\n\tOutputs LLVM IR instead of an executable" << std::endl;
+    std::cout << "-o <path>\n\tOutputs the compiled file the provided path" << std::endl;
+    std::cout << "-O<n>\n\tEnables optimizations up to level `n`. Currently, the maximum optimization level is `1`" << std::endl;
+    std::cout << "--timings\n\tDisplays how long each pass took to finish" << std::endl;
+}
+
 std::string process_arguments(int argc, char** argv) {
     bool warned_multiple_files = false;
     int to_compile_idx = -1;
@@ -43,6 +54,12 @@ std::string process_arguments(int argc, char** argv) {
         }
         else if (arg == "--timings") {
             print_timings = true;
+        }
+        else if (arg == "--help") {
+            emit_help();
+            if (to_compile_idx == -1) {
+                to_compile_idx = -2;
+            }
         }
         else {
             if (arg[0] == '-' && arg[1] == 'O') {
@@ -63,10 +80,11 @@ std::string process_arguments(int argc, char** argv) {
         }
     }
 
-    if (to_compile_idx == -1) {
+    if (to_compile_idx == -1)
         std::cout << "ShuC: fatal error: no input files" << std::endl;
+
+    if (to_compile_idx < 0)
         exit(1);
-    }
 
     return std::string(argv[to_compile_idx]);
 }

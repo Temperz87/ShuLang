@@ -2,13 +2,22 @@
 
 This is subject to change.
 
-## Act 5: Functions
-You know what a function is, I know what a function is, it's time to have some fun compiling them.
-
 ## Act 6: Objects
-Me when I need a VTable.
+I plan to make objects probably with automatic reference counting, as I have heard horror stories of dealing with Rust's borrow checker. I don't know what these object declarations will look like yet, but I'm currently brainstorming on this front. I also plan to add in strings and a proper running during this.
+
+## Act 7: Lambdas
+Just something that I think would be nice to have in the language. I may implement some lambda specific operations.
+
+## Act 8: The ShuLang ShuLang Compiler
+Compiling ShuLang code using ShuLang. To do this and still use LLVM's backend, I'll need a notion of interoperability.
 
 ## Previous Acts
+
+## Act 5: Functions
+Pretty much implementing functions. I also made a three notable changes to the optimization framework:
+1. SCCP became IPSCCP, so I can reason about interprocedural constant flow
+2. I created an AnalysisManager akin to LLVM
+3. I fixed a bug in creating use define chains, and now optimizations run about 200x faster
 
 ## Act 4: Optimizations
 The original plan was to only do constant folding, constant propagation, and dead code elimination, however things quickly derailed because of not being able to solely focus on the project. At the end of this, the following optimizations were working:

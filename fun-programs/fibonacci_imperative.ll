@@ -29,21 +29,21 @@ then1:                                            ; preds = %entry
   ret i32 %0
 
 continuation0:                                    ; preds = %entry
-  br label %loop_condition5
+  br label %loop_condition6
 
-loop_condition5:                                  ; preds = %loop_body6, %continuation0
-  %2 = phi i32 [ %3, %loop_body6 ], [ 0, %continuation0 ]
-  %3 = phi i32 [ %6, %loop_body6 ], [ 1, %continuation0 ]
-  %4 = phi i32 [ %7, %loop_body6 ], [ %0, %continuation0 ]
+loop_condition6:                                  ; preds = %loop_body7, %continuation0
+  %2 = phi i32 [ %3, %loop_body7 ], [ 0, %continuation0 ]
+  %3 = phi i32 [ %6, %loop_body7 ], [ 1, %continuation0 ]
+  %4 = phi i32 [ %7, %loop_body7 ], [ %0, %continuation0 ]
   %5 = icmp sge i32 %4, 0
-  br i1 %5, label %loop_body6, label %loop_continuation7
+  br i1 %5, label %loop_body7, label %loop_continuation8
 
-loop_body6:                                       ; preds = %loop_condition5
+loop_body7:                                       ; preds = %loop_condition6
   %6 = add i32 %3, %2
   %7 = sub i32 %4, 1
-  br label %loop_condition5
+  br label %loop_condition6
 
-loop_continuation7:                               ; preds = %loop_condition5
+loop_continuation8:                               ; preds = %loop_condition6
   ret i32 %3
 }
 

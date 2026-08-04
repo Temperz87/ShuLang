@@ -19,9 +19,29 @@ void TypeChecker::assert_same(std::string expected, std::string actual, std::str
     }
 }
 
+std::string TypeChecker::lookup_variable(const std::string& name) {
+    for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
+        auto found = it->variables.find(name);
+        if (found != it->variables.end())
+            return found->second;
+    }
+
+    return "";
+}
+
+FunctionSignature* TypeChecker::lookup_function(const std::string& name) {
+    for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
+        auto found = it->functions.find(name);
+        if (found != it->functions.end())
+            return &found->second;
+    }
+
+    return nullptr;
+}
+
 void TypeChecker::visitNode(BindingNode* node) { 
     if (node->type != "Inferred") {
-        scope_stack.back().insert({node->identifier, node->type});
+        scope_stack.back().variables.insert({node->identifier, node->type});
     }
 
     descendIntoChildren(node);
@@ -32,7 +52,7 @@ void TypeChecker::visitNode(BindingNode* node) {
         }
 
         node->type = node->value->type;
-        scope_stack.back().insert({node->identifier, node->type});
+        scope_stack.back().variables.insert({node->identifier, node->type});
     }
     else {
         assert_same(node->type, node->value->type, "Variable " + node->identifier + " was bound to a value of the wrong type");
@@ -40,14 +60,7 @@ void TypeChecker::visitNode(BindingNode* node) {
 }
         
 void TypeChecker::visitNode(VariableReferenceNode* node) {
-    node->type = "";
-    for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
-        if (it->contains(node->identifier)) {
-            node->type = it->at(node->identifier);
-            break;
-        }
-    }
-
+    node->type = lookup_variable(node->identifier);
     if (node->type.empty()) {
         std::cout << "ShuC: " << node->identifier << " was used before it was declared!" << std::endl;
         exit(1);
@@ -105,12 +118,13 @@ void TypeChecker::visitNode(SelectOperatorNode* node) {
 
 void TypeChecker::visitNode(CallNode* node) {
     descendIntoChildren(node);
-    if (!function_types.contains(node->function_name)) {
-        std::cout << "ShuC: function used before defined " << node->function_name;
+    FunctionSignature* signature = lookup_function(node->function_name);
+    if (!signature) {
+        std::cout << "ShuC: function used before defined: " << node->function_name << std::endl;
         exit(1);
     }
 
-    int expected_arguments = function_types.at(node->function_name).first;
+    int expected_arguments = signature->first;
     if (node->arguments.size() != expected_arguments) {
         std::cout << "ShuC: expected " << expected_arguments << " argument(s) for call to function\n\t" << node->function_name;
         std::cout << "\nBut got " << node->arguments.size() << " argument(s) instead!" << std::endl;
@@ -118,14 +132,14 @@ void TypeChecker::visitNode(CallNode* node) {
     }
 
     for (int i = 0; i < node->arguments.size(); i++) {
-        std::string expected_type = function_types.at(node->function_name).second.at(i + 1);
+        std::string expected_type = signature->second.at(i + 1);
         if (expected_type != "Any") {
             std::string error_msg = "Argument expected type " + expected_type + 
                 " at position " + std::to_string(i) + " in call to function\n\t" + node->function_name; 
             assert_same(expected_type, node->arguments.at(i)->type, error_msg);
         }
     }
-    node->type = function_types.at(node->function_name).second.at(0);
+    node->type = signature->second.at(0);
 }
 
 std::unordered_map<std::string, std::string> join(std::unordered_map<std::string, std::string> scope1, 
@@ -148,24 +162,24 @@ void TypeChecker::visitNode(IfNode* node) {
     auto before_scope = scope_stack.back(); 
     scope_stack.push_back({});
     node->then_block->accept(this);
-    auto then_scope = scope_stack.back();
+    auto then_scope = scope_stack.back().variables;
     scope_stack.pop_back();
 
     // If there is an else block, descend into it
-    auto new_scope = then_scope;
     if (node->else_block != nullptr) {
         bool then_returns = caught_return;
         caught_return = false;
         scope_stack.push_back({});
         node->else_block->accept(this);
         caught_return &= then_returns;
-        auto else_scope = scope_stack.back();
+        auto else_scope = scope_stack.back().variables;
         scope_stack.pop_back();
 
         // and a variable is defined in both the then and else block
         // the variables in both blocks become usable in the next scope
-        auto new_scope = join(then_scope, else_scope);
-        scope_stack.push_back(new_scope);
+        Scope new_scope;
+        new_scope.variables = join(then_scope, else_scope);
+        scope_stack.push_back(std::move(new_scope));
     }
 }
 
@@ -182,12 +196,6 @@ void TypeChecker::visitNode(FunctionNode* node) {
     bool previous_caught_return = false;
     caught_return = false;
 
-    // For now, we don't box captured variables
-    // Hence we need to do this to make sure inner functions don't reference outer ones
-    // (rip global variables)
-    auto previous_scope_stack = std::move(scope_stack);
-    scope_stack.clear();
-
     // Add function signature into function_types
     // Do it now to allow for recursion
     std::vector<std::string> types;
@@ -195,12 +203,13 @@ void TypeChecker::visitNode(FunctionNode* node) {
     for (auto param : node->parameters)
         types.push_back(param.second);
 
-    function_types[node->name] = {node->parameters.size(), types};
-    
+    scope_stack.back().functions[node->name] = {node->parameters.size(), types};
+    int my_level = scope_stack.size();
+
     // Create new scope and insert parameters
     scope_stack.push_back({});
     for (auto param : node->parameters)
-        scope_stack.back().insert(param);
+        scope_stack.back().variables.insert(param);
 
     return_type_stack.push_front(node->return_type);
     node->body->accept(this);
@@ -212,7 +221,9 @@ void TypeChecker::visitNode(FunctionNode* node) {
 
     caught_return = previous_caught_return;
     return_type_stack.pop_front();
-    scope_stack = std::move(previous_scope_stack);
+    
+    while (scope_stack.size() != my_level)
+        scope_stack.pop_back();
 }
 
 void TypeChecker::visitNode(ReturnNode* node) {

@@ -2,7 +2,7 @@
 
 ShuLang is an imperative procedural programming language, currently supported if statements, printing, and some math operators! The grammar of the language is outlined in this file.
 
-This specification was last updated during Act 5. Any changes past that point will not be reflected here.
+This specification was last updated on August 3rd, 2026. Any changes past that point will not be reflected here.
 
 ## Concrete Syntax
 

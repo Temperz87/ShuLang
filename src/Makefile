@@ -51,7 +51,7 @@ $(PYTHONFILEPATH): $(OBJECTS) ./python_bindings/pybind11_stuff.o
 	$(CC) $(CPPFLAGS) $(OBJECTS) ./driver/driver.o -fexceptions -o ./output/shuc
 
 
-.PHONY: build build-debug clean
+.PHONY: build build-debug clean python-bindings shuc
 
 build:
 	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(RELEASEFLAGS)" all
@@ -66,6 +66,12 @@ build-profile:
 	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(PROFILEFlags)" all
 
 all: ./output/shuc $(PYTHONFILEPATH)
+
+shuc:
+	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(RELEASEFLAGS)" ./output/shuc
+
+python-bindings:
+	$(MAKE) CPPFLAGS="$(COMMONCPPFLAGS) $(RELEASEFLAGS)" $(PYTHONFILEPATH)
 
 clean:
 	$(RM) -f ./output/*
